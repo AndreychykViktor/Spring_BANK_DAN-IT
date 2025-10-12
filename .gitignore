@@ -1,0 +1,33 @@
+backend/HELP.md
+target/
+!backend/src/main/**          # Дозволяємо всі файли в src/main
+!backend/src/test/**          # Дозволяємо всі файли в src/test
+!frontend/**                  # Дозволяємо всі файли в папці frontend
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/

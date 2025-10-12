@@ -1,0 +1,41 @@
+INSERT INTO employers (id, name, address) VALUES (1, 'Google', '1600 Amphitheatre Parkway, Mountain View, CA');
+INSERT INTO employers (id, name, address) VALUES (2, 'Microsoft', 'One Microsoft Way, Redmond, WA');
+INSERT INTO employers (id, name, address) VALUES (3, 'Amazon', '410 Terry Ave N, Seattle, WA');
+
+INSERT INTO customers (id, name, email, age) VALUES (1, 'John Doe', 'john.doe@example.com', 30);
+INSERT INTO customers (id, name, email, age) VALUES (2, 'Jane Smith', 'jane.smith@example.com', 28);
+INSERT INTO customers (id, name, email, age) VALUES (3, 'Bob Johnson', 'bob.johnson@example.com', 40);
+
+INSERT INTO customer_employer (customer_id, employer_id) VALUES (1, 1);
+INSERT INTO customer_employer (customer_id, employer_id) VALUES (1, 2);
+INSERT INTO customer_employer (customer_id, employer_id) VALUES (2, 2);
+INSERT INTO customer_employer (customer_id, employer_id) VALUES (3, 3);
+
+INSERT INTO accounts (id, number, currency, balance, customer_id) VALUES (1, 'ACC-0001', 'USD', 1500.00, 1);
+INSERT INTO accounts (id, number, currency, balance, customer_id) VALUES (2, 'ACC-0002', 'EUR', 250.50, 1);
+INSERT INTO accounts (id, number, currency, balance, customer_id) VALUES (3, 'ACC-0003', 'UAH', 10000.00, 2);
+INSERT INTO accounts (id, number, currency, balance, customer_id) VALUES (4, 'ACC-0004', 'GBP', 500.00, 3);
+
+
+INSERT INTO roles (name) VALUES ('ROLE_USER')
+    ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO roles (name) VALUES ('ROLE_ADMIN')
+    ON CONFLICT (name) DO NOTHING;
+
+
+INSERT INTO users (username, password, enabled)
+VALUES ('admin','{bcrypt}$2a$10$N2qv4x0z2s8mM2a8w1mZQe2qQm7yYxQ3mQq0P1bq7Z5pA3i3vT0N6', TRUE)
+    ON CONFLICT (username) DO NOTHING;
+
+
+INSERT INTO users_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u, roles r
+WHERE u.username = 'admin' AND r.name IN ('ROLE_USER', 'ROLE_ADMIN')
+    ON CONFLICT DO NOTHING;
+
+UPDATE customers c
+SET user_id = u.id
+FROM users u
+WHERE c.id = 1 AND u.username = 'admin';

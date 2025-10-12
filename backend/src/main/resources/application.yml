@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: hm1
+  profiles:
+    active: local
+
+server:
+  port: 9000
+  servlet:
+    context-path: /api
+
+---
+spring:
+  mvc:
+    cors:
+      allowed-origins: "http://localhost:3000"
+      allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+      allowed-headers: "*"
+      allow-credentials: true
+
+---
+spring:
+  profiles:
+    active: prod
+---
+spring:
+  sql:
+    init:
+      mode: always
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bankdb
+    username: bankuser
+    password: bankpass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  security:
+    jwt:
+      secret: "c2VjdXJlLXNlY3JldC1rZXktMzItYnl0ZXMtc2hvdWxkLWJlLWJhc2U2NA=="
+      expiration-millis: 3600000

@@ -1,21 +1,22 @@
 
 package com.example.hm1.controller;
 
-import com.example.hm1.entity.Account;
-import com.example.hm1.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import com.example.hm1.entity.Account;
+import com.example.hm1.service.AccountService;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/accounts")
+
 @CrossOrigin(origins = "*")
 public class AccountController {
 
     private final AccountService accountService;
-
     @Autowired
     public AccountController(AccountService accountService) {
         this.accountService = accountService;
@@ -26,6 +27,7 @@ public class AccountController {
             @PathVariable String accountNumber,
             @RequestBody Map<String, Double> request) {
         Double amount = request.get("amount");
+
         if (amount == null) {
             return ResponseEntity.badRequest().body("Amount is required");
         }
@@ -42,6 +44,7 @@ public class AccountController {
             @PathVariable String accountNumber,
             @RequestBody Map<String, Double> request) {
         Double amount = request.get("amount");
+        
         if (amount == null) {
             return ResponseEntity.badRequest().body("Amount is required");
         }

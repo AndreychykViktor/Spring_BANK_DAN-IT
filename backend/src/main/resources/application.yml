@@ -2,45 +2,27 @@ spring:
   application:
     name: hm1
   profiles:
-    active: local
-
-server:
-  port: 9000
-  servlet:
-    context-path: /api
-
----
-spring:
-  mvc:
-    cors:
-      allowed-origins: "http://localhost:3000"
-      allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
-      allowed-headers: "*"
-      allow-credentials: true
-
----
-spring:
-  profiles:
-    active: prod
----
-spring:
+    active: local # Активний локальний профіль
   sql:
     init:
-      mode: always
+      mode: always # SQL-скрипти (schema.sql та data.sql) автоматично виконуються під час запуску
+security:
+  jwt:
+    secret: "c2VjdXJlLXNlY3JldC1rZXktMzItYnl0ZXMtc2hvdWxkLWJlLWJhc2U2NA==" # Base64-encoded секрет для JWT
+    expirationMillis: 3600000 # Термін дії токена (1 година)
+server:
+  port: 9000 # Порт бекенда
+
 ---
 spring:
-  config:
-    activate:
-      on-profile: prod
   datasource:
-    url: jdbc:postgresql://localhost:5432/bankdb
-    username: bankuser
-    password: bankpass
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/bankdb # URL бази даних PostgreSQL
+    username: bankuser # Ім'я користувача бази
+    password: bankpass # Пароль до бази
+    driver-class-name: org.postgresql.Driver # Драйвер JDBC PostgreSQL
   jpa:
     hibernate:
-      ddl-auto: validate
-  security:
-    jwt:
-      secret: "c2VjdXJlLXNlY3JldC1rZXktMzItYnl0ZXMtc2hvdWxkLWJlLWJhc2U2NA=="
-      expiration-millis: 3600000
+      ddl-auto: update # Автоматичне оновлення/створення таблиць
+    show-sql: true # Виводити SQL-запити у лог
+  hikari:
+    maximum-pool-size: 10 # Максимальна кількість підключень до бази

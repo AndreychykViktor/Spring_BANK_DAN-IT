@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        .result { margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Bank API Test Interface</h1>
+    
+    <div class="section">
+        <h3>1. Register New User</h3>
+        <input type="text" id="regUsername" placeholder="Username" />
+        <input type="email" id="regEmail" placeholder="Email" />
+        <input type="password" id="regPassword" placeholder="Password" />
+        <button onclick="register()">Register</button>
+        <div id="registerResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h3>2. Login</h3>
+        <input type="text" id="loginUsername" placeholder="Username" />
+        <input type="password" id="loginPassword" placeholder="Password" />
+        <button onclick="login()">Login</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h3>3. Create Account (for logged in user)</h3>
+        <input type="text" id="accountCurrency" placeholder="Currency (USD, EUR, UAH)" />
+        <button onclick="createAccount()">Create Account</button>
+        <div id="accountResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h3>4. Admin Functions (admin only)</h3>
+        <input type="text" id="adminUsername" placeholder="Username to make admin" />
+        <button onclick="assignAdmin()">Assign Admin Role</button>
+        <button onclick="getAllUsers()">Get All Users</button>
+        <div id="adminResult" class="result"></div>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('accessToken');
+        
+        function showResult(elementId, message) {
+            document.getElementById(elementId).innerHTML = message;
+        }
+
+        async function register() {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const result = await response.text();
+                showResult('registerResult', result);
+            } catch (error) {
+                showResult('registerResult', 'Error: ' + error.message);
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    token = result.accessToken;
+                    localStorage.setItem('accessToken', token);
+                    showResult('loginResult', 'Login successful! Token saved.');
+                } else {
+                    showResult('loginResult', 'Login failed: ' + result);
+                }
+            } catch (error) {
+                showResult('loginResult', 'Error: ' + error.message);
+            }
+        }
+
+        async function createAccount() {
+            if (!token) {
+                showResult('accountResult', 'Please login first');
+                return;
+            }
+
+            const currency = document.getElementById('accountCurrency').value;
+
+            try {
+                const response = await fetch('/api/customers/1/accounts', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ currency })
+                });
+
+                const result = await response.text();
+                showResult('accountResult', result);
+            } catch (error) {
+                showResult('accountResult', 'Error: ' + error.message);
+            }
+        }
+
+        async function assignAdmin() {
+            if (!token) {
+                showResult('adminResult', 'Please login first');
+                return;
+            }
+
+            const username = document.getElementById('adminUsername').value;
+
+            try {
+                const response = await fetch('/api/admin/assign-admin/' + username, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                const result = await response.text();
+                showResult('adminResult', result);
+            } catch (error) {
+                showResult('adminResult', 'Error: ' + error.message);
+            }
+        }
+
+        async function getAllUsers() {
+            if (!token) {
+                showResult('adminResult', 'Please login first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/users', {
+                    method: 'GET',
+                    headers: { 
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                const result = await response.text();
+                showResult('adminResult', result);
+            } catch (error) {
+                showResult('adminResult', 'Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

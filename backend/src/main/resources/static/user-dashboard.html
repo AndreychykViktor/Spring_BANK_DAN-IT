@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Особистий кабінет - Banking App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .account-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e1e5e9;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+
+        .account-info h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .account-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .account-balance {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-info h4 {
+            color: #333;
+            margin-bottom: 0.3rem;
+        }
+
+        .transaction-info p {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .transaction-amount {
+            font-weight: bold;
+        }
+
+        .transaction-amount.positive {
+            color: #28a745;
+        }
+
+        .transaction-amount.negative {
+            color: #dc3545;
+        }
+
+        .transaction-type {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .type-deposit {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .type-withdrawal {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .type-transfer {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 0.2rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .close {
+            font-size: 2rem;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border: 1px solid #fcc;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border: 1px solid #cfc;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e1e5e9;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏦 Banking App - Особистий кабінет</h1>
+        <div class="user-info">
+            <span id="userName">Користувач</span>
+            <button class="logout-btn" onclick="logout()">Вийти</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="message"></div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('accounts')">Мої акаунти</div>
+            <div class="tab" onclick="showTab('transactions')">Історія транзакцій</div>
+            <div class="tab" onclick="showTab('operations')">Операції</div>
+        </div>
+
+        <!-- Мої акаунти -->
+        <div id="accounts" class="tab-content active">
+            <div class="card">
+                <h2>Мої акаунти</h2>
+                <div id="accountsList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Завантаження акаунтів...</p>
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="openCreateAccountModal()">Створити новий акаунт</button>
+            </div>
+        </div>
+
+        <!-- Історія транзакцій -->
+        <div id="transactions" class="tab-content">
+            <div class="card">
+                <h2>Історія транзакцій</h2>
+                <div id="transactionsList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Завантаження транзакцій...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Операції -->
+        <div id="operations" class="tab-content">
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h2>Поповнити акаунт</h2>
+                    <form id="depositForm">
+                        <div class="form-group">
+                            <label>Акаунт:</label>
+                            <select id="depositAccount" required>
+                                <option value="">Оберіть акаунт</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Сума:</label>
+                            <input type="number" id="depositAmount" step="0.01" min="0.01" required>
+                        </div>
+                        <button type="submit" class="btn">Поповнити</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2>Зняти кошти</h2>
+                    <form id="withdrawForm">
+                        <div class="form-group">
+                            <label>Акаунт:</label>
+                            <select id="withdrawAccount" required>
+                                <option value="">Оберіть акаунт</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Сума:</label>
+                            <input type="number" id="withdrawAmount" step="0.01" min="0.01" required>
+                        </div>
+                        <button type="submit" class="btn">Зняти</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2>Переказ між акаунтами</h2>
+                    <form id="transferForm">
+                        <div class="form-group">
+                            <label>З акаунту:</label>
+                            <select id="fromAccount" required>
+                                <option value="">Оберіть акаунт</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>На акаунт:</label>
+                            <input type="text" id="toAccountNumber" placeholder="Номер акаунту" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Сума:</label>
+                            <input type="number" id="transferAmount" step="0.01" min="0.01" required>
+                        </div>
+                        <button type="submit" class="btn">Переказати</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальне вікно для створення акаунту -->
+    <div id="createAccountModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Створити новий акаунт</h2>
+                <span class="close" onclick="closeCreateAccountModal()">&times;</span>
+            </div>
+            <form id="createAccountForm">
+                <div class="form-group">
+                    <label>Валюта:</label>
+                    <select id="accountCurrency" required>
+                        <option value="USD">USD - Долар США</option>
+                        <option value="EUR">EUR - Євро</option>
+                        <option value="UAH">UAH - Гривня</option>
+                        <option value="CHF">CHF - Швейцарський франк</option>
+                        <option value="GBP">GBP - Британський фунт</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Створити акаунт</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:9000/api';
+        let currentCustomer = null;
+        let accounts = [];
+
+        // Fetch з timeout 10 секунд
+        async function fetchWithTimeout(url, options = {}) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
+            
+            try {
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                clearTimeout(timeout);
+                return response;
+            } catch (error) {
+                clearTimeout(timeout);
+                if (error.name === 'AbortError') {
+                    throw new Error('Час вичерпано (10 секунд)');
+                }
+                throw error;
+            }
+        }
+
+        // Перевіряємо авторизацію
+        window.addEventListener('load', function() {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const role = localStorage.getItem('userRole');
+            if (role === 'ROLE_ADMIN') {
+                window.location.href = 'admin-dashboard.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = localStorage.getItem('username') || 'Користувач';
+            loadCustomerData();
+        });
+
+        async function loadCustomerData() {
+            try {
+                const response = await fetchWithTimeout(`${BASE_URL}/customers/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    currentCustomer = await response.json();
+                    loadAccounts();
+                    loadTransactions();
+                } else if (response.status === 404) {
+                    showMessage('Акаунт користувача не знайдено. Будь ласка, зверніться до адміністратора.', 'error');
+                } else {
+                    showMessage('Помилка завантаження даних користувача', 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        }
+
+        async function loadAccounts() {
+            if (!currentCustomer) return;
+
+            try {
+                const response = await fetchWithTimeout(`${BASE_URL}/customers/${currentCustomer.id}/accounts`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    accounts = await response.json();
+                    displayAccounts();
+                    updateAccountSelects();
+                } else {
+                    showMessage('Помилка завантаження акаунтів', 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        }
+
+        async function loadTransactions() {
+            if (!currentCustomer) return;
+
+            try {
+                const response = await fetchWithTimeout(`${BASE_URL}/transactions/customer/${currentCustomer.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const transactions = await response.json();
+                    displayTransactions(transactions);
+                } else {
+                    showMessage('Помилка завантаження транзакцій', 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        }
+
+        function displayAccounts() {
+            const container = document.getElementById('accountsList');
+            
+            if (accounts.length === 0) {
+                container.innerHTML = '<p>У вас поки немає акаунтів. Створіть перший акаунт!</p>';
+                return;
+            }
+
+            container.innerHTML = accounts.map(account => `
+                <div class="account-item">
+                    <div class="account-info">
+                        <h3>${account.number}</h3>
+                        <p>Валюта: ${account.currency} | Баланс: ${account.balance}</p>
+                    </div>
+                    <div class="account-balance">${account.balance} ${account.currency}</div>
+                </div>
+            `).join('');
+        }
+
+        function displayTransactions(transactions) {
+            const container = document.getElementById('transactionsList');
+            
+            if (transactions.length === 0) {
+                container.innerHTML = '<p>У вас поки немає транзакцій.</p>';
+                return;
+            }
+
+            container.innerHTML = transactions.map(transaction => `
+                <div class="transaction-item">
+                    <div class="transaction-info">
+                        <h4>${transaction.description}</h4>
+                        <p>${new Date(transaction.timestamp).toLocaleString('uk-UA')}</p>
+                        <span class="transaction-type type-${transaction.type.toLowerCase()}">${transaction.type}</span>
+                    </div>
+                    <div class="transaction-amount ${transaction.type === 'DEPOSIT' ? 'positive' : 'negative'}">
+                        ${transaction.type === 'DEPOSIT' ? '+' : '-'}${transaction.amount}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateAccountSelects() {
+            const selects = ['depositAccount', 'withdrawAccount', 'fromAccount'];
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">Оберіть акаунт</option>';
+                accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.number;
+                    option.textContent = `${account.number} (${account.currency}) - ${account.balance}`;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function showTab(tabName) {
+            // Приховуємо всі таби
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Показуємо обраний таб
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function openCreateAccountModal() {
+            document.getElementById('createAccountModal').style.display = 'block';
+        }
+
+        function closeCreateAccountModal() {
+            document.getElementById('createAccountModal').style.display = 'none';
+        }
+
+        // Обробники форм
+        document.getElementById('depositForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const accountNumber = document.getElementById('depositAccount').value;
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+
+            try {
+                const response = await fetchWithTimeout(`${BASE_URL}/accounts/deposit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ accountNumber, amount })
+                });
+
+                if (response.ok) {
+                    showMessage('Акаунт успішно пополнено!', 'success');
+                    loadAccounts();
+                    loadTransactions();
+                    document.getElementById('depositForm').reset();
+                } else {
+                    const errorData = await response.text();
+                    showMessage('Помилка поповнення акаунту: ' + errorData, 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        });
+
+        document.getElementById('withdrawForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const accountNumber = document.getElementById('withdrawAccount').value;
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+
+            try {
+                const response = await fetchWithTimeout(`${BASE_URL}/accounts/withdraw`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ accountNumber, amount })
+                });
+
+                if (response.ok) {
+                    showMessage('Кошти успішно знято!', 'success');
+                    loadAccounts();
+                    loadTransactions();
+                    document.getElementById('withdrawForm').reset();
+                } else {
+                    const errorData = await response.text();
+                    showMessage('Помилка зняття коштів: ' + errorData, 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        });
+
+        document.getElementById('transferForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const fromAccount = document.getElementById('fromAccount').value;
+            const toAccount = document.getElementById('toAccountNumber').value;
+            const amount = parseFloat(document.getElementById('transferAmount').value);
+
+            try {
+                const response = await fetchWithTimeout(`${BASE_URL}/accounts/transfer`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ fromAccount, toAccount, amount })
+                });
+
+                if (response.ok) {
+                    showMessage('Переказ успішно викона!', 'success');
+                    loadAccounts();
+                    loadTransactions();
+                    document.getElementById('transferForm').reset();
+                } else {
+                    const errorData = await response.text();
+                    showMessage('Помилка переказу: ' + errorData, 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        });
+
+        document.getElementById('createAccountForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!currentCustomer || !currentCustomer.id) {
+                showMessage('Помилка: дані користувача не завантажені. Будь ласка, оновіть сторінку.', 'error');
+                return;
+            }
+            
+            const currency = document.getElementById('accountCurrency').value;
+
+            try {
+                const response = await fetchWithTimeout(`${BASE_URL}/customers/${currentCustomer.id}/accounts`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ currency })
+                });
+
+                if (response.ok) {
+                    showMessage('Акаунт успішно створено!', 'success');
+                    loadAccounts();
+                    closeCreateAccountModal();
+                    document.getElementById('createAccountForm').reset();
+                } else {
+                    const errorData = await response.text();
+                    showMessage('Помилка створення акаунту: ' + errorData, 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        });
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('username');
+            window.location.href = 'login.html';
+        }
+
+        // Закриваємо модальне вікно при кліку поза ним
+        window.onclick = function(event) {
+            const modal = document.getElementById('createAccountModal');
+            if (event.target === modal) {
+                closeCreateAccountModal();
+            }
+        }
+    </script>
+</body>
+</html>

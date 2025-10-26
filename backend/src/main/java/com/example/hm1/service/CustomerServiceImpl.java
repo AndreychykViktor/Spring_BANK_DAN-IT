@@ -24,8 +24,8 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Customer createCustomer(String name, String email, Integer age) {
-        Customer customer = new Customer(name, email, age);
+    public Customer createCustomer(String name, Integer age) {
+        Customer customer = new Customer(name, "temp@email.com", age);
         return customerRepo.save(customer);
     }
 
@@ -64,7 +64,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Account createAccountForCustomer(Long customerId, Currency currency) {
+    public Account createAccountForCustomer(Long customerId, Currency currency, String email, String password) {
         Customer customer = customerRepo.getOne(customerId);
         if (customer == null) {
             throw new IllegalArgumentException("Customer not found with id: " + customerId);

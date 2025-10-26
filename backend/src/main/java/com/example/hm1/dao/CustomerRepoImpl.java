@@ -1,10 +1,12 @@
 package com.example.hm1.dao;
 
 import com.example.hm1.entity.Customer;
+import com.example.hm1.entity.User;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Repository
@@ -68,5 +70,12 @@ public class CustomerRepoImpl implements CustomerRepo {
                 .filter(customer -> email.equals(customer.getEmail()))
                 .findFirst()
                 .orElse(null);
+    }
+
+    @Override
+    public Optional<Customer> findByUser(User user) {
+        return customers.stream()
+                .filter(customer -> user.equals(customer.getUser()))
+                .findFirst();
     }
 }

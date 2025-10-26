@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS customers (
                                          id BIGSERIAL PRIMARY KEY,
                                          name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    age INTEGER
+    age INTEGER,
+    user_id BIGINT UNIQUE
     );
 
 CREATE TABLE IF NOT EXISTS employers (

@@ -17,7 +17,15 @@ public class SecurityProperties {
         return secret;
     }
 
+    public void setSecret(String secret) {
+        this.secret = secret;
+    }
+
     public long getExpirationMillis() {
         return expirationMillis;
+    }
+
+    public void setExpirationMillis(long expirationMillis) {
+        this.expirationMillis = expirationMillis;
     }
 }

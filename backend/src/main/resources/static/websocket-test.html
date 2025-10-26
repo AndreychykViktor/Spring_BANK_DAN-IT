@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: white;
+            border-radius: 3px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 8px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .connected { color: green; }
+        .disconnected { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🏦 Banking WebSocket Test</h1>
+    
+    <div class="container">
+        <h3>Connection Status</h3>
+        <div id="status" class="status disconnected">Disconnected</div>
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+
+    <div class="container">
+        <h3>Send Message</h3>
+        <input type="text" id="messageInput" placeholder="Enter your name" value="Banking User">
+        <button onclick="sendMessage()">Send Greeting</button>
+    </div>
+
+    <div class="container">
+        <h3>Account Subscription</h3>
+        <input type="text" id="accountInput" placeholder="Enter account number" value="123456789">
+        <button onclick="subscribeToAccount()">Subscribe to Account</button>
+    </div>
+
+    <div class="container">
+        <h3>Messages</h3>
+        <div id="messages" class="messages"></div>
+        <button onclick="clearMessages()">Clear Messages</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    
+    <script>
+        let stompClient = null;
+        let socket = null;
+
+        function connect() {
+            socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function (frame) {
+                console.log('Connected: ' + frame);
+                document.getElementById('status').textContent = 'Connected';
+                document.getElementById('status').className = 'status connected';
+                
+                // Subscribe to account updates
+                stompClient.subscribe('/topic/account-updates', function (message) {
+                    const data = JSON.parse(message.body);
+                    addMessage('Account Update: ' + JSON.stringify(data, null, 2));
+                });
+                
+                // Subscribe to transaction updates
+                stompClient.subscribe('/topic/transaction-updates', function (message) {
+                    const data = JSON.parse(message.body);
+                    addMessage('Transaction Update: ' + JSON.stringify(data, null, 2));
+                });
+                
+                // Subscribe to system notifications
+                stompClient.subscribe('/topic/system-notifications', function (message) {
+                    const data = JSON.parse(message.body);
+                    addMessage('System Notification: ' + JSON.stringify(data, null, 2));
+                });
+                
+                // Subscribe to greetings
+                stompClient.subscribe('/topic/greetings', function (message) {
+                    const data = JSON.parse(message.body);
+                    addMessage('Greeting: ' + JSON.stringify(data, null, 2));
+                });
+                
+                // Subscribe to account subscriptions
+                stompClient.subscribe('/topic/account-subscriptions', function (message) {
+                    const data = JSON.parse(message.body);
+                    addMessage('Subscription: ' + JSON.stringify(data, null, 2));
+                });
+                
+            }, function (error) {
+                console.log('Connection error: ' + error);
+                document.getElementById('status').textContent = 'Connection Error';
+                document.getElementById('status').className = 'status disconnected';
+            });
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            document.getElementById('status').textContent = 'Disconnected';
+            document.getElementById('status').className = 'status disconnected';
+            console.log("Disconnected");
+        }
+
+        function sendMessage() {
+            const name = document.getElementById('messageInput').value;
+            if (stompClient && name) {
+                stompClient.send("/app/hello", {}, JSON.stringify({'name': name}));
+            }
+        }
+
+        function subscribeToAccount() {
+            const accountNumber = document.getElementById('accountInput').value;
+            if (stompClient && accountNumber) {
+                stompClient.send("/app/account/subscribe", {}, JSON.stringify({'accountNumber': accountNumber}));
+            }
+        }
+
+        function addMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        // Auto-connect on page load
+        window.onload = function() {
+            connect();
+        };
+    </script>
+</body>
+</html>

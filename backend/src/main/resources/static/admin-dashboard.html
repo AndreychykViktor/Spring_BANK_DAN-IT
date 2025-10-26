@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Адмін панель - Banking App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e1e5e9;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            border-bottom-color: #dc3545;
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .table th, .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 0.2rem;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #dc3545;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 2% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .close {
+            font-size: 2rem;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border: 1px solid #fcc;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border: 1px solid #cfc;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #dc3545;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 5px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e1e5e9;
+            background: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .pagination button.active {
+            background: #dc3545;
+            color: white;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .table {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏦 Banking App - Адмін панель</h1>
+        <div class="user-info">
+            <span id="userName">Адміністратор</span>
+            <button class="logout-btn" onclick="logout()">Вийти</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="message"></div>
+
+        <!-- Статистика -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Всього користувачів</h3>
+                <div class="number" id="totalUsers">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Всього акаунтів</h3>
+                <div class="number" id="totalAccounts">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Всього транзакцій</h3>
+                <div class="number" id="totalTransactions">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Загальний баланс</h3>
+                <div class="number" id="totalBalance">-</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('users')">Користувачі</div>
+            <div class="tab" onclick="showTab('transactions')">Транзакції</div>
+            <div class="tab" onclick="showTab('accounts')">Акаунти</div>
+            <div class="tab" onclick="showTab('roles')">Управління ролями</div>
+        </div>
+
+        <!-- Користувачі -->
+        <div id="users" class="tab-content active">
+            <div class="card">
+                <h2>Всі користувачі</h2>
+                <div class="search-bar">
+                    <input type="text" id="userSearch" placeholder="Пошук користувачів...">
+                    <button class="btn" onclick="searchUsers()">Пошук</button>
+                </div>
+                <div id="usersList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Завантаження користувачів...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Транзакції -->
+        <div id="transactions" class="tab-content">
+            <div class="card">
+                <h2>Всі транзакції</h2>
+                <div class="search-bar">
+                    <input type="date" id="startDate" placeholder="Дата початку">
+                    <input type="date" id="endDate" placeholder="Дата кінця">
+                    <select id="transactionType">
+                        <option value="">Всі типи</option>
+                        <option value="DEPOSIT">Депозит</option>
+                        <option value="WITHDRAWAL">Зняття</option>
+                        <option value="TRANSFER">Переказ</option>
+                    </select>
+                    <button class="btn" onclick="filterTransactions()">Фільтр</button>
+                </div>
+                <div id="transactionsList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Завантаження транзакцій...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Акаунти -->
+        <div id="accounts" class="tab-content">
+            <div class="card">
+                <h2>Всі акаунти</h2>
+                <div id="accountsList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Завантаження акаунтів...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Управління ролями -->
+        <div id="roles" class="tab-content">
+            <div class="card">
+                <h2>Управління ролями</h2>
+                <div class="form-group">
+                    <label>Користувач:</label>
+                    <select id="roleUserSelect">
+                        <option value="">Оберіть користувача</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Роль:</label>
+                    <select id="roleSelect">
+                        <option value="ROLE_USER">Користувач</option>
+                        <option value="ROLE_ADMIN">Адміністратор</option>
+                    </select>
+                </div>
+                <button class="btn btn-success" onclick="assignRole()">Призначити роль</button>
+                <button class="btn btn-warning" onclick="removeRole()">Видалити роль</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:9000/api';
+        let users = [];
+        let transactions = [];
+        let accounts = [];
+
+        // Перевіряємо авторизацію
+        window.addEventListener('load', function() {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const role = localStorage.getItem('userRole');
+            if (role !== 'ROLE_ADMIN') {
+                window.location.href = 'user-dashboard.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = localStorage.getItem('username') || 'Адміністратор';
+            loadDashboardData();
+        });
+
+        async function loadDashboardData() {
+            await Promise.all([
+                loadUsers(),
+                loadTransactions(),
+                loadAccounts(),
+                loadStats()
+            ]);
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${BASE_URL}/admin/users`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    users = await response.json();
+                    displayUsers(users);
+                    updateRoleUserSelect();
+                } else {
+                    showMessage('Помилка завантаження користувачів', 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        }
+
+        async function loadTransactions() {
+            try {
+                const response = await fetch(`${BASE_URL}/transactions/all`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    transactions = await response.json();
+                    displayTransactions(transactions);
+                } else {
+                    showMessage('Помилка завантаження транзакцій', 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        }
+
+        async function loadAccounts() {
+            try {
+                const response = await fetch(`${BASE_URL}/accounts`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    accounts = await response.json();
+                    displayAccounts(accounts);
+                } else {
+                    showMessage('Помилка завантаження акаунтів', 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        }
+
+        async function loadStats() {
+            try {
+                // Завантажуємо статистику
+                document.getElementById('totalUsers').textContent = users.length;
+                document.getElementById('totalAccounts').textContent = accounts.length;
+                document.getElementById('totalTransactions').textContent = transactions.length;
+                
+                const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
+                document.getElementById('totalBalance').textContent = totalBalance.toFixed(2);
+            } catch (error) {
+                console.error('Помилка завантаження статистики:', error);
+            }
+        }
+
+        function displayUsers(usersToShow) {
+            const container = document.getElementById('usersList');
+            
+            if (usersToShow.length === 0) {
+                container.innerHTML = '<p>Користувачів не знайдено.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ім'я користувача</th>
+                            <th>Email</th>
+                            <th>Ролі</th>
+                            <th>Активний</th>
+                            <th>Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${usersToShow.map(user => `
+                            <tr>
+                                <td>${user.id}</td>
+                                <td>${user.username}</td>
+                                <td>${user.customer ? user.customer.email : 'Н/Д'}</td>
+                                <td>
+                                    ${user.roles ? user.roles.map(role => 
+                                        `<span class="badge ${role.name === 'ROLE_ADMIN' ? 'badge-danger' : 'badge-info'}">${role.name}</span>`
+                                    ).join(' ') : 'Н/Д'}
+                                </td>
+                                <td>
+                                    <span class="badge ${user.enabled ? 'badge-success' : 'badge-danger'}">
+                                        ${user.enabled ? 'Так' : 'Ні'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-info" onclick="viewUserDetails(${user.id})">Деталі</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function displayTransactions(transactionsToShow) {
+            const container = document.getElementById('transactionsList');
+            
+            if (transactionsToShow.length === 0) {
+                container.innerHTML = '<p>Транзакцій не знайдено.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Тип</th>
+                            <th>Сума</th>
+                            <th>Опис</th>
+                            <th>Клієнт</th>
+                            <th>Дата</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${transactionsToShow.map(transaction => `
+                            <tr>
+                                <td>${transaction.id}</td>
+                                <td>
+                                    <span class="badge type-${transaction.type.toLowerCase()}">${transaction.type}</span>
+                                </td>
+                                <td>${transaction.amount}</td>
+                                <td>${transaction.description}</td>
+                                <td>${transaction.customer ? transaction.customer.name : 'Н/Д'}</td>
+                                <td>${new Date(transaction.timestamp).toLocaleString('uk-UA')}</td>
+                                <td>
+                                    <span class="badge ${transaction.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">
+                                        ${transaction.status}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function displayAccounts(accountsToShow) {
+            const container = document.getElementById('accountsList');
+            
+            if (accountsToShow.length === 0) {
+                container.innerHTML = '<p>Акаунтів не знайдено.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Номер</th>
+                            <th>Валюта</th>
+                            <th>Баланс</th>
+                            <th>Клієнт</th>
+                            <th>Дата створення</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${accountsToShow.map(account => `
+                            <tr>
+                                <td>${account.id}</td>
+                                <td>${account.number}</td>
+                                <td>${account.currency}</td>
+                                <td>${account.balance}</td>
+                                <td>${account.customer ? account.customer.name : 'Н/Д'}</td>
+                                <td>${new Date(account.createdAt).toLocaleDateString('uk-UA')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function updateRoleUserSelect() {
+            const select = document.getElementById('roleUserSelect');
+            select.innerHTML = '<option value="">Оберіть користувача</option>';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.username} (${user.customer ? user.customer.email : 'Н/Д'})`;
+                select.appendChild(option);
+            });
+        }
+
+        function showTab(tabName) {
+            // Приховуємо всі таби
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Показуємо обраний таб
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function searchUsers() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            const filteredUsers = users.filter(user => 
+                user.username.toLowerCase().includes(searchTerm) ||
+                (user.customer && user.customer.email.toLowerCase().includes(searchTerm))
+            );
+            displayUsers(filteredUsers);
+        }
+
+        function filterTransactions() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const type = document.getElementById('transactionType').value;
+
+            let filteredTransactions = transactions;
+
+            if (startDate) {
+                filteredTransactions = filteredTransactions.filter(t => 
+                    new Date(t.timestamp) >= new Date(startDate)
+                );
+            }
+
+            if (endDate) {
+                filteredTransactions = filteredTransactions.filter(t => 
+                    new Date(t.timestamp) <= new Date(endDate)
+                );
+            }
+
+            if (type) {
+                filteredTransactions = filteredTransactions.filter(t => t.type === type);
+            }
+
+            displayTransactions(filteredTransactions);
+        }
+
+        async function assignRole() {
+            const userId = document.getElementById('roleUserSelect').value;
+            const roleName = document.getElementById('roleSelect').value;
+
+            if (!userId || !roleName) {
+                showMessage('Оберіть користувача та роль', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/admin/assign-role/${userId}/${roleName}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showMessage('Роль успішно призначено!', 'success');
+                    loadUsers();
+                } else {
+                    showMessage('Помилка призначення ролі', 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        }
+
+        async function removeRole() {
+            const userId = document.getElementById('roleUserSelect').value;
+            const roleName = document.getElementById('roleSelect').value;
+
+            if (!userId || !roleName) {
+                showMessage('Оберіть користувача та роль', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/admin/remove-role/${userId}/${roleName}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showMessage('Роль успішно видалено!', 'success');
+                    loadUsers();
+                } else {
+                    showMessage('Помилка видалення ролі', 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        }
+
+        function viewUserDetails(userId) {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                alert(`Деталі користувача:\n\nID: ${user.id}\nІм'я: ${user.username}\nEmail: ${user.customer ? user.customer.email : 'Н/Д'}\nАктивний: ${user.enabled ? 'Так' : 'Ні'}\nРолі: ${user.roles ? user.roles.map(r => r.name).join(', ') : 'Н/Д'}`);
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('username');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

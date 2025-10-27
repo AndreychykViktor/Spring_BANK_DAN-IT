@@ -29,7 +29,6 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Skip initialization for now
         System.out.println("DataInitializer: Skipping initialization");
     }
 }

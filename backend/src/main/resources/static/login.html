@@ -222,7 +222,21 @@
                         }
                     }, 1500);
                 } else {
-                    showMessage('Помилка входу: ' + (data.message || 'Невірні облікові дані'), 'error');
+                    const errorMsg = data.message || 'Невірні облікові дані';
+                    showMessage('Помилка входу: ' + errorMsg, 'error');
+                    
+                    // Якщо користувач не знайдений, пропонуємо зареєструватися
+                    if (response.status === 401 || response.status === 403) {
+                        setTimeout(() => {
+                            const registrationLink = document.createElement('div');
+                            registrationLink.innerHTML = `
+                                <p style="margin-top: 10px;">Немає акаунту? 
+                                    <a href="registration.html" style="color: #667eea; text-decoration: underline;">Зареєструйтеся</a>
+                                </p>
+                            `;
+                            document.getElementById('message').appendChild(registrationLink);
+                        }, 500);
+                    }
                 }
             } catch (error) {
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');

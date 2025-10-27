@@ -1,52 +1,64 @@
 CREATE TABLE IF NOT EXISTS customers (
                                          id BIGSERIAL PRIMARY KEY,
                                          name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    age INTEGER,
-    user_id BIGINT UNIQUE
-    );
+                                         email VARCHAR(255) UNIQUE NOT NULL,
+                                         age INTEGER,
+                                         user_id BIGINT UNIQUE
+);
 
 CREATE TABLE IF NOT EXISTS employers (
                                          id BIGSERIAL PRIMARY KEY,
                                          name VARCHAR(255) NOT NULL,
-    address VARCHAR(255)
-    );
+                                         address VARCHAR(255)
+);
 
 CREATE TABLE IF NOT EXISTS customer_employer (
                                                  customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-    employer_id BIGINT NOT NULL REFERENCES employers(id) ON DELETE CASCADE,
-    PRIMARY KEY (customer_id, employer_id)
-    );
+                                                 employer_id BIGINT NOT NULL REFERENCES employers(id) ON DELETE CASCADE,
+                                                 PRIMARY KEY (customer_id, employer_id)
+);
 
 CREATE TABLE IF NOT EXISTS accounts (
                                         id BIGSERIAL PRIMARY KEY,
                                         number VARCHAR(100) UNIQUE NOT NULL,
-    currency VARCHAR(10) NOT NULL,
-    balance NUMERIC(19,2) NOT NULL DEFAULT 0,
-    customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE CASCADE
-    );
+                                        currency VARCHAR(10) NOT NULL,
+                                        balance NUMERIC(19,2) NOT NULL DEFAULT 0,
+                                        customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE CASCADE
+);
 
 CREATE TABLE IF NOT EXISTS roles (
                                      id BIGSERIAL PRIMARY KEY,
                                      name VARCHAR(50) UNIQUE NOT NULL
-    );
+);
 
 
 CREATE TABLE IF NOT EXISTS users (
                                      id BIGSERIAL PRIMARY KEY,
                                      username VARCHAR(80) UNIQUE NOT NULL,
-    password VARCHAR(200) NOT NULL,
-    enabled BOOLEAN NOT NULL DEFAULT TRUE
-    );
+                                     password VARCHAR(200) NOT NULL,
+                                     enabled BOOLEAN NOT NULL DEFAULT TRUE
+);
 
 
 CREATE TABLE IF NOT EXISTS users_roles (
                                            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, role_id)
-    );
+                                           role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+                                           PRIMARY KEY (user_id, role_id)
+);
 
 ALTER TABLE customers
     ADD COLUMN IF NOT EXISTS user_id BIGINT UNIQUE,
     ADD CONSTRAINT fk_customers_user
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS transactions (
+    id BIGSERIAL PRIMARY KEY,
+    amount NUMERIC(19,2) NOT NULL,
+    type VARCHAR(255) NOT NULL,
+    status VARCHAR(255) NOT NULL,
+    description VARCHAR(500),
+    timestamp TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    from_account_id BIGINT REFERENCES accounts(id) ON DELETE SET NULL,
+    to_account_id BIGINT REFERENCES accounts(id) ON DELETE SET NULL,
+    customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE CASCADE
+);

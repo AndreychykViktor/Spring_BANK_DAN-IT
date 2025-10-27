@@ -23,6 +23,8 @@ import jakarta.validation.constraints.NotBlank;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -85,6 +87,14 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest req) {
         try {
+            // Перевіряємо чи користувач існує
+            if (!userRepository.existsByUsername(req.getUsername())) {
+                Map<String, String> error = new java.util.HashMap<>();
+                error.put("message", "Користувач не знайдений. Будь ласка, зареєструйтеся.");
+                error.put("error", "USER_NOT_FOUND");
+                return ResponseEntity.status(401).body(error);
+            }
+
             Authentication authentication = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword())
             );
@@ -96,8 +106,16 @@ public class AuthController {
 
             String token = jwtService.generateToken(user.getUsername(), roles);
             return ResponseEntity.ok(new AuthResponse(token));
+        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            Map<String, String> error = new java.util.HashMap<>();
+            error.put("message", "Невірний пароль. Спробуйте ще раз.");
+            error.put("error", "BAD_CREDENTIALS");
+            return ResponseEntity.status(401).body(error);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Login failed: " + e.getMessage());
+            Map<String, String> error = new java.util.HashMap<>();
+            error.put("message", "Помилка входу: " + e.getMessage());
+            error.put("error", "LOGIN_FAILED");
+            return ResponseEntity.status(400).body(error);
         }
     }
 

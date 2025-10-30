@@ -22,9 +22,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 import java.util.Set;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -72,11 +70,21 @@ public class AuthController {
                     .build();
 
             user = userRepository.save(user);
+            
+            // Перевіряємо, що user має ID після збереження
+            if (user.getId() == null) {
+                throw new RuntimeException("User ID is null after save");
+            }
+            
+            System.out.println("AuthController: User saved with ID: " + user.getId());
 
             // Створюємо клієнта
             Customer customer = new Customer(req.getUsername(), req.getEmail(), 25); // Вік за замовчуванням
             customer.setUser(user);
-            customerRepository.save(customer);
+            Customer savedCustomer = customerRepository.save(customer);
+            
+            System.out.println("AuthController: Customer saved with ID: " + savedCustomer.getId() + ", user ID: " + 
+                    (savedCustomer.getUser() != null ? savedCustomer.getUser().getId() : "null"));
 
             return ResponseEntity.ok("User registered successfully");
         } catch (Exception e) {
@@ -105,7 +113,7 @@ public class AuthController {
                     .toArray(String[]::new);
 
             String token = jwtService.generateToken(user.getUsername(), roles);
-            return ResponseEntity.ok(new AuthResponse(token));
+            return ResponseEntity.ok(new AuthResponse(token, roles));
         } catch (org.springframework.security.authentication.BadCredentialsException e) {
             Map<String, String> error = new java.util.HashMap<>();
             error.put("message", "Невірний пароль. Спробуйте ще раз.");
@@ -253,13 +261,19 @@ public class AuthController {
 
     public static class AuthResponse {
         private final String accessToken;
+        private final String[] roles;
 
-        public AuthResponse(String accessToken) {
+        public AuthResponse(String accessToken, String[] roles) {
             this.accessToken = accessToken;
+            this.roles = roles;
         }
 
         public String getAccessToken() {
             return this.accessToken;
+        }
+
+        public String[] getRoles() {
+            return this.roles;
         }
 
         public boolean equals(final Object o) {

@@ -299,10 +299,35 @@
                 const data = await response.text();
 
                 if (response.ok) {
-                    showMessage('Реєстрація успішна! Тепер ви можете увійти в систему.', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 2000);
+                    showMessage('Реєстрація успішна! Будь ласка, заповніть ваш профіль.', 'success');
+                    // Автоматично логінимося після реєстрації
+                    setTimeout(async () => {
+                        try {
+                            const loginResponse = await fetch(`${AUTH_URL}/login`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ username, password })
+                            });
+                            
+                            const loginData = await loginResponse.json();
+                            if (loginResponse.ok) {
+                                localStorage.setItem('accessToken', loginData.accessToken);
+                                const roles = loginData.roles || [];
+                                const hasAdminRole = roles.includes('ROLE_ADMIN');
+                                localStorage.setItem('userRole', hasAdminRole ? 'ROLE_ADMIN' : (roles[0] || 'ROLE_USER'));
+                                localStorage.setItem('username', username);
+                                
+                                // Перенаправляємо на форму профілю
+                                window.location.href = 'profile-setup.html';
+                            } else {
+                                window.location.href = 'login.html';
+                            }
+                        } catch (error) {
+                            window.location.href = 'login.html';
+                        }
+                    }, 1500);
                 } else {
                     showMessage('Помилка реєстрації: ' + data, 'error');
                 }

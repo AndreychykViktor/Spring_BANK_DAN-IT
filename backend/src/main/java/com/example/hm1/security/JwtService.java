@@ -6,13 +6,10 @@ import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.SignatureAlgorithm;
 
-import com.example.hm1.security.SecurityProperties;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.util.Date;
-import java.util.Map;
 import java.util.function.Function;
 
 @Service
@@ -27,11 +24,11 @@ public class JwtService {
     }
 
     public String extractUsername(String token) {
-        return extractClaim(token, claims -> (String) claims.get("sub"));
+        return extractClaim(token, Claims::getSubject);
     }
 
-    public <T> T extractClaim(String token, Function<Map<String, Object>, T> resolver) {
-        Map<String, Object> claims = parseAllClaims(token);
+    public <T> T extractClaim(String token, Function<Claims, T> resolver) {
+        Claims claims = parseAllClaims(token);
         return resolver.apply(claims);
     }
 
@@ -53,7 +50,7 @@ public class JwtService {
     }
 
     private boolean isExpired(String token) {
-        Date exp = extractClaim(token, claims -> (Date) claims.get("exp"));
+        Date exp = extractClaim(token, Claims::getExpiration);
         return exp.before(new Date());
     }
 
@@ -62,7 +59,7 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private Map<String, Object> parseAllClaims(String token) {
+    private Claims parseAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSignKey())
                 .build()

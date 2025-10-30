@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Налаштування профілю - Banking App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .profile-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border: 1px solid #fcc;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border: 1px solid #cfc;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .skip-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .skip-link a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .skip-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <div class="logo">
+            <h1>🏦 Banking App</h1>
+            <p>Заповніть ваш профіль</p>
+        </div>
+
+        <div id="message"></div>
+
+        <form id="profileForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="firstName">Ім'я:</label>
+                    <input type="text" id="firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Прізвище:</label>
+                    <input type="text" id="lastName" name="lastName" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+                <div class="form-row">
+                <div class="form-group">
+                    <label for="age">Вік:</label>
+                    <input type="number" id="age" name="age" min="18" max="120" required>
+                </div>
+                <div class="form-group">
+                    <label for="employerSelect">Місце роботи (вибрати зі списку):</label>
+                    <select id="employerSelect" name="employerSelect">
+                        <option value="">Оберіть роботодавця</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="customEmployerCheckbox" onchange="toggleCustomEmployer()">
+                    Або ввести свого роботодавця
+                </label>
+            </div>
+            
+            <div class="form-group" id="customEmployerGroup" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="employerName">Назва компанії:</label>
+                        <input type="text" id="employerName" name="employerName" placeholder="Назва компанії">
+                    </div>
+                    <div class="form-group">
+                        <label for="employerAddress">Адреса:</label>
+                        <input type="text" id="employerAddress" name="employerAddress" placeholder="Адреса компанії">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">Зберегти профіль</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Збереження профілю...</p>
+        </div>
+
+        <div class="skip-link">
+            <a href="javascript:void(0)" onclick="skipProfileSetup()">Пропустити (заповнити пізніше)</a>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:9000/api';
+
+        // Завантажуємо список роботодавців
+        async function loadEmployers() {
+            try {
+                const response = await fetch(`${BASE_URL}/employers`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const employers = await response.json();
+                    const select = document.getElementById('employerSelect');
+                    
+                    // Очищаємо поточні опції
+                    select.innerHTML = '<option value="">Оберіть роботодавця</option>';
+                    
+                    if (employers && employers.length > 0) {
+                        employers.forEach(employer => {
+                            const option = document.createElement('option');
+                            option.value = employer.id || employer.ID || '';
+                            option.textContent = employer.name || employer.NAME || 'Невідомий';
+                            select.appendChild(option);
+                        });
+                        console.log('Завантажено роботодавців:', employers.length);
+                    } else {
+                        console.warn('Список роботодавців порожній');
+                    }
+                } else {
+                    console.error('Помилка завантаження роботодавців:', response.status, response.statusText);
+                    const errorText = await response.text().catch(() => '');
+                    console.error('Деталі помилки:', errorText);
+                }
+            } catch (error) {
+                console.error('Помилка завантаження роботодавців:', error);
+                // Не показуємо помилку, бо можна ввести свого роботодавця
+            }
+        }
+        
+        function toggleCustomEmployer() {
+            const checkbox = document.getElementById('customEmployerCheckbox');
+            const customGroup = document.getElementById('customEmployerGroup');
+            const select = document.getElementById('employerSelect');
+            
+            if (checkbox.checked) {
+                customGroup.style.display = 'block';
+                select.required = false;
+                document.getElementById('employerName').required = true;
+            } else {
+                customGroup.style.display = 'none';
+                select.required = true;
+                document.getElementById('employerName').required = false;
+                document.getElementById('employerName').value = '';
+                document.getElementById('employerAddress').value = '';
+            }
+        }
+
+        // Завантажуємо поточний профіль якщо він існує
+        async function loadCurrentProfile() {
+            try {
+                const response = await fetch(`${BASE_URL}/customers/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const customer = await response.json();
+                    if (customer) {
+                        // Розділяємо ім'я на ім'я та прізвище
+                        const nameParts = customer.name ? customer.name.split(' ') : ['', ''];
+                        document.getElementById('firstName').value = nameParts[0] || '';
+                        document.getElementById('lastName').value = nameParts.slice(1).join(' ') || '';
+                        document.getElementById('email').value = customer.email || '';
+                        document.getElementById('age').value = customer.age || '';
+                        
+                        // Встановлюємо роботодавця якщо є
+                        if (customer.employers && customer.employers.length > 0) {
+                            const employer = customer.employers[0];
+                            const employerSelect = document.getElementById('employerSelect');
+                            if (employer.id) {
+                                employerSelect.value = employer.id || '';
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Помилка завантаження профілю:', error);
+            }
+        }
+
+        // Обробка форми
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const ageValue = document.getElementById('age').value;
+            const useCustomEmployer = document.getElementById('customEmployerCheckbox').checked;
+            const employerSelect = document.getElementById('employerSelect').value;
+            const employerName = document.getElementById('employerName').value.trim();
+            const employerAddress = document.getElementById('employerAddress').value.trim();
+
+            if (!firstName || !lastName) {
+                showMessage('Будь ласка, введіть ім\'я та прізвище', 'error');
+                return;
+            }
+
+            if (!email) {
+                showMessage('Будь ласка, введіть email', 'error');
+                return;
+            }
+
+            const age = ageValue ? parseInt(ageValue) : null;
+            if (age === null || isNaN(age) || age < 18 || age > 120) {
+                showMessage('Будь ласка, введіть правильний вік (18-120)', 'error');
+                return;
+            }
+
+            // Валідація роботодавця
+            if (!useCustomEmployer && !employerSelect) {
+                showMessage('Будь ласка, оберіть роботодавця зі списку або введіть свого', 'error');
+                return;
+            }
+            
+            if (useCustomEmployer && !employerName) {
+                showMessage('Будь ласка, введіть назву компанії', 'error');
+                return;
+            }
+
+            showLoading(true);
+            hideMessage();
+
+            try {
+                const fullName = `${firstName} ${lastName}`;
+                
+                // Оновлюємо профіль
+                const requestData = {
+                    name: fullName,
+                    email: email,
+                    age: age
+                };
+
+                // Якщо вибрано зі списку
+                if (!useCustomEmployer && employerSelect && employerSelect !== '') {
+                    requestData.employerId = parseInt(employerSelect);
+                }
+                // Якщо вводимо свого
+                else if (useCustomEmployer && employerName) {
+                    requestData.employerName = employerName;
+                    requestData.employerAddress = employerAddress || '';
+                }
+
+                const response = await fetch(`${BASE_URL}/customers/me`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json().catch(() => null);
+                    console.log('Profile update response:', data);
+                    showMessage('Профіль успішно оновлено!', 'success');
+                    setTimeout(() => {
+                        const role = localStorage.getItem('userRole');
+                        if (role === 'ROLE_ADMIN') {
+                            window.location.href = 'admin-dashboard.html';
+                        } else {
+                            window.location.href = 'user-dashboard.html';
+                        }
+                    }, 1500);
+                } else {
+                    const errorText = await response.text().catch(() => '');
+                    console.error('Profile update failed:', response.status, errorText);
+                    showMessage('Помилка оновлення профілю (статус: ' + response.status + '): ' + errorText, 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        function skipProfileSetup() {
+            const role = localStorage.getItem('userRole');
+            if (role === 'ROLE_ADMIN') {
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                window.location.href = 'user-dashboard.html';
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        function hideMessage() {
+            document.getElementById('message').innerHTML = '';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('submitBtn').disabled = show;
+        }
+
+        // Перевіряємо авторизацію при завантаженні
+        window.addEventListener('load', function() {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Спочатку завантажуємо роботодавців, потім профіль
+            loadEmployers().then(() => {
+                loadCurrentProfile();
+            }).catch(error => {
+                console.error('Помилка завантаження:', error);
+                // Все одно намагаємося завантажити профіль
+                loadCurrentProfile();
+            });
+        });
+    </script>
+</body>
+</html>
+

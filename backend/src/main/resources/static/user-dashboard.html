@@ -331,9 +331,10 @@
 </head>
 <body>
     <div class="header">
-        <h1>🏦 Banking App - Особистий кабінет</h1>
+        <h1>🏦 Banking App</h1>
         <div class="user-info">
             <span id="userName">Користувач</span>
+            <button class="logout-btn" onclick="window.location.href='profile-setup.html'">Налаштування профілю</button>
             <button class="logout-btn" onclick="logout()">Вийти</button>
         </div>
     </div>
@@ -462,6 +463,38 @@
         const BASE_URL = 'http://localhost:9000/api';
         let currentCustomer = null;
         let accounts = [];
+        let isLoading = false; // Прапорець для захисту від циклічного завантаження
+
+        // Безпечні утиліти для читання відповіді
+        function isJsonResponse(response) {
+            const ct = response.headers.get('content-type') || '';
+            return ct.toLowerCase().includes('application/json');
+        }
+        async function readResponseBodySafe(response) {
+            try {
+                if (isJsonResponse(response)) {
+                    return await response.json();
+                }
+                const text = await response.text();
+                // Пробуємо розпарсити як JSON навіть без заголовка content-type
+                try {
+                    return JSON.parse(text);
+                } catch (_) {
+                    return text;
+                }
+            } catch (_) {
+                try {
+                    const text = await response.text();
+                    try {
+                        return JSON.parse(text);
+                    } catch (_) {
+                        return text;
+                    }
+                } catch (_) {
+                    return '';
+                }
+            }
+        }
 
         // Fetch з timeout 10 секунд
         async function fetchWithTimeout(url, options = {}) {
@@ -496,28 +529,133 @@
             }
 
             document.getElementById('userName').textContent = localStorage.getItem('username') || 'Користувач';
-            loadCustomerData();
+            
+            // Завантажуємо дані тільки один раз
+            if (!isLoading) {
+                loadCustomerData();
+            }
         });
 
         async function loadCustomerData() {
+            // Захист від циклічного завантаження
+            if (isLoading) {
+                console.log('Завантаження вже виконується, пропускаємо...');
+                return;
+            }
+            
+            isLoading = true;
+            
+            const token = localStorage.getItem('accessToken');
+            console.log('Attempting to load customer data, token exists:', !!token);
+            console.log('Token length:', token ? token.length : 0);
+            
             try {
+                // Спочатку тестуємо токен
+                const testResponse = await fetchWithTimeout(`${BASE_URL}/test/auth`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }).catch(() => null);
+                
+                if (testResponse && !testResponse.ok) {
+                    console.error('Token validation failed:', testResponse.status);
+                    if (testResponse.status === 401 || testResponse.status === 403) {
+                        showMessage('Токен недійсний або застарів. Будь ласка, увійдіть знову.', 'error');
+                        setTimeout(() => {
+                            localStorage.clear();
+                            window.location.href = 'login.html';
+                        }, 2000);
+                        isLoading = false;
+                        return;
+                    }
+                }
+                
                 const response = await fetchWithTimeout(`${BASE_URL}/customers/me`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
                 });
 
+                console.log('Response status:', response.status);
+                
                 if (response.ok) {
-                    currentCustomer = await response.json();
-                    loadAccounts();
-                    loadTransactions();
+                    const data = await readResponseBodySafe(response);
+                    console.log('Raw customer response:', data, 'headers:', Array.from(response.headers.entries()));
+                    currentCustomer = (typeof data === 'string') ? null : data;
+                    const customerId = currentCustomer && (currentCustomer.id || currentCustomer.customerId || currentCustomer.ID);
+                    console.log('Resolved customerId:', customerId, 'keys:', currentCustomer ? Object.keys(currentCustomer) : []);
+                    if (currentCustomer && customerId) {
+                        // Нормалізуємо id у полі id
+                        currentCustomer.id = Number(customerId);
+                        loadAccounts();
+                        loadTransactions();
+                    } else if (typeof data === 'string' && data) {
+                        showMessage('Дані користувача некоректні: ' + data, 'error');
+                    } else {
+                        showMessage('Дані користувача завантажені, але некоректні. Будь ласка, зверніться до адміністратора.', 'error');
+                    }
                 } else if (response.status === 404) {
-                    showMessage('Акаунт користувача не знайдено. Будь ласка, зверніться до адміністратора.', 'error');
+                    // Якщо Customer не знайдено, перенаправляємо на форму профілю тільки якщо не на сторінці профілю
+                    console.warn('Customer not found (404)');
+                    const currentPage = window.location.pathname;
+                    if (!currentPage.includes('profile-setup.html')) {
+                        showMessage('Профіль не заповнено. Будь ласка, заповніть ваш профіль.', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'profile-setup.html';
+                        }, 3000); // Збільшено до 3 секунд, щоб користувач міг побачити повідомлення
+                    } else {
+                        // Якщо вже на сторінці профілю, просто показуємо помилку
+                        showMessage('Профіль не знайдено. Заповніть форму нижче для створення профілю.', 'error');
+                    }
+                } else if (response.status === 401 || response.status === 403) {
+                    const errorText = await response.text().catch(() => '');
+                    console.error('Authorization error:', response.status, errorText);
+                    
+                    // Локально декодуємо токен і перевіряємо термін дії
+                    const parts = (token || '').split('.');
+                    let tokenStillValidByTime = false;
+                    try {
+                        if (parts.length === 3) {
+                            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                            const exp = new Date(payload.exp * 1000);
+                            tokenStillValidByTime = exp > new Date();
+                        }
+                    } catch(_) {}
+
+                    // Додаткова перевірка через тестовий endpoint (може повертати 403 навіть із валідним токеном)
+                    let testOk = false;
+                    try {
+                        const testAuth = await fetch(`${BASE_URL}/test/auth`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        testOk = testAuth.ok;
+                    } catch(_) {}
+
+                    if (testOk || tokenStillValidByTime) {
+                        // Токен виглядає валідним: не логаутимо. Або профіль ще не створено
+                        showMessage('Потрібно завершити налаштування профілю.', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'profile-setup.html';
+                        }, 3000);
+                    } else {
+                        // Схоже токен прострочений/недійсний
+                        showMessage('Токен недійсний або застарів. Будь ласка, увійдіть знову.', 'error');
+                        setTimeout(() => {
+                            localStorage.clear();
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    }
                 } else {
-                    showMessage('Помилка завантаження даних користувача', 'error');
+                    const errorText = await response.text().catch(() => '');
+                    console.error('Other error:', response.status, errorText);
+                    showMessage('Помилка завантаження даних користувача (статус: ' + response.status + '): ' + (errorText || response.statusText || 'Невідома помилка'), 'error');
                 }
             } catch (error) {
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                console.error('Connection error:', error);
+                showMessage('Помилка з\'єднання: ' + error.message + '. Перевірте, чи запущений сервер.', 'error');
+            } finally {
+                isLoading = false;
             }
         }
 
@@ -532,11 +670,13 @@
                 });
 
                 if (response.ok) {
-                    accounts = await response.json();
-                    displayAccounts();
+                    const data = await readResponseBodySafe(response);
+                    const accounts = (typeof data === 'string') ? [] : data;
+                    displayAccounts(accounts);
                     updateAccountSelects();
                 } else {
-                    showMessage('Помилка завантаження акаунтів', 'error');
+                    const errorText = await readResponseBodySafe(response);
+                    showMessage('Помилка завантаження акаунтів: ' + (errorText || response.statusText), 'error');
                 }
             } catch (error) {
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
@@ -547,24 +687,26 @@
             if (!currentCustomer) return;
 
             try {
-                const response = await fetchWithTimeout(`${BASE_URL}/transactions/customer/${currentCustomer.id}`, {
+                const response = await fetchWithTimeout(`${BASE_URL}/transactions/history/${currentCustomer.id}`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                     }
                 });
 
                 if (response.ok) {
-                    const transactions = await response.json();
+                    const data = await readResponseBodySafe(response);
+                    const transactions = (typeof data === 'string') ? [] : data;
                     displayTransactions(transactions);
                 } else {
-                    showMessage('Помилка завантаження транзакцій', 'error');
+                    const errorText = await readResponseBodySafe(response);
+                    showMessage('Помилка завантаження транзакцій: ' + (errorText || response.statusText), 'error');
                 }
             } catch (error) {
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
             }
         }
 
-        function displayAccounts() {
+        function displayAccounts(accounts) {
             const container = document.getElementById('accountsList');
             
             if (accounts.length === 0) {

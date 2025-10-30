@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -12,6 +15,7 @@ import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,13 +24,14 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false, length = 80)
     private String username;
 
+    @JsonIgnore
     @Column(nullable = false, length = 200)
     private String password;
 
     @Column(nullable = false)
     private boolean enabled = true;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
         name = "users_roles",
         joinColumns = @JoinColumn(name = "user_id"),
@@ -34,6 +39,7 @@ public class User implements UserDetails {
     )
     private Set<Role> roles = new HashSet<>();
 
+    @JsonManagedReference
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Customer customer;
 
@@ -126,6 +132,9 @@ public class User implements UserDetails {
 
     public void setCustomer(Customer customer) {
         this.customer = customer;
+        if (customer != null && customer.getUser() != this) {
+            customer.setUser(this);
+        }
     }
 
     public static class UserBuilder {

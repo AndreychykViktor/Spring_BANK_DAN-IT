@@ -74,8 +74,24 @@ public class CustomerRepoImpl implements CustomerRepo {
 
     @Override
     public Optional<Customer> findByUser(User user) {
+        if (user == null || user.getId() == null) {
+            return Optional.empty();
+        }
+        return findByUserId(user.getId());
+    }
+
+    @Override
+    public Optional<Customer> findByUserId(Long userId) {
+        if (userId == null) {
+            return Optional.empty();
+        }
         return customers.stream()
-                .filter(customer -> user.equals(customer.getUser()))
+                .filter(customer -> {
+                    User customerUser = customer.getUser();
+                    return customerUser != null && 
+                           customerUser.getId() != null && 
+                           customerUser.getId().equals(userId);
+                })
                 .findFirst();
     }
 }

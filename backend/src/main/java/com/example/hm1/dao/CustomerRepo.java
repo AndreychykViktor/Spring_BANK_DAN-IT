@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface CustomerRepo extends Dao<Customer> {
     Customer findByEmail(String email);
     Optional<Customer> findByUser(User user);
+    Optional<Customer> findByUserId(Long userId);
 }

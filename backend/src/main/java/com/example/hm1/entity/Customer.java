@@ -13,6 +13,9 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,6 +25,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "customers")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Customer extends AbstractEntity {
 
     @Id
@@ -37,10 +41,12 @@ public class Customer extends AbstractEntity {
     @Column(unique = true, nullable = false, length = 150)
     private String email;
 
+    @JsonBackReference
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts = new ArrayList<>();
 
@@ -108,7 +114,7 @@ public class Customer extends AbstractEntity {
         this.accounts = accounts;
     }
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "customer_employer",
             joinColumns = @JoinColumn(name = "customer_id"),
@@ -159,6 +165,9 @@ public class Customer extends AbstractEntity {
 
     public void setUser(User user) {
         this.user = user;
+        if (user != null && user.getCustomer() != this) {
+            user.setCustomer(this);
+        }
     }
 
 

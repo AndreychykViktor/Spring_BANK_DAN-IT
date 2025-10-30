@@ -130,7 +130,7 @@ public class GlobalExceptionHandler {
             this.path = path;
         }
 
-        // Getters
+
         public int getStatus() { return status; }
         public String getError() { return error; }
         public String getMessage() { return message; }

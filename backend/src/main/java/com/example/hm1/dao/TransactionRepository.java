@@ -31,6 +31,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     
     @Query("SELECT t FROM Transaction t ORDER BY t.timestamp DESC")
     Page<Transaction> findAllOrderByTimestampDesc(Pageable pageable);
+
+    @Query("SELECT t FROM Transaction t ORDER BY t.timestamp DESC")
+    List<Transaction> findAllOrderByTimestampDesc();
     
     List<Transaction> findByTypeOrderByTimestampDesc(Transaction.TransactionType type);
     

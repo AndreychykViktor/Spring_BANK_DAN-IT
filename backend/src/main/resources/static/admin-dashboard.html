@@ -488,6 +488,39 @@
         let users = [];
         let transactions = [];
         let accounts = [];
+        let usersPage = 1;
+        const USERS_PER_PAGE = 20;
+        let transactionsPage = 1;
+        const TRANSACTIONS_PER_PAGE = 20;
+
+        // Безпечні утиліти для читання відповіді
+        function isJsonResponse(response) {
+            const ct = response.headers.get('content-type') || '';
+            return ct.toLowerCase().includes('application/json');
+        }
+        async function readResponseBodySafe(response) {
+            try {
+                if (isJsonResponse(response)) {
+                    return await response.json();
+                }
+                const text = await response.text();
+                // Спроба повного парсингу
+                try { return JSON.parse(text); } catch (_) {}
+                // Якщо в тексті є JSON-масив, пробуємо витягнути
+                const start = text.indexOf('[');
+                const end = text.lastIndexOf(']');
+                if (start !== -1 && end !== -1 && end > start) {
+                    const slice = text.substring(start, end + 1);
+                    try { return JSON.parse(slice); } catch (_) {}
+                }
+                return text;
+            } catch (_) {
+                try {
+                    const text = await response.text();
+                    try { return JSON.parse(text); } catch (_) { return text; }
+                } catch (_) { return ''; }
+            }
+        }
 
         // Перевіряємо авторизацію
         window.addEventListener('load', function() {
@@ -508,12 +541,14 @@
         });
 
         async function loadDashboardData() {
-            await Promise.all([
-                loadUsers(),
-                loadTransactions(),
-                loadAccounts(),
-                loadStats()
-            ]);
+            try {
+                await loadUsers();
+                await loadTransactions();
+                await loadAccounts();
+                await loadStats();
+            } catch (e) {
+                console.error('Помилка завантаження дашборду:', e);
+            }
         }
 
         async function loadUsers() {
@@ -525,11 +560,23 @@
                 });
 
                 if (response.ok) {
-                    users = await response.json();
-                    displayUsers(users);
+                    const data = await readResponseBodySafe(response);
+                    if (typeof data === 'string') {
+                        console.error('Users response not JSON:', data.slice(0, 500));
+                        showMessage('Помилка завантаження користувачів: некоректний формат відповіді', 'error');
+                        users = [];
+                    } else {
+                        users = data;
+                    }
+                    console.log('Loaded users:', Array.isArray(users) ? users.length : 'not array');
                     updateRoleUserSelect();
+                    const usersCountEl = document.getElementById('totalUsers');
+                    if (usersCountEl && Array.isArray(users)) usersCountEl.textContent = users.length;
+                    usersPage = 1;
+                    renderUsersPage();
                 } else {
-                    showMessage('Помилка завантаження користувачів', 'error');
+                    const err = await readResponseBodySafe(response);
+                    showMessage('Помилка завантаження користувачів: ' + (typeof err === 'string' ? err : response.statusText), 'error');
                 }
             } catch (error) {
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
@@ -538,17 +585,20 @@
 
         async function loadTransactions() {
             try {
-                const response = await fetch(`${BASE_URL}/transactions/all`, {
+                const response = await fetch(`${BASE_URL}/admin/transactions`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                     }
                 });
 
                 if (response.ok) {
-                    transactions = await response.json();
-                    displayTransactions(transactions);
+                    const data = await readResponseBodySafe(response);
+                    transactions = (typeof data === 'string') ? [] : data;
+                    transactionsPage = 1;
+                    renderTransactionsPage();
                 } else {
-                    showMessage('Помилка завантаження транзакцій', 'error');
+                    const err = await readResponseBodySafe(response);
+                    showMessage('Помилка завантаження транзакцій: ' + (err || response.statusText), 'error');
                 }
             } catch (error) {
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
@@ -564,10 +614,12 @@
                 });
 
                 if (response.ok) {
-                    accounts = await response.json();
+                    const data = await readResponseBodySafe(response);
+                    accounts = (typeof data === 'string') ? [] : data;
                     displayAccounts(accounts);
                 } else {
-                    showMessage('Помилка завантаження акаунтів', 'error');
+                    const err = await readResponseBodySafe(response);
+                    showMessage('Помилка завантаження акаунтів: ' + (err || response.statusText), 'error');
                 }
             } catch (error) {
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
@@ -576,8 +628,23 @@
 
         async function loadStats() {
             try {
-                // Завантажуємо статистику
-                document.getElementById('totalUsers').textContent = users.length;
+                // Серверний лічильник користувачів
+                try {
+                    const resp = await fetch(`${BASE_URL}/admin/users/count`, {
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+                    });
+                    if (resp.ok) {
+                        const data = await readResponseBodySafe(resp);
+                        if (data && typeof data.count === 'number') {
+                            document.getElementById('totalUsers').textContent = data.count;
+                        }
+                    }
+                } catch(_) {}
+
+                // Резервні підрахунки з клієнтських колекцій
+                if (document.getElementById('totalUsers').textContent === '-' || document.getElementById('totalUsers').textContent === '') {
+                    document.getElementById('totalUsers').textContent = users.length;
+                }
                 document.getElementById('totalAccounts').textContent = accounts.length;
                 document.getElementById('totalTransactions').textContent = transactions.length;
                 
@@ -591,7 +658,7 @@
         function displayUsers(usersToShow) {
             const container = document.getElementById('usersList');
             
-            if (usersToShow.length === 0) {
+            if (!usersToShow || usersToShow.length === 0) {
                 container.innerHTML = '<p>Користувачів не знайдено.</p>';
                 return;
             }
@@ -611,13 +678,13 @@
                     <tbody>
                         ${usersToShow.map(user => `
                             <tr>
-                                <td>${user.id}</td>
-                                <td>${user.username}</td>
-                                <td>${user.customer ? user.customer.email : 'Н/Д'}</td>
+                                <td>${user.id ?? ''}</td>
+                                <td>${user.username ?? ''}</td>
+                                <td>${user.customerEmail ?? 'Н/Д'}</td>
                                 <td>
-                                    ${user.roles ? user.roles.map(role => 
-                                        `<span class="badge ${role.name === 'ROLE_ADMIN' ? 'badge-danger' : 'badge-info'}">${role.name}</span>`
-                                    ).join(' ') : 'Н/Д'}
+                                    ${(Array.isArray(user.roles) ? user.roles : []).map(r => 
+                                        `<span class="badge ${r === 'ROLE_ADMIN' ? 'badge-danger' : 'badge-info'}">${r}</span>`
+                                    ).join(' ')}
                                 </td>
                                 <td>
                                     <span class="badge ${user.enabled ? 'badge-success' : 'badge-danger'}">
@@ -631,13 +698,39 @@
                         `).join('')}
                     </tbody>
                 </table>
+                <div id="usersPagination" class="pagination"></div>
             `;
+
+            renderUsersPagination();
+        }
+
+        function renderUsersPage() {
+            const start = (usersPage - 1) * USERS_PER_PAGE;
+            const end = start + USERS_PER_PAGE;
+            const pageItems = users.slice(start, end);
+            displayUsers(pageItems);
+        }
+
+        function renderUsersPagination() {
+            const pag = document.getElementById('usersPagination');
+            if (!pag) return;
+            const totalPages = Math.max(1, Math.ceil(users.length / USERS_PER_PAGE));
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="${i === usersPage ? 'active' : ''}" onclick="goUsersPage(${i})">${i}</button>`;
+            }
+            pag.innerHTML = html;
+        }
+
+        function goUsersPage(n) {
+            usersPage = n;
+            renderUsersPage();
         }
 
         function displayTransactions(transactionsToShow) {
             const container = document.getElementById('transactionsList');
             
-            if (transactionsToShow.length === 0) {
+            if (!transactionsToShow || transactionsToShow.length === 0) {
                 container.innerHTML = '<p>Транзакцій не знайдено.</p>';
                 return;
             }
@@ -653,29 +746,53 @@
                             <th>Клієнт</th>
                             <th>Дата</th>
                             <th>Статус</th>
+                            <th>З акаунта</th>
+                            <th>На акаунт</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${transactionsToShow.map(transaction => `
+                        ${transactionsToShow.map(t => `
                             <tr>
-                                <td>${transaction.id}</td>
-                                <td>
-                                    <span class="badge type-${transaction.type.toLowerCase()}">${transaction.type}</span>
-                                </td>
-                                <td>${transaction.amount}</td>
-                                <td>${transaction.description}</td>
-                                <td>${transaction.customer ? transaction.customer.name : 'Н/Д'}</td>
-                                <td>${new Date(transaction.timestamp).toLocaleString('uk-UA')}</td>
-                                <td>
-                                    <span class="badge ${transaction.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">
-                                        ${transaction.status}
-                                    </span>
-                                </td>
+                                <td>${t.id ?? ''}</td>
+                                <td><span class="badge type-${(t.type||'').toLowerCase()}">${t.type ?? ''}</span></td>
+                                <td>${t.amount ?? ''}</td>
+                                <td>${t.description ?? ''}</td>
+                                <td>${t.customerName || (t.customerId ? ('ID ' + t.customerId) : 'Н/Д')}</td>
+                                <td>${t.timestamp ? new Date(t.timestamp).toLocaleString('uk-UA') : ''}</td>
+                                <td><span class="badge ${t.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">${t.status ?? ''}</span></td>
+                                <td>${t.fromAccount || ''}</td>
+                                <td>${t.toAccount || ''}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
+                <div id="transactionsPagination" class="pagination"></div>
             `;
+
+            renderTransactionsPagination();
+        }
+
+        function renderTransactionsPage() {
+            const start = (transactionsPage - 1) * TRANSACTIONS_PER_PAGE;
+            const end = start + TRANSACTIONS_PER_PAGE;
+            const pageItems = transactions.slice(start, end);
+            displayTransactions(pageItems);
+        }
+
+        function renderTransactionsPagination() {
+            const pag = document.getElementById('transactionsPagination');
+            if (!pag) return;
+            const totalPages = Math.max(1, Math.ceil(transactions.length / TRANSACTIONS_PER_PAGE));
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="${i === transactionsPage ? 'active' : ''}" onclick="goTransactionsPage(${i})">${i}</button>`;
+            }
+            pag.innerHTML = html;
+        }
+
+        function goTransactionsPage(n) {
+            transactionsPage = n;
+            renderTransactionsPage();
         }
 
         function displayAccounts(accountsToShow) {
@@ -716,11 +833,12 @@
 
         function updateRoleUserSelect() {
             const select = document.getElementById('roleUserSelect');
+            if (!select) return;
             select.innerHTML = '<option value="">Оберіть користувача</option>';
             users.forEach(user => {
                 const option = document.createElement('option');
                 option.value = user.id;
-                option.textContent = `${user.username} (${user.customer ? user.customer.email : 'Н/Д'})`;
+                option.textContent = `${user.username} (${user.customerEmail || 'Н/Д'})`;
                 select.appendChild(option);
             });
         }
@@ -736,12 +854,12 @@
         }
 
         function searchUsers() {
-            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
-            const filteredUsers = users.filter(user => 
-                user.username.toLowerCase().includes(searchTerm) ||
-                (user.customer && user.customer.email.toLowerCase().includes(searchTerm))
+            const searchTerm = (document.getElementById('userSearch').value || '').toLowerCase();
+            const filtered = users.filter(user => 
+                (user.username || '').toLowerCase().includes(searchTerm) ||
+                (user.customerEmail ? user.customerEmail.toLowerCase().includes(searchTerm) : false)
             );
-            displayUsers(filteredUsers);
+            displayUsers(filtered);
         }
 
         function filterTransactions() {
@@ -829,7 +947,8 @@
         function viewUserDetails(userId) {
             const user = users.find(u => u.id === userId);
             if (user) {
-                alert(`Деталі користувача:\n\nID: ${user.id}\nІм'я: ${user.username}\nEmail: ${user.customer ? user.customer.email : 'Н/Д'}\nАктивний: ${user.enabled ? 'Так' : 'Ні'}\nРолі: ${user.roles ? user.roles.map(r => r.name).join(', ') : 'Н/Д'}`);
+                const rolesStr = Array.isArray(user.roles) ? user.roles.join(', ') : '';
+                alert(`Деталі користувача:\n\nID: ${user.id}\nІм'я: ${user.username}\nEmail: ${user.customerEmail || 'Н/Д'}\nАктивний: ${user.enabled ? 'Так' : 'Ні'}\nРолі: ${rolesStr}`);
             }
         }
 

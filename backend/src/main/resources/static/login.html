@@ -207,7 +207,10 @@
 
                 if (response.ok) {
                     localStorage.setItem('accessToken', data.accessToken);
-                    localStorage.setItem('userRole', data.roles ? data.roles[0] : 'USER');
+                    // Зберігаємо першу роль, перевіряємо чи є адмінська роль
+                    const roles = data.roles || [];
+                    const hasAdminRole = roles.includes('ROLE_ADMIN');
+                    localStorage.setItem('userRole', hasAdminRole ? 'ROLE_ADMIN' : (roles[0] || 'ROLE_USER'));
                     localStorage.setItem('username', username);
                     
                     showMessage('Успішний вхід! Перенаправлення...', 'success');

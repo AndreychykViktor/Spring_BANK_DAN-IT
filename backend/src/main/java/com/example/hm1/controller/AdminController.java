@@ -3,9 +3,12 @@ package com.example.hm1.controller;
 import com.example.hm1.dao.UserRepository;
 import com.example.hm1.dao.RoleRepository;
 import com.example.hm1.dao.CustomerRepo;
+import com.example.hm1.dao.AccountRepo;
 import com.example.hm1.entity.Role;
 import com.example.hm1.entity.User;
 import com.example.hm1.entity.Customer;
+import com.example.hm1.entity.Account;
+import com.example.hm1.entity.Employer;
 import com.example.hm1.service.TransactionService;
 import com.example.hm1.entity.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Sort;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,13 +29,15 @@ public class AdminController {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final CustomerRepo customerRepo;
+    private final AccountRepo accountRepo;
     private final TransactionService transactionService;
 
     @Autowired
-    public AdminController(UserRepository userRepository, RoleRepository roleRepository, CustomerRepo customerRepo, TransactionService transactionService) {
+    public AdminController(UserRepository userRepository, RoleRepository roleRepository, CustomerRepo customerRepo, AccountRepo accountRepo, TransactionService transactionService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.customerRepo = customerRepo;
+        this.accountRepo = accountRepo;
         this.transactionService = transactionService;
     }
 
@@ -93,6 +99,27 @@ public class AdminController {
         public String status;
         public String fromAccount;
         public String toAccount;
+    }
+
+    public static class AdminAccountDto {
+        public Long id;
+        public String number;
+        public String balance;
+        public String currency;
+    }
+
+    public static class UserDetailsDto {
+        public Long userId;
+        public String username;
+        public boolean enabled;
+        public List<String> roles;
+        public Long customerId;
+        public String customerName;
+        public String customerEmail;
+        public Integer customerAge;
+        public List<String> employers;
+        public List<AdminAccountDto> accounts;
+        public List<AdminTransactionDto> transactions;
     }
 
     @GetMapping("/users")
@@ -178,6 +205,80 @@ public class AdminController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Failed to get transactions: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/users/{userId}/details")
+    public ResponseEntity<?> getUserDetails(@PathVariable Long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            UserDetailsDto details = new UserDetailsDto();
+            details.userId = user.getId();
+            details.username = user.getUsername();
+            details.enabled = user.isEnabled();
+            details.roles = user.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toList());
+
+            // Customer details
+            Customer customer = customerRepo.findByUserId(user.getId()).orElse(null);
+            if (customer != null) {
+                details.customerId = customer.getId();
+                details.customerName = customer.getName();
+                details.customerEmail = customer.getEmail();
+                details.customerAge = customer.getAge();
+                details.employers = customer.getEmployers() != null 
+                        ? customer.getEmployers().stream()
+                                .map(Employer::getName)
+                                .collect(Collectors.toList())
+                        : new ArrayList<>();
+
+                // Accounts
+                List<Account> accounts = accountRepo.findByCustomerId(customer.getId());
+                details.accounts = accounts.stream().map(a -> {
+                    AdminAccountDto accountDto = new AdminAccountDto();
+                    accountDto.id = a.getId();
+                    accountDto.number = a.getNumber();
+                    accountDto.balance = a.getBalance() != null ? String.valueOf(a.getBalance()) : "0";
+                    accountDto.currency = a.getCurrency() != null ? a.getCurrency().name() : null;
+                    return accountDto;
+                }).collect(Collectors.toList());
+
+                // Transactions
+                List<Transaction> transactions = transactionService.getAllTransactions().stream()
+                        .filter(t -> t.getCustomer() != null && t.getCustomer().getId().equals(customer.getId()))
+                        .collect(Collectors.toList());
+                
+                details.transactions = transactions.stream().map(t -> {
+                    AdminTransactionDto transactionDto = new AdminTransactionDto();
+                    transactionDto.id = t.getId();
+                    transactionDto.type = t.getType() != null ? t.getType().name() : null;
+                    transactionDto.amount = t.getAmount() != null ? t.getAmount().toPlainString() : null;
+                    transactionDto.description = t.getDescription();
+                    transactionDto.customerId = t.getCustomer() != null ? t.getCustomer().getId() : null;
+                    transactionDto.customerName = t.getCustomer() != null ? t.getCustomer().getName() : null;
+                    transactionDto.timestamp = t.getTimestamp() != null ? t.getTimestamp().toString() : null;
+                    transactionDto.status = t.getStatus() != null ? t.getStatus().name() : null;
+                    transactionDto.fromAccount = t.getFromAccount() != null ? t.getFromAccount().getNumber() : null;
+                    transactionDto.toAccount = t.getToAccount() != null ? t.getToAccount().getNumber() : null;
+                    return transactionDto;
+                }).collect(Collectors.toList());
+            } else {
+                details.customerId = null;
+                details.customerName = null;
+                details.customerEmail = null;
+                details.customerAge = null;
+                details.employers = new ArrayList<>();
+                details.accounts = new ArrayList<>();
+                details.transactions = new ArrayList<>();
+            }
+
+            return ResponseEntity.ok(details);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Failed to get user details: " + e.getMessage());
         }
     }
 }

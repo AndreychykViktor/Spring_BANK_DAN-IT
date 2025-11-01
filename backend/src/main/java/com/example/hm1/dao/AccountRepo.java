@@ -6,4 +6,5 @@ import java.util.List;
 public interface AccountRepo extends Dao<Account> {
     Account findByNumber(String number);
     List<Account> findByCustomerId(Long customerId);
+    String getLastAccountNumber();
 }

@@ -114,7 +114,7 @@ public class Customer extends AbstractEntity {
         this.accounts = accounts;
     }
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @JoinTable(
             name = "customer_employer",
             joinColumns = @JoinColumn(name = "customer_id"),

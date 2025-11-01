@@ -348,6 +348,21 @@
             cursor: not-allowed;
         }
 
+        .type-deposit {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .type-withdrawal {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .type-transfer {
+            background: #d4edda;
+            color: #155724;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -404,6 +419,7 @@
             <div class="tab" onclick="showTab('transactions')">Транзакції</div>
             <div class="tab" onclick="showTab('accounts')">Акаунти</div>
             <div class="tab" onclick="showTab('roles')">Управління ролями</div>
+            <div class="tab" onclick="showTab('my-profile')">Мій профіль</div>
         </div>
 
         <!-- Користувачі -->
@@ -479,6 +495,131 @@
                 </div>
                 <button class="btn btn-success" onclick="assignRole()">Призначити роль</button>
                 <button class="btn btn-warning" onclick="removeRole()">Видалити роль</button>
+            </div>
+        </div>
+
+        <!-- Мій профіль (для адміна) -->
+        <div id="my-profile" class="tab-content">
+            <div class="card">
+                <h2>Мої особисті дані</h2>
+                <div id="adminProfileInfo">
+                    <div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>
+                </div>
+                <button class="btn" onclick="window.location.href='profile-setup.html'">Редагувати профіль</button>
+            </div>
+
+            <div class="card">
+                <h2>Мої рахунки</h2>
+                <button class="btn btn-success" onclick="openCreateAdminAccountModal()" style="margin-bottom: 1rem;">Створити новий рахунок</button>
+                <div id="adminAccountsList">
+                    <div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Операції з рахунками</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                    <div>
+                        <h3>Поповнення</h3>
+                        <form id="adminDepositForm">
+                            <div class="form-group">
+                                <label>Рахунок:</label>
+                                <select id="adminDepositAccount" required>
+                                    <option value="">Оберіть рахунок</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Сума:</label>
+                                <input type="number" id="adminDepositAmount" step="0.01" min="0.01" required>
+                            </div>
+                            <button type="submit" class="btn">Поповнити</button>
+                        </form>
+                    </div>
+
+                    <div>
+                        <h3>Зняття</h3>
+                        <form id="adminWithdrawForm">
+                            <div class="form-group">
+                                <label>Рахунок:</label>
+                                <select id="adminWithdrawAccount" required>
+                                    <option value="">Оберіть рахунок</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Сума:</label>
+                                <input type="number" id="adminWithdrawAmount" step="0.01" min="0.01" required>
+                            </div>
+                            <button type="submit" class="btn">Зняти</button>
+                        </form>
+                    </div>
+
+                    <div>
+                        <h3>Переказ</h3>
+                        <form id="adminTransferForm">
+                            <div class="form-group">
+                                <label>З рахунку:</label>
+                                <select id="adminFromAccount" required>
+                                    <option value="">Оберіть рахунок</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>На рахунок (номер):</label>
+                                <input type="text" id="adminToAccountNumber" placeholder="ACC-0001" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Сума:</label>
+                                <input type="number" id="adminTransferAmount" step="0.01" min="0.01" required>
+                            </div>
+                            <button type="submit" class="btn">Переказати</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Мої транзакції</h2>
+                <div id="adminTransactionsList">
+                    <div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальне вікно для створення рахунку адміна -->
+    <div id="createAdminAccountModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Створити новий рахунок</h2>
+                <span class="close" onclick="closeCreateAdminAccountModal()">&times;</span>
+            </div>
+            <form id="createAdminAccountForm">
+                <div class="form-group">
+                    <label>Валюта:</label>
+                    <select id="adminAccountCurrency" required>
+                        <option value="USD">USD - Долар США</option>
+                        <option value="EUR">EUR - Євро</option>
+                        <option value="UAH">UAH - Гривня</option>
+                        <option value="CHF">CHF - Швейцарський франк</option>
+                        <option value="GBP">GBP - Британський фунт</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Створити рахунок</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальне вікно для деталей користувача -->
+    <div id="userDetailsModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>Деталі користувача</h2>
+                <span class="close" onclick="closeUserDetailsModal()">&times;</span>
+            </div>
+            <div id="userDetailsContent">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Завантаження...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -851,6 +992,11 @@
             // Показуємо обраний таб
             event.target.classList.add('active');
             document.getElementById(tabName).classList.add('active');
+            
+            // Завантажуємо дані для "Мій профіль"
+            if (tabName === 'my-profile') {
+                loadAdminProfile();
+            }
         }
 
         function searchUsers() {
@@ -958,6 +1104,409 @@
             setTimeout(() => {
                 messageDiv.innerHTML = '';
             }, 5000);
+        }
+
+        async function viewUserDetails(userId) {
+            const modal = document.getElementById('userDetailsModal');
+            const content = document.getElementById('userDetailsContent');
+            
+            modal.style.display = 'block';
+            content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>';
+
+            try {
+                const response = await fetch(`${BASE_URL}/admin/users/${userId}/details`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Не вдалося завантажити дані');
+                }
+
+                const details = await readResponseBodySafe(response);
+                displayUserDetails(details);
+            } catch (error) {
+                content.innerHTML = `<div class="error">Помилка: ${error.message}</div>`;
+            }
+        }
+
+        function displayUserDetails(details) {
+            const content = document.getElementById('userDetailsContent');
+            
+            content.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <h3>Інформація про користувача</h3>
+                        <table class="table" style="margin-top: 1rem;">
+                            <tr><td><strong>ID:</strong></td><td>${details.userId}</td></tr>
+                            <tr><td><strong>Логін:</strong></td><td>${details.username}</td></tr>
+                            <tr><td><strong>Email:</strong></td><td>${details.customerEmail || 'Н/Д'}</td></tr>
+                            <tr><td><strong>Активний:</strong></td><td>
+                                <span class="badge ${details.enabled ? 'badge-success' : 'badge-danger'}">
+                                    ${details.enabled ? 'Так' : 'Ні'}
+                                </span>
+                            </td></tr>
+                            <tr><td><strong>Ролі:</strong></td><td>
+                                ${details.roles.map(r => 
+                                    `<span class="badge ${r === 'ROLE_ADMIN' ? 'badge-danger' : 'badge-info'}">${r}</span>`
+                                ).join(' ')}
+                            </td></tr>
+                        </table>
+
+                        <h3 style="margin-top: 1.5rem;">Особисті дані</h3>
+                        <table class="table" style="margin-top: 1rem;">
+                            <tr><td><strong>Ім'я:</strong></td><td>${details.customerName || 'Н/Д'}</td></tr>
+                            <tr><td><strong>Вік:</strong></td><td>${details.customerAge || 'Н/Д'}</td></tr>
+                            <tr><td><strong>Роботодавці:</strong></td><td>${details.employers && details.employers.length > 0 ? details.employers.join(', ') : 'Н/Д'}</td></tr>
+                        </table>
+                    </div>
+
+                    <div>
+                        <h3>Рахунки (${details.accounts ? details.accounts.length : 0})</h3>
+                        ${details.accounts && details.accounts.length > 0 ? `
+                            <table class="table" style="margin-top: 1rem;">
+                                <thead>
+                                    <tr>
+                                        <th>Номер</th>
+                                        <th>Баланс</th>
+                                        <th>Валюта</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${details.accounts.map(acc => `
+                                        <tr>
+                                            <td>${acc.number}</td>
+                                            <td>${acc.balance}</td>
+                                            <td>${acc.currency}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p style="margin-top: 1rem; color: #999;">Рахунків не знайдено</p>'}
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <h3>Транзакції (${details.transactions ? details.transactions.length : 0})</h3>
+                    ${details.transactions && details.transactions.length > 0 ? `
+                        <div style="max-height: 400px; overflow-y: auto; margin-top: 1rem;">
+                            <table class="table">
+                                <thead style="position: sticky; top: 0; background: white;">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Тип</th>
+                                        <th>Сума</th>
+                                        <th>Опис</th>
+                                        <th>Дата</th>
+                                        <th>Статус</th>
+                                        <th>З рахунку</th>
+                                        <th>На рахунок</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${details.transactions.map(t => `
+                                        <tr>
+                                            <td>${t.id}</td>
+                                            <td><span class="badge type-${(t.type||'').toLowerCase()}">${t.type}</span></td>
+                                            <td>${t.amount}</td>
+                                            <td>${t.description || '-'}</td>
+                                            <td>${t.timestamp ? new Date(t.timestamp).toLocaleString('uk-UA') : ''}</td>
+                                            <td><span class="badge ${t.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">${t.status}</span></td>
+                                            <td>${t.fromAccount || '-'}</td>
+                                            <td>${t.toAccount || '-'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : '<p style="margin-top: 1rem; color: #999;">Транзакцій не знайдено</p>'}
+                </div>
+            `;
+        }
+
+        function closeUserDetailsModal() {
+            document.getElementById('userDetailsModal').style.display = 'none';
+        }
+
+        // Закриття модального вікна при кліку поза ним
+        window.onclick = function(event) {
+            const modal = document.getElementById('userDetailsModal');
+            if (event.target === modal) {
+                closeUserDetailsModal();
+            }
+            const adminModal = document.getElementById('createAdminAccountModal');
+            if (event.target === adminModal) {
+                closeCreateAdminAccountModal();
+            }
+        }
+
+        // ===== ФУНКЦІЇ ДЛЯ ПРОФІЛЮ АДМІНА =====
+        let adminCurrentCustomer = null;
+        let adminAccounts = [];
+
+        async function loadAdminProfile() {
+            await loadAdminCustomerData();
+            await loadAdminAccounts();
+            await loadAdminTransactions();
+        }
+
+        async function loadAdminCustomerData() {
+            try {
+                const response = await fetch(`${BASE_URL}/customers/me`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+                });
+                if (response.ok) {
+                    const data = await readResponseBodySafe(response);
+                    console.log('Admin customer data:', data);
+                    console.log('Admin customer data type:', typeof data);
+                    
+                    if (typeof data === 'object' && data !== null) {
+                        adminCurrentCustomer = data;
+                        console.log('Admin customer keys:', Object.keys(adminCurrentCustomer));
+                        console.log('Admin customer ID:', adminCurrentCustomer.id);
+                        
+                        // Нормалізуємо ID
+                        const customerId = adminCurrentCustomer.id || adminCurrentCustomer.customerId || adminCurrentCustomer.ID;
+                        if (customerId) {
+                            adminCurrentCustomer.id = Number(customerId);
+                            console.log('Normalized admin customer ID:', adminCurrentCustomer.id);
+                            displayAdminProfile(adminCurrentCustomer);
+                        } else {
+                            console.error('Admin customer has no ID');
+                            document.getElementById('adminProfileInfo').innerHTML = '<p class="error">Помилка: ID профілю не знайдено. Об\'єкт: ' + JSON.stringify(adminCurrentCustomer).substring(0, 200) + '</p>';
+                        }
+                    } else {
+                        console.error('Admin customer data is not an object:', data);
+                        document.getElementById('adminProfileInfo').innerHTML = '<p class="error">Помилка: некоректний формат даних</p>';
+                    }
+                } else {
+                    console.warn('Admin customer not found, status:', response.status);
+                    document.getElementById('adminProfileInfo').innerHTML = '<p>Профіль не заповнено. Натисніть "Редагувати профіль" для налаштування.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading admin profile:', error);
+                showMessage('Помилка завантаження профілю: ' + error.message, 'error');
+            }
+        }
+
+        function displayAdminProfile(customer) {
+            const container = document.getElementById('adminProfileInfo');
+            container.innerHTML = `
+                <table class="table">
+                    <tr><td><strong>Ім'я:</strong></td><td>${customer.name || 'Н/Д'}</td></tr>
+                    <tr><td><strong>Email:</strong></td><td>${customer.email || 'Н/Д'}</td></tr>
+                    <tr><td><strong>Вік:</strong></td><td>${customer.age || 'Н/Д'}</td></tr>
+                    <tr><td><strong>ID:</strong></td><td>${customer.id || 'Н/Д'}</td></tr>
+                </table>
+            `;
+        }
+
+        async function loadAdminAccounts() {
+            console.log('loadAdminAccounts called, adminCurrentCustomer:', adminCurrentCustomer);
+            if (!adminCurrentCustomer || !adminCurrentCustomer.id) {
+                console.warn('Cannot load admin accounts: customer or ID is missing');
+                document.getElementById('adminAccountsList').innerHTML = '<p>Спочатку заповніть профіль</p>';
+                return;
+            }
+            try {
+                console.log('Fetching accounts for customer ID:', adminCurrentCustomer.id);
+                const response = await fetch(`${BASE_URL}/customers/${adminCurrentCustomer.id}/accounts`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+                });
+                if (response.ok) {
+                    adminAccounts = await readResponseBodySafe(response);
+                    console.log('Admin accounts loaded:', adminAccounts);
+                    displayAdminAccounts(adminAccounts);
+                    updateAdminAccountSelects();
+                } else {
+                    console.error('Failed to load admin accounts, status:', response.status);
+                    document.getElementById('adminAccountsList').innerHTML = '<p class="error">Помилка завантаження рахунків (статус ' + response.status + ')</p>';
+                }
+            } catch (error) {
+                console.error('Error loading admin accounts:', error);
+                showMessage('Помилка завантаження рахунків: ' + error.message, 'error');
+            }
+        }
+
+        function displayAdminAccounts(accounts) {
+            const container = document.getElementById('adminAccountsList');
+            if (accounts.length === 0) {
+                container.innerHTML = '<p>У вас поки немає рахунків. Створіть перший!</p>';
+                return;
+            }
+            container.innerHTML = accounts.map(acc => `
+                <div class="account-item" style="background: white; padding: 1rem; margin-bottom: 0.5rem; border-radius: 5px; display: flex; justify-content: space-between;">
+                    <div><h3>${acc.number}</h3><p>Валюта: ${acc.currency} | Баланс: ${acc.balance}</p></div>
+                    <div style="font-size: 1.5rem; font-weight: bold;">${acc.balance} ${acc.currency}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateAdminAccountSelects() {
+            const selects = [
+                document.getElementById('adminDepositAccount'),
+                document.getElementById('adminWithdrawAccount'),
+                document.getElementById('adminFromAccount')
+            ];
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">Оберіть рахунок</option>' +
+                    adminAccounts.map(acc => `<option value="${acc.number}">${acc.number} (${acc.balance} ${acc.currency})</option>`).join('');
+            });
+        }
+
+        async function loadAdminTransactions() {
+            console.log('loadAdminTransactions called, adminCurrentCustomer:', adminCurrentCustomer);
+            if (!adminCurrentCustomer || !adminCurrentCustomer.id) {
+                console.warn('Cannot load admin transactions: customer or ID is missing');
+                document.getElementById('adminTransactionsList').innerHTML = '<p>Спочатку заповніть профіль</p>';
+                return;
+            }
+            try {
+                console.log('Fetching transactions for customer ID:', adminCurrentCustomer.id);
+                const response = await fetch(`${BASE_URL}/transactions/history/${adminCurrentCustomer.id}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+                });
+                if (response.ok) {
+                    const transactions = await readResponseBodySafe(response);
+                    console.log('Admin transactions loaded:', transactions);
+                    displayAdminTransactions(transactions);
+                } else {
+                    console.error('Failed to load admin transactions, status:', response.status);
+                    document.getElementById('adminTransactionsList').innerHTML = '<p class="error">Помилка завантаження транзакцій (статус ' + response.status + ')</p>';
+                }
+            } catch (error) {
+                console.error('Error loading admin transactions:', error);
+                showMessage('Помилка завантаження транзакцій: ' + error.message, 'error');
+            }
+        }
+
+        function displayAdminTransactions(transactions) {
+            const container = document.getElementById('adminTransactionsList');
+            if (transactions.length === 0) {
+                container.innerHTML = '<p>Транзакцій поки немає.</p>';
+                return;
+            }
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr><th>ID</th><th>Тип</th><th>Сума</th><th>Опис</th><th>Дата</th><th>Статус</th></tr>
+                    </thead>
+                    <tbody>
+                        ${transactions.map(t => `
+                            <tr>
+                                <td>${t.id}</td>
+                                <td><span class="badge type-${(t.type||'').toLowerCase()}">${t.type}</span></td>
+                                <td>${t.amount}</td>
+                                <td>${t.description || '-'}</td>
+                                <td>${t.timestamp ? new Date(t.timestamp).toLocaleString('uk-UA') : ''}</td>
+                                <td><span class="badge ${t.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">${t.status}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function openCreateAdminAccountModal() {
+            document.getElementById('createAdminAccountModal').style.display = 'block';
+        }
+
+        function closeCreateAdminAccountModal() {
+            document.getElementById('createAdminAccountModal').style.display = 'none';
+        }
+
+        document.getElementById('createAdminAccountForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!adminCurrentCustomer || !adminCurrentCustomer.id) {
+                showMessage('Помилка: дані користувача не завантажені.', 'error');
+                return;
+            }
+            const currency = document.getElementById('adminAccountCurrency').value;
+            try {
+                const response = await fetch(`${BASE_URL}/customers/${adminCurrentCustomer.id}/accounts`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ currency })
+                });
+                if (response.ok) {
+                    showMessage('Рахунок успішно створено!', 'success');
+                    loadAdminAccounts();
+                    closeCreateAdminAccountModal();
+                    document.getElementById('createAdminAccountForm').reset();
+                } else {
+                    const errorData = await response.text();
+                    showMessage('Помилка створення рахунку: ' + errorData, 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
+        });
+
+        // Форми транзакцій адміна
+        document.getElementById('adminDepositForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const accountNumber = document.getElementById('adminDepositAccount').value;
+            const amount = document.getElementById('adminDepositAmount').value;
+            await performAdminTransaction('deposit', accountNumber, null, amount, form);
+        });
+
+        document.getElementById('adminWithdrawForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const accountNumber = document.getElementById('adminWithdrawAccount').value;
+            const amount = document.getElementById('adminWithdrawAmount').value;
+            await performAdminTransaction('withdraw', accountNumber, null, amount, form);
+        });
+
+        document.getElementById('adminTransferForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const fromAccount = document.getElementById('adminFromAccount').value;
+            const toAccount = document.getElementById('adminToAccountNumber').value;
+            const amount = document.getElementById('adminTransferAmount').value;
+            await performAdminTransaction('transfer', fromAccount, toAccount, amount, form);
+        });
+
+        async function performAdminTransaction(type, fromAccount, toAccount, amount, form) {
+            try {
+                let endpoint, body;
+                if (type === 'deposit') {
+                    endpoint = `${BASE_URL}/accounts/${fromAccount}/deposit`;
+                    body = { amount: parseFloat(amount) };
+                } else if (type === 'withdraw') {
+                    endpoint = `${BASE_URL}/accounts/${fromAccount}/withdraw`;
+                    body = { amount: parseFloat(amount) };
+                } else if (type === 'transfer') {
+                    endpoint = `${BASE_URL}/accounts/${fromAccount}/transfer`;
+                    body = { toAccountNumber: toAccount, amount: parseFloat(amount) };
+                }
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    showMessage('Операція виконана успішно!', 'success');
+                    loadAdminAccounts();
+                    loadAdminTransactions();
+                    if (form) form.reset();
+                } else {
+                    const errorData = await response.text();
+                    showMessage('Помилка транзакції: ' + errorData, 'error');
+                }
+            } catch (error) {
+                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+            }
         }
 
         function logout() {

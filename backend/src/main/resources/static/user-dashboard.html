@@ -581,19 +581,38 @@
                 
                 if (response.ok) {
                     const data = await readResponseBodySafe(response);
-                    console.log('Raw customer response:', data, 'headers:', Array.from(response.headers.entries()));
-                    currentCustomer = (typeof data === 'string') ? null : data;
-                    const customerId = currentCustomer && (currentCustomer.id || currentCustomer.customerId || currentCustomer.ID);
-                    console.log('Resolved customerId:', customerId, 'keys:', currentCustomer ? Object.keys(currentCustomer) : []);
-                    if (currentCustomer && customerId) {
-                        // Нормалізуємо id у полі id
-                        currentCustomer.id = Number(customerId);
-                        loadAccounts();
-                        loadTransactions();
-                    } else if (typeof data === 'string' && data) {
-                        showMessage('Дані користувача некоректні: ' + data, 'error');
+                    console.log('Raw customer response:', data);
+                    console.log('Response type:', typeof data);
+                    console.log('Response headers:', Array.from(response.headers.entries()));
+                    
+                    if (typeof data === 'string') {
+                        console.error('Received string instead of object:', data);
+                        showMessage('Дані користувача некоректні (отримано текст замість об\'єкта): ' + data.substring(0, 100), 'error');
+                        currentCustomer = null;
+                    } else if (!data || typeof data !== 'object') {
+                        console.error('Invalid data type:', typeof data, data);
+                        showMessage('Дані користувача некоректні (невірний формат).', 'error');
+                        currentCustomer = null;
                     } else {
-                        showMessage('Дані користувача завантажені, але некоректні. Будь ласка, зверніться до адміністратора.', 'error');
+                        currentCustomer = data;
+                        console.log('Customer object keys:', Object.keys(currentCustomer));
+                        console.log('Customer.id:', currentCustomer.id);
+                        console.log('Customer.customerId:', currentCustomer.customerId);
+                        console.log('Customer.ID:', currentCustomer.ID);
+                        
+                        const customerId = currentCustomer.id || currentCustomer.customerId || currentCustomer.ID;
+                        console.log('Resolved customerId:', customerId);
+                        
+                        if (customerId) {
+                            // Нормалізуємо id у полі id
+                            currentCustomer.id = Number(customerId);
+                            console.log('Loading accounts and transactions for customer ID:', currentCustomer.id);
+                            loadAccounts();
+                            loadTransactions();
+                        } else {
+                            console.error('Customer object exists but no ID found. Full object:', JSON.stringify(currentCustomer));
+                            showMessage('Дані користувача завантажені, але ID не знайдено. Об\'єкт: ' + JSON.stringify(currentCustomer).substring(0, 200), 'error');
+                        }
                     }
                 } else if (response.status === 404) {
                     // Якщо Customer не знайдено, перенаправляємо на форму профілю тільки якщо не на сторінці профілю
@@ -660,8 +679,12 @@
         }
 
         async function loadAccounts() {
-            if (!currentCustomer) return;
+            if (!currentCustomer) {
+                console.warn('loadAccounts: currentCustomer is not set');
+                return;
+            }
 
+            console.log('loadAccounts: Loading accounts for customer ID:', currentCustomer.id);
             try {
                 const response = await fetchWithTimeout(`${BASE_URL}/customers/${currentCustomer.id}/accounts`, {
                     headers: {
@@ -671,14 +694,19 @@
 
                 if (response.ok) {
                     const data = await readResponseBodySafe(response);
-                    const accounts = (typeof data === 'string') ? [] : data;
+                    console.log('loadAccounts: Received data:', data);
+                    // ВАЖЛИВО: зберігаємо в глобальну змінну accounts, а не створюємо локальну
+                    accounts = (typeof data === 'string') ? [] : (Array.isArray(data) ? data : []);
+                    console.log('loadAccounts: Accounts set to:', accounts.length, 'items');
                     displayAccounts(accounts);
                     updateAccountSelects();
                 } else {
+                    console.error('loadAccounts: Failed with status:', response.status);
                     const errorText = await readResponseBodySafe(response);
                     showMessage('Помилка завантаження акаунтів: ' + (errorText || response.statusText), 'error');
                 }
             } catch (error) {
+                console.error('loadAccounts: Error:', error);
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
             }
         }
@@ -748,9 +776,14 @@
         }
 
         function updateAccountSelects() {
+            console.log('updateAccountSelects: Updating selects with', accounts.length, 'accounts');
             const selects = ['depositAccount', 'withdrawAccount', 'fromAccount'];
             selects.forEach(selectId => {
                 const select = document.getElementById(selectId);
+                if (!select) {
+                    console.warn('updateAccountSelects: Select element not found:', selectId);
+                    return;
+                }
                 select.innerHTML = '<option value="">Оберіть акаунт</option>';
                 accounts.forEach(account => {
                     const option = document.createElement('option');
@@ -758,6 +791,7 @@
                     option.textContent = `${account.number} (${account.currency}) - ${account.balance}`;
                     select.appendChild(option);
                 });
+                console.log('updateAccountSelects: Updated', selectId, 'with', accounts.length, 'options');
             });
         }
 
@@ -785,26 +819,40 @@
             const accountNumber = document.getElementById('depositAccount').value;
             const amount = parseFloat(document.getElementById('depositAmount').value);
 
+            console.log('Deposit form submitted:', { accountNumber, amount });
+
+            if (!accountNumber || !amount || amount <= 0) {
+                showMessage('Помилка: заповніть всі поля коректно', 'error');
+                return;
+            }
+
             try {
-                const response = await fetchWithTimeout(`${BASE_URL}/accounts/deposit`, {
+                // ВАЖЛИВО: ендпоінт має бути /accounts/{accountNumber}/deposit
+                const response = await fetchWithTimeout(`${BASE_URL}/accounts/${accountNumber}/deposit`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                     },
-                    body: JSON.stringify({ accountNumber, amount })
+                    body: JSON.stringify({ amount: amount })
                 });
 
+                console.log('Deposit response status:', response.status);
+
                 if (response.ok) {
-                    showMessage('Акаунт успішно пополнено!', 'success');
+                    const result = await response.text();
+                    console.log('Deposit result:', result);
+                    showMessage('Акаунт успішно поповнено!', 'success');
                     loadAccounts();
                     loadTransactions();
                     document.getElementById('depositForm').reset();
                 } else {
                     const errorData = await response.text();
+                    console.error('Deposit error:', errorData);
                     showMessage('Помилка поповнення акаунту: ' + errorData, 'error');
                 }
             } catch (error) {
+                console.error('Deposit connection error:', error);
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
             }
         });
@@ -814,26 +862,40 @@
             const accountNumber = document.getElementById('withdrawAccount').value;
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
 
+            console.log('Withdraw form submitted:', { accountNumber, amount });
+
+            if (!accountNumber || !amount || amount <= 0) {
+                showMessage('Помилка: заповніть всі поля коректно', 'error');
+                return;
+            }
+
             try {
-                const response = await fetchWithTimeout(`${BASE_URL}/accounts/withdraw`, {
+                // ВАЖЛИВО: ендпоінт має бути /accounts/{accountNumber}/withdraw
+                const response = await fetchWithTimeout(`${BASE_URL}/accounts/${accountNumber}/withdraw`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                     },
-                    body: JSON.stringify({ accountNumber, amount })
+                    body: JSON.stringify({ amount: amount })
                 });
 
+                console.log('Withdraw response status:', response.status);
+
                 if (response.ok) {
+                    const result = await response.text();
+                    console.log('Withdraw result:', result);
                     showMessage('Кошти успішно знято!', 'success');
                     loadAccounts();
                     loadTransactions();
                     document.getElementById('withdrawForm').reset();
                 } else {
                     const errorData = await response.text();
+                    console.error('Withdraw error:', errorData);
                     showMessage('Помилка зняття коштів: ' + errorData, 'error');
                 }
             } catch (error) {
+                console.error('Withdraw connection error:', error);
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
             }
         });
@@ -844,26 +906,40 @@
             const toAccount = document.getElementById('toAccountNumber').value;
             const amount = parseFloat(document.getElementById('transferAmount').value);
 
+            console.log('Transfer form submitted:', { fromAccount, toAccount, amount });
+
+            if (!fromAccount || !toAccount || !amount || amount <= 0) {
+                showMessage('Помилка: заповніть всі поля коректно', 'error');
+                return;
+            }
+
             try {
-                const response = await fetchWithTimeout(`${BASE_URL}/accounts/transfer`, {
+                // ВАЖЛИВО: ендпоінт має бути /accounts/{fromAccountNumber}/transfer
+                const response = await fetchWithTimeout(`${BASE_URL}/accounts/${fromAccount}/transfer`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                     },
-                    body: JSON.stringify({ fromAccount, toAccount, amount })
+                    body: JSON.stringify({ toAccountNumber: toAccount, amount: amount })
                 });
 
+                console.log('Transfer response status:', response.status);
+
                 if (response.ok) {
-                    showMessage('Переказ успішно викона!', 'success');
+                    const result = await response.text();
+                    console.log('Transfer result:', result);
+                    showMessage('Переказ успішно виконано!', 'success');
                     loadAccounts();
                     loadTransactions();
                     document.getElementById('transferForm').reset();
                 } else {
                     const errorData = await response.text();
+                    console.error('Transfer error:', errorData);
                     showMessage('Помилка переказу: ' + errorData, 'error');
                 }
             } catch (error) {
+                console.error('Transfer connection error:', error);
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
             }
         });

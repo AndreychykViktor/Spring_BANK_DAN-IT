@@ -65,4 +65,13 @@ public class AccountRepoJpaImpl implements AccountRepo {
     public List<Account> findByCustomerId(Long customerId) {
         return jpa.findByCustomer_Id(customerId);
     }
+
+    @Override
+    public String getLastAccountNumber() {
+        List<String> numbers = jpa.findAllAccountNumbersOrderedDesc();
+        if (numbers.isEmpty()) {
+            return null;
+        }
+        return numbers.get(0);
+    }
 }

@@ -2,7 +2,6 @@ package com.example.hm1.controller;
 
 import com.example.hm1.entity.Transaction;
 import com.example.hm1.service.TransactionService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +26,18 @@ public class TransactionController {
     @GetMapping("/customer/{customerId}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<List<Transaction>> getTransactionsByCustomer(@PathVariable Long customerId) {
+        System.out.println("TransactionController.getTransactionsByCustomer: customerId=" + customerId);
         List<Transaction> transactions = transactionService.getTransactionsByCustomerId(customerId);
+        System.out.println("TransactionController.getTransactionsByCustomer: Found " + transactions.size() + " transactions");
+        return ResponseEntity.ok(transactions);
+    }
+
+    @GetMapping("/history/{customerId}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<List<Transaction>> getTransactionHistory(@PathVariable Long customerId) {
+        System.out.println("TransactionController.getTransactionHistory: customerId=" + customerId);
+        List<Transaction> transactions = transactionService.getTransactionsByCustomerId(customerId);
+        System.out.println("TransactionController.getTransactionHistory: Found " + transactions.size() + " transactions");
         return ResponseEntity.ok(transactions);
     }
 

@@ -21,11 +21,33 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/customers")
 @CrossOrigin(origins = "*")
 public class CustomerController {
+
+    // DTO для безпечної серіалізації Customer
+    public static class CustomerDTO {
+        public Long id;
+        public String name;
+        public String email;
+        public Integer age;
+        public List<String> employers;
+        
+        public CustomerDTO(Customer customer) {
+            this.id = customer.getId();
+            this.name = customer.getName();
+            this.email = customer.getEmail();
+            this.age = customer.getAge();
+            this.employers = customer.getEmployers() != null 
+                ? customer.getEmployers().stream()
+                    .map(Employer::getName)
+                    .collect(Collectors.toList())
+                : new java.util.ArrayList<>();
+        }
+    }
 
     private final CustomerService customerService;
     private final CustomerRepo customerRepo;
@@ -47,7 +69,7 @@ public class CustomerController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Customer> getCurrentCustomer() {
+    public ResponseEntity<?> getCurrentCustomer() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = authentication.getName();
@@ -86,8 +108,24 @@ public class CustomerController {
             }
             
             System.out.println("CustomerController: Found customer with ID: " + customer.getId() + 
-                             ", name: " + customer.getName());
-            return ResponseEntity.ok(customer);
+                             ", name: " + customer.getName() + ", email: " + customer.getEmail());
+            
+            // Додаткова валідація перед поверненням
+            if (customer.getId() == null) {
+                System.err.println("CustomerController: WARNING! Customer ID is null before returning");
+            }
+            
+            // Повертаємо DTO замість entity щоб уникнути проблем серіалізації
+            try {
+                CustomerDTO dto = new CustomerDTO(customer);
+                System.out.println("CustomerController: Successfully created DTO with ID: " + dto.id);
+                return ResponseEntity.ok(dto);
+            } catch (Exception e) {
+                System.err.println("CustomerController: Error creating DTO: " + e.getMessage());
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to serialize customer data"));
+            }
         } catch (RuntimeException e) {
             System.err.println("CustomerController: RuntimeException: " + e.getMessage());
             e.printStackTrace();
@@ -228,15 +266,27 @@ public class CustomerController {
                             employer.setName(employerName.trim());
                             employer.setAddress(employerAddress != null ? employerAddress.trim() : "");
                             employer = employerRepo.save(employer);
+                            System.out.println("CustomerController.updateCurrentCustomer: Created new employer: " + employer.getName() + " with ID: " + employer.getId());
                         } catch (org.springframework.dao.DataIntegrityViolationException dup) {
                             // Якщо паралельно створили — повторно зчитаємо
                             employer = employerRepo.findByNameIgnoreCase(employerName.trim()).orElse(null);
+                            System.out.println("CustomerController.updateCurrentCustomer: Found existing employer after collision: " + (employer != null ? employer.getName() : "null"));
                         }
+                    } else {
+                        System.out.println("CustomerController.updateCurrentCustomer: Using existing employer: " + employer.getName() + " with ID: " + employer.getId());
                     }
                     if (employer != null) {
-                        Set<Employer> employers = new HashSet<>();
+                        // Отримуємо існуючий set або створюємо новий
+                        Set<Employer> employers = customer.getEmployers();
+                        if (employers == null) {
+                            employers = new HashSet<>();
+                        } else {
+                            // Очищаємо старі зв'язки, щоб уникнути дублікатів
+                            employers.clear();
+                        }
                         employers.add(employer);
                         customer.setEmployers(employers);
+                        System.out.println("CustomerController.updateCurrentCustomer: Set employer for customer. Employer ID: " + employer.getId());
                     }
                 }
             }
@@ -248,11 +298,16 @@ public class CustomerController {
             
             Customer updatedCustomer = customerRepo.save(customer);
             System.out.println("CustomerController.updateCurrentCustomer: Customer saved successfully with ID: " + updatedCustomer.getId());
+            System.out.println("CustomerController.updateCurrentCustomer: Employers count after save: " + 
+                (updatedCustomer.getEmployers() != null ? updatedCustomer.getEmployers().size() : 0));
             
             // Перевіряємо що збереження пройшло успішно
             Customer savedCheck = customerRepo.findByUserId(user.getId()).orElse(null);
             if (savedCheck == null) {
                 System.err.println("CustomerController.updateCurrentCustomer: WARNING! Customer not found after save!");
+            } else {
+                System.out.println("CustomerController.updateCurrentCustomer: Employers count in DB check: " + 
+                    (savedCheck.getEmployers() != null ? savedCheck.getEmployers().size() : 0));
             }
             
             return ResponseEntity.ok(updatedCustomer);
@@ -306,16 +361,32 @@ public class CustomerController {
             @PathVariable Long customerId,
             @RequestBody Map<String, String> requestBody) {
         try {
-            Currency currency = Currency.valueOf(requestBody.get("currency"));
+            System.out.println("CustomerController.createAccountForCustomer: Request received for customerId=" + customerId);
+            System.out.println("CustomerController.createAccountForCustomer: Request body: " + requestBody);
+            
+            String currencyStr = requestBody.get("currency");
+            if (currencyStr == null || currencyStr.trim().isEmpty()) {
+                System.err.println("CustomerController.createAccountForCustomer: Currency is null or empty");
+                return ResponseEntity.badRequest().body(null);
+            }
+            
+            Currency currency = Currency.valueOf(currencyStr.toUpperCase());
+            System.out.println("CustomerController.createAccountForCustomer: Parsed currency: " + currency);
+            
             // email та password не потрібні для створення акаунту, але залишаємо для сумісності
             String email = requestBody.get("email");
             String password = requestBody.get("password");
             Account account = customerService.createAccountForCustomer(customerId, currency, email, password);
+            System.out.println("CustomerController.createAccountForCustomer: Account created successfully");
             return ResponseEntity.status(HttpStatus.CREATED).body(account);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            System.err.println("CustomerController.createAccountForCustomer: IllegalArgumentException: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(null);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            System.err.println("CustomerController.createAccountForCustomer: Exception: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 

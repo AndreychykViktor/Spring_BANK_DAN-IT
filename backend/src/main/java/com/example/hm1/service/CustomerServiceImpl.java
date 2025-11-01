@@ -65,13 +65,42 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Account createAccountForCustomer(Long customerId, Currency currency, String email, String password) {
+        System.out.println("CustomerServiceImpl.createAccountForCustomer: customerId=" + customerId + ", currency=" + currency);
         Customer customer = customerRepo.getOne(customerId);
         if (customer == null) {
+            System.err.println("CustomerServiceImpl.createAccountForCustomer: Customer not found with id: " + customerId);
             throw new IllegalArgumentException("Customer not found with id: " + customerId);
         }
 
+        System.out.println("CustomerServiceImpl.createAccountForCustomer: Found customer: " + customer.getName());
+        
+        // Генеруємо номер акаунту в форматі ACC-XXXX
+        String accountNumber = generateAccountNumber();
+        System.out.println("CustomerServiceImpl.createAccountForCustomer: Generated account number: " + accountNumber);
+        
         Account account = new Account(currency, customer);
-        return accountRepo.save(account);
+        account.setNumber(accountNumber);
+        Account saved = accountRepo.save(account);
+        System.out.println("CustomerServiceImpl.createAccountForCustomer: Account created successfully. ID=" + saved.getId() + ", Number=" + saved.getNumber());
+        return saved;
+    }
+    
+    private String generateAccountNumber() {
+        String lastNumber = accountRepo.getLastAccountNumber();
+        int nextNumber = 1;
+        
+        if (lastNumber != null && lastNumber.startsWith("ACC-")) {
+            try {
+                String numberPart = lastNumber.substring(4); // Вирізаємо "ACC-"
+                nextNumber = Integer.parseInt(numberPart) + 1;
+            } catch (NumberFormatException e) {
+                System.err.println("CustomerServiceImpl.generateAccountNumber: Failed to parse last number: " + lastNumber);
+                nextNumber = 1;
+            }
+        }
+        
+        // Форматуємо з ведучими нулями: ACC-0001, ACC-0002, ..., ACC-9999
+        return String.format("ACC-%04d", nextNumber);
     }
 
     @Override

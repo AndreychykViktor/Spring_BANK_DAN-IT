@@ -78,4 +78,14 @@ public class AccountRepoImpl implements AccountRepo {
                                    customerId.equals(account.getCustomer().getId()))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public String getLastAccountNumber() {
+        return accounts.stream()
+                .map(Account::getNumber)
+                .filter(number -> number != null && number.startsWith("ACC-"))
+                .sorted((a, b) -> b.compareTo(a)) // Сортуємо за спаданням
+                .findFirst()
+                .orElse(null);
+    }
 }

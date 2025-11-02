@@ -14,9 +14,11 @@ import java.util.List;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     
-    List<Transaction> findByCustomerIdOrderByTimestampDesc(Long customerId);
+    @Query("SELECT t FROM Transaction t JOIN FETCH t.customer WHERE t.customer.id = :customerId ORDER BY t.timestamp DESC")
+    List<Transaction> findByCustomerIdOrderByTimestampDesc(@Param("customerId") Long customerId);
     
-    Page<Transaction> findByCustomerIdOrderByTimestampDesc(Long customerId, Pageable pageable);
+    @Query("SELECT t FROM Transaction t WHERE t.customer.id = :customerId ORDER BY t.timestamp DESC")
+    Page<Transaction> findByCustomerIdOrderByTimestampDescPage(@Param("customerId") Long customerId, Pageable pageable);
     
     List<Transaction> findByFromAccountIdOrToAccountIdOrderByTimestampDesc(Long fromAccountId, Long toAccountId);
     

@@ -24,5 +24,11 @@ spring:
     hibernate:
       ddl-auto: update # Автоматичне оновлення/створення таблиць
     show-sql: true # Виводити SQL-запити у лог
+    properties:
+      hibernate:
+        enable_lazy_load_no_trans: true # Дозволити lazy loading поза транзакцією
+  jackson:
+    serialization:
+      fail-on-empty-beans: false # Не падати на порожніх beans
   hikari:
     maximum-pool-size: 10 # Максимальна кількість підключень до бази

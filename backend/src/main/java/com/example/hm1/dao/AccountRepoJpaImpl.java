@@ -58,7 +58,7 @@ public class AccountRepoJpaImpl implements AccountRepo {
 
     @Override
     public Account findByNumber(String number) {
-        return jpa.findByNumber(number);
+        return jpa.findByNumber(number).orElse(null);
     }
 
     @Override

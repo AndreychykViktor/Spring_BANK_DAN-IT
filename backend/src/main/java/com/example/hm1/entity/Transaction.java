@@ -1,20 +1,14 @@
 package com.example.hm1.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "transactions")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Transaction extends AbstractEntity {
 
     @Enumerated(EnumType.STRING)
@@ -29,14 +23,17 @@ public class Transaction extends AbstractEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_account_id")
+    @JsonIgnoreProperties({"customer", "hibernateLazyInitializer", "handler"})
     private Account fromAccount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "to_account_id")
+    @JsonIgnoreProperties({"customer", "hibernateLazyInitializer", "handler"})
     private Account toAccount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
+    @JsonIgnoreProperties({"user", "accounts", "employers", "hibernateLazyInitializer", "handler"})
     private Customer customer;
 
     @Column(nullable = false)
@@ -65,5 +62,74 @@ public class Transaction extends AbstractEntity {
         this.customer = customer;
         this.timestamp = LocalDateTime.now();
         this.status = TransactionStatus.COMPLETED;
+    }
+
+    // Конструктор без параметрів
+    public Transaction() {
+    }
+
+    // Геттери та сеттери
+    public TransactionType getType() {
+        return this.type;
+    }
+
+    public void setType(TransactionType type) {
+        this.type = type;
+    }
+
+    public BigDecimal getAmount() {
+        return this.amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Account getFromAccount() {
+        return this.fromAccount;
+    }
+
+    public void setFromAccount(Account fromAccount) {
+        this.fromAccount = fromAccount;
+    }
+
+    public Account getToAccount() {
+        return this.toAccount;
+    }
+
+    public void setToAccount(Account toAccount) {
+        this.toAccount = toAccount;
+    }
+
+    public Customer getCustomer() {
+        return this.customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return this.timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public TransactionStatus getStatus() {
+        return this.status;
+    }
+
+    public void setStatus(TransactionStatus status) {
+        this.status = status;
     }
 }

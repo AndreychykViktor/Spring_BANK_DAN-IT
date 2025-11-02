@@ -5,10 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/**
- * Ініціалізатор для синхронізації PostgreSQL sequences після завантаження даних з data.sql
- * Це виправляє помилку "duplicate key value violates unique constraint"
- */
 @Configuration
 public class SequenceInitializer {
 

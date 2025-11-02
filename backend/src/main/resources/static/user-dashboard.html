@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Особистий кабінет - Banking App</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -343,13 +344,31 @@
         <div id="message"></div>
 
         <div class="tabs">
-            <div class="tab active" onclick="showTab('accounts')">Мої акаунти</div>
+            <div class="tab active" onclick="showTab('profile')">Мій профіль</div>
+            <div class="tab" onclick="showTab('accounts')">Мої акаунти</div>
             <div class="tab" onclick="showTab('transactions')">Історія транзакцій</div>
             <div class="tab" onclick="showTab('operations')">Операції</div>
+            <div class="tab" onclick="showTab('exchange-rates')">Курси валют</div>
+        </div>
+
+        <!-- Мій профіль -->
+        <div id="profile" class="tab-content active">
+            <div class="card">
+                <h2>Інформація про профіль</h2>
+                <div id="profileInfo">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Завантаження інформації...</p>
+                    </div>
+                </div>
+                <button class="btn" onclick="window.location.href='profile-setup.html'" style="margin-top: 1rem;">
+                    Редагувати профіль
+                </button>
+            </div>
         </div>
 
         <!-- Мої акаунти -->
-        <div id="accounts" class="tab-content active">
+        <div id="accounts" class="tab-content">
             <div class="card">
                 <h2>Мої акаунти</h2>
                 <div id="accountsList">
@@ -431,6 +450,38 @@
                         </div>
                         <button type="submit" class="btn">Переказати</button>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Курси валют -->
+        <div id="exchange-rates" class="tab-content">
+            <div class="card">
+                <h2>Актуальні курси валют</h2>
+                <p style="margin-bottom: 1rem; color: #666;">Базова валюта: UAH</p>
+                <div id="exchangeRatesList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Завантаження курсів...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Графіки курсів валют</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 1rem;">
+                    <div>
+                        <h3 style="text-align: center; margin-bottom: 1rem;">USD (Долар США)</h3>
+                        <canvas id="usdChart"></canvas>
+                    </div>
+                    <div>
+                        <h3 style="text-align: center; margin-bottom: 1rem;">EUR (Євро)</h3>
+                        <canvas id="eurChart"></canvas>
+                    </div>
+                    <div>
+                        <h3 style="text-align: center; margin-bottom: 1rem;">GBP (Британський фунт)</h3>
+                        <canvas id="gbpChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -607,6 +658,10 @@
                             // Нормалізуємо id у полі id
                             currentCustomer.id = Number(customerId);
                             console.log('Loading accounts and transactions for customer ID:', currentCustomer.id);
+                            
+                            // Відображаємо профіль
+                            displayProfile(currentCustomer);
+                            
                             loadAccounts();
                             loadTransactions();
                         } else {
@@ -712,8 +767,12 @@
         }
 
         async function loadTransactions() {
-            if (!currentCustomer) return;
+            if (!currentCustomer) {
+                console.warn('loadTransactions: currentCustomer is not set');
+                return;
+            }
 
+            console.log('loadTransactions: Loading transactions for customer ID:', currentCustomer.id);
             try {
                 const response = await fetchWithTimeout(`${BASE_URL}/transactions/history/${currentCustomer.id}`, {
                     headers: {
@@ -721,17 +780,54 @@
                     }
                 });
 
+                console.log('loadTransactions: Response status:', response.status);
+
                 if (response.ok) {
                     const data = await readResponseBodySafe(response);
-                    const transactions = (typeof data === 'string') ? [] : data;
+                    console.log('loadTransactions: Received data:', data);
+                    console.log('loadTransactions: Data type:', typeof data);
+                    const transactions = (typeof data === 'string') ? [] : (Array.isArray(data) ? data : []);
+                    console.log('loadTransactions: Parsed transactions:', transactions.length);
                     displayTransactions(transactions);
                 } else {
                     const errorText = await readResponseBodySafe(response);
+                    console.error('loadTransactions: Error response:', errorText);
                     showMessage('Помилка завантаження транзакцій: ' + (errorText || response.statusText), 'error');
                 }
             } catch (error) {
+                console.error('loadTransactions: Exception:', error);
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
             }
+        }
+
+        function displayProfile(customer) {
+            const container = document.getElementById('profileInfo');
+            
+            if (!customer) {
+                container.innerHTML = '<p class="error">Профіль не знайдено</p>';
+                return;
+            }
+
+            const employers = customer.employers && customer.employers.length > 0 
+                ? customer.employers.join(', ') 
+                : 'Н/Д';
+
+            container.innerHTML = `
+                <div style="padding: 1rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Ім'я:</strong> ${customer.name || 'Не вказано'}
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Email:</strong> ${customer.email || 'Не вказано'}
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Вік:</strong> ${customer.age || 'Не вказано'}
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Роботодавці:</strong> ${employers}
+                    </div>
+                </div>
+            `;
         }
 
         function displayAccounts(accounts) {
@@ -754,13 +850,16 @@
         }
 
         function displayTransactions(transactions) {
+            console.log('displayTransactions: Called with', transactions);
             const container = document.getElementById('transactionsList');
             
-            if (transactions.length === 0) {
+            if (!transactions || transactions.length === 0) {
+                console.log('displayTransactions: No transactions to display');
                 container.innerHTML = '<p>У вас поки немає транзакцій.</p>';
                 return;
             }
 
+            console.log('displayTransactions: Rendering', transactions.length, 'transactions');
             container.innerHTML = transactions.map(transaction => `
                 <div class="transaction-item">
                     <div class="transaction-info">
@@ -803,6 +902,11 @@
             // Показуємо обраний таб
             event.target.classList.add('active');
             document.getElementById(tabName).classList.add('active');
+            
+            // Якщо відкриваємо вкладку курсів валют, завантажуємо дані
+            if (tabName === 'exchange-rates') {
+                loadExchangeRates();
+            }
         }
 
         function openCreateAccountModal() {
@@ -811,6 +915,146 @@
 
         function closeCreateAccountModal() {
             document.getElementById('createAccountModal').style.display = 'none';
+        }
+
+        // Графіки курсів валют
+        let exchangeRateCharts = {};
+
+        async function loadExchangeRates() {
+            try {
+                const response = await fetchWithTimeout(`${BASE_URL}/exchange-rates/all?base=UAH`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await readResponseBodySafe(response);
+                    console.log('Exchange rates:', data);
+                    
+                    if (data && data.rates) {
+                        displayExchangeRates(data.rates);
+                        
+                        // Створюємо mock історичні дані для графіків (на практиці тут будуть дані з API)
+                        const mockHistory = generateMockHistory(data.rates);
+                        drawExchangeRateCharts(mockHistory);
+                    }
+                } else {
+                    const errorText = await readResponseBodySafe(response);
+                    console.error('Failed to load exchange rates:', errorText);
+                }
+            } catch (error) {
+                console.error('Error loading exchange rates:', error);
+            }
+        }
+
+        function displayExchangeRates(rates) {
+            const container = document.getElementById('exchangeRatesList');
+            
+            const currencyNames = {
+                'USD': 'Долар США',
+                'EUR': 'Євро',
+                'GBP': 'Британський фунт',
+                'CHF': 'Швейцарський франк'
+            };
+            
+            container.innerHTML = Object.entries(rates).map(([currency, rate]) => `
+                <div class="account-item">
+                    <div class="account-info">
+                        <h3>${currency}</h3>
+                        <p>${currencyNames[currency] || currency}</p>
+                    </div>
+                    <div class="account-balance">${rate.toFixed(2)} UAH</div>
+                </div>
+            `).join('');
+        }
+
+        function generateMockHistory(rates) {
+            // Генеруємо mock історичні дані для останніх 7 днів
+            const history = {};
+            const today = new Date();
+            
+            Object.keys(rates).forEach(currency => {
+                const baseRate = rates[currency];
+                history[currency] = [];
+                
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    
+                    // Генеруємо випадкову варіацію ±2%
+                    const variation = (Math.random() * 0.04 - 0.02);
+                    const rate = baseRate * (1 + variation);
+                    
+                    history[currency].push({
+                        date: date.toLocaleDateString('uk-UA'),
+                        rate: parseFloat(rate.toFixed(2))
+                    });
+                }
+            });
+            
+            return history;
+        }
+
+        function drawExchangeRateCharts(history) {
+            // Конфігурація кольорів для графіків
+            const chartColors = {
+                'USD': { border: 'rgb(54, 162, 235)', background: 'rgba(54, 162, 235, 0.2)' },
+                'EUR': { border: 'rgb(255, 99, 132)', background: 'rgba(255, 99, 132, 0.2)' },
+                'GBP': { border: 'rgb(75, 192, 192)', background: 'rgba(75, 192, 192, 0.2)' }
+            };
+            
+            Object.entries(chartColors).forEach(([currency, colors]) => {
+                const canvasId = currency.toLowerCase() + 'Chart';
+                const canvas = document.getElementById(canvasId);
+                
+                if (!canvas) {
+                    console.error('Canvas not found:', canvasId);
+                    return;
+                }
+                
+                // Знищуємо попередній графік якщо існує
+                if (exchangeRateCharts[currency]) {
+                    exchangeRateCharts[currency].destroy();
+                }
+                
+                const data = history[currency] || [];
+                
+                exchangeRateCharts[currency] = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.date),
+                        datasets: [{
+                            label: `${currency}/UAH`,
+                            data: data.map(d => d.rate),
+                            borderColor: colors.border,
+                            backgroundColor: colors.background,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toFixed(2) + ' UAH';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
         }
 
         // Обробники форм

@@ -4,7 +4,6 @@ import com.example.hm1.dao.TransactionRepository;
 import com.example.hm1.entity.Account;
 import com.example.hm1.entity.Customer;
 import com.example.hm1.entity.Transaction;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,21 +30,30 @@ public class TransactionServiceImpl implements TransactionService {
                                        Account fromAccount, 
                                        Account toAccount, 
                                        Customer customer) {
+        System.out.println("TransactionServiceImpl.createTransaction: type=" + type + ", amount=" + amount + ", customer=" + (customer != null ? customer.getId() : "null"));
         Transaction transaction = new Transaction(type, amount, description, fromAccount, toAccount, customer);
         
-        return transactionRepository.save(transaction);
+        Transaction saved = transactionRepository.save(transaction);
+        System.out.println("TransactionServiceImpl.createTransaction: Saved transaction ID=" + saved.getId());
+        return saved;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Transaction> getTransactionsByCustomerId(Long customerId) {
-        return transactionRepository.findByCustomerIdOrderByTimestampDesc(customerId);
+        System.out.println("TransactionServiceImpl.getTransactionsByCustomerId: customerId=" + customerId);
+        List<Transaction> transactions = transactionRepository.findByCustomerIdOrderByTimestampDesc(customerId);
+        System.out.println("TransactionServiceImpl.getTransactionsByCustomerId: Found " + transactions.size() + " transactions");
+        if (!transactions.isEmpty()) {
+            System.out.println("TransactionServiceImpl.getTransactionsByCustomerId: First transaction: " + transactions.get(0));
+        }
+        return transactions;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<Transaction> getTransactionsByCustomerId(Long customerId, Pageable pageable) {
-        return transactionRepository.findByCustomerIdOrderByTimestampDesc(customerId, pageable);
+        return transactionRepository.findByCustomerIdOrderByTimestampDescPage(customerId, pageable);
     }
 
     @Override

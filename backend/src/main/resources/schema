@@ -3,13 +3,17 @@ CREATE TABLE IF NOT EXISTS customers (
                                          name VARCHAR(255) NOT NULL,
                                          email VARCHAR(255) UNIQUE NOT NULL,
                                          age INTEGER,
-                                         user_id BIGINT UNIQUE
+                                         user_id BIGINT UNIQUE,
+                                         created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                         last_modified_date TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS employers (
                                          id BIGSERIAL PRIMARY KEY,
                                          name VARCHAR(255) NOT NULL,
-                                         address VARCHAR(255)
+                                         address VARCHAR(255),
+                                         created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                         last_modified_date TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS customer_employer (
@@ -60,5 +64,13 @@ CREATE TABLE IF NOT EXISTS transactions (
     timestamp TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     from_account_id BIGINT REFERENCES accounts(id) ON DELETE SET NULL,
     to_account_id BIGINT REFERENCES accounts(id) ON DELETE SET NULL,
-    customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE CASCADE
+    customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_modified_date TIMESTAMP
 );
+
+ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ADD COLUMN IF NOT EXISTS last_modified_date TIMESTAMP;
+
+

@@ -1,8 +1,10 @@
 package com.example.hm1.service;
 
+import com.example.hm1.dto.ExchangeRateHistoryPoint;
 import com.example.hm1.entity.Currency;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,6 +35,14 @@ public interface ExchangeRateService {
      * @return Map з курсами
      */
     Map<String, BigDecimal> getAllRates(Currency baseCurrency);
+    
+    /**
+     * Отримати історію курсу валют за вказаний період
+     * @param currencies список валют для отримання історії
+     * @param days кількість днів у періоді
+     * @return Map з історичними даними для кожної валюти
+     */
+    Map<String, List<ExchangeRateHistoryPoint>> getHistoricalRates(List<Currency> currencies, int days);
     
     /**
      * Оновити курси валют (викликається scheduler або вручну)

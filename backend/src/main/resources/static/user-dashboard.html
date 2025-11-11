@@ -12,10 +12,31 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --light-bg: #f5f7fa;
+            --dark-bg: #0f172a;
+            --dark-card: #172035;
+            --dark-card-alt: #1d273f;
+            --dark-border: rgba(148, 163, 184, 0.16);
+            --dark-text: #e2e8f0;
+            --dark-muted: #94a3b8;
+            --dark-accent: #60a5fa;
+            --dark-accent-secondary: #facc15;
+            --dark-positive: #4ade80;
+            --dark-negative: #f87171;
+            --dark-hover: rgba(96, 165, 250, 0.14);
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: var(--light-bg);
             min-height: 100vh;
+            color: #222;
+        }
+
+        body.dark-mode {
+            background: var(--dark-bg);
+            color: var(--dark-text);
         }
 
         .header {
@@ -28,6 +49,11 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
+        body.dark-mode .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 60%, #1e293b 100%);
+            box-shadow: 0 6px 20px rgba(8, 11, 20, 0.55);
+        }
+
         .header h1 {
             font-size: 1.5rem;
         }
@@ -36,6 +62,31 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+        }
+
+        .theme-toggle {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.35rem 0.55rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.05rem;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-1px);
+        }
+
+        body.dark-mode .theme-toggle {
+            background: rgba(15, 23, 42, 0.55);
+            border-color: rgba(148,163,184,0.35);
+        }
+
+        body.dark-mode .theme-toggle:hover {
+            background: rgba(15, 23, 42, 0.75);
         }
 
         .logout-btn {
@@ -50,6 +101,15 @@
 
         .logout-btn:hover {
             background: rgba(255,255,255,0.3);
+        }
+
+        body.dark-mode .logout-btn {
+            background: rgba(15, 23, 42, 0.55);
+            border-color: rgba(148,163,184,0.35);
+        }
+
+        body.dark-mode .logout-btn:hover {
+            background: rgba(15, 23, 42, 0.75);
         }
 
         .container {
@@ -72,10 +132,293 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
+        body.dark-mode .card {
+            background: var(--dark-card);
+            box-shadow: 0 12px 32px rgba(8, 11, 20, 0.55);
+            border: 1px solid var(--dark-border);
+            color: var(--dark-text);
+        }
+
         .card h2 {
             color: #333;
             margin-bottom: 1rem;
             font-size: 1.2rem;
+        }
+
+        body.dark-mode .card h2 {
+            color: var(--dark-text);
+        }
+
+        body.dark-mode .card h3,
+        body.dark-mode .card h4 {
+            color: var(--dark-text);
+        }
+
+        body.dark-mode .card p {
+            color: var(--dark-muted);
+        }
+
+        .profile-trigger {
+            position: relative;
+        }
+
+        .profile-toggle {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.4rem 0.6rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background 0.3s;
+        }
+
+        .profile-toggle:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        body.dark-mode .profile-toggle {
+            background: rgba(15, 23, 42, 0.55);
+            border-color: rgba(148,163,184,0.35);
+        }
+
+        body.dark-mode .profile-toggle:hover {
+            background: rgba(15, 23, 42, 0.75);
+        }
+
+        .profile-popup {
+            position: absolute;
+            right: 0;
+            top: 2.5rem;
+            background: white;
+            border: 1px solid #e1e5e9;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            width: 260px;
+            max-width: 90vw;
+            display: none;
+            z-index: 1500;
+        }
+
+        body.dark-mode .profile-popup {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .profile-popup.show {
+            display: block;
+        }
+
+        .profile-popup-content {
+            padding: 1rem;
+        }
+
+        .profile-popup-content p {
+            margin: 0.35rem 0;
+            color: #444;
+            font-size: 0.95rem;
+        }
+
+        body.dark-mode .profile-popup-content p {
+            color: var(--dark-muted);
+        }
+
+        .profile-popup-content p strong {
+            display: inline-block;
+            width: 90px;
+            color: #666;
+        }
+
+        body.dark-mode .profile-popup-content p strong {
+            color: var(--dark-accent);
+        }
+
+        .profile-popup-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .profile-popup-actions .btn-link {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.9rem;
+        }
+
+        .profile-popup-actions .btn-link:hover {
+            text-decoration: underline;
+        }
+
+        .profile-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 2rem 1rem;
+        }
+
+        .profile-overlay.open {
+            display: flex;
+        }
+
+        .profile-overlay-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        body.dark-mode .profile-overlay-content {
+            background: var(--dark-card);
+            color: var(--dark-text);
+        }
+
+        .profile-overlay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .profile-overlay-header h2 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .profile-overlay-header .close {
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .profile-overlay-header .close:hover {
+            color: #000;
+        }
+
+        body.dark-mode .profile-overlay-header .close {
+            color: var(--dark-muted);
+        }
+
+        body.dark-mode .profile-overlay-header .close:hover {
+            color: var(--dark-accent);
+        }
+
+        .profile-overlay-body p {
+            margin: 0.5rem 0;
+            color: #333;
+        }
+
+        body.dark-mode .profile-overlay-body p {
+            color: var(--dark-muted);
+        }
+
+        body.dark-mode .profile-overlay-body p strong {
+            color: var(--dark-accent);
+        }
+
+        .profile-overlay-body p strong {
+            display: inline-block;
+            width: 120px;
+        }
+
+        .profile-overlay-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .calculator-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .calculator-section .form-group-inline {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .calculator-section .result-box {
+            background: #f5f7fa;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #e1e5e9;
+        }
+
+        body.dark-mode .calculator-section .result-box {
+            background: var(--dark-card-alt);
+            border-color: rgba(148,163,184,0.22);
+            color: var(--dark-text);
+        }
+
+        .section-note {
+            margin-bottom: 1rem;
+            color: #666;
+        }
+
+        body.dark-mode .section-note {
+            color: var(--dark-muted);
+        }
+
+        .calculator-section .result-box strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        body.dark-mode .calculator-section .result-box strong {
+            color: var(--dark-text);
+        }
+
+        .history-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0.5rem 0 1rem;
+            flex-wrap: wrap;
+        }
+
+        .history-controls label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        body.dark-mode .history-controls label {
+            color: var(--dark-muted);
+        }
+
+        .history-controls select {
+            padding: 0.4rem 0.6rem;
+            border-radius: 5px;
+            border: 1px solid #e1e5e9;
+            background: #fff;
+        }
+
+        body.dark-mode .history-controls select {
+            background: var(--dark-card-alt);
+            border-color: rgba(148,163,184,0.25);
+            color: var(--dark-text);
         }
 
         .account-item {
@@ -84,8 +427,40 @@
             align-items: center;
             padding: 1rem;
             border: 1px solid #e1e5e9;
-            border-radius: 5px;
+            border-radius: 10px;
             margin-bottom: 1rem;
+            background: white;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .account-item:hover {
+            background: #eef2ff;
+            border-color: #d4d9ff;
+        }
+
+        body.dark-mode .account-item {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            box-shadow: 0 8px 24px rgba(8, 11, 20, 0.45);
+            color: var(--dark-text);
+        }
+
+        body.dark-mode .account-item:hover {
+            background: rgba(96, 165, 250, 0.18);
+            border-color: rgba(96, 165, 250, 0.35);
+            box-shadow: 0 10px 32px rgba(8, 11, 20, 0.55);
+        }
+
+        #historyChartTitle {
+            color: #333;
+        }
+
+        body.dark-mode #historyChartTitle {
+            color: var(--dark-text);
+        }
+
+        body.dark-mode .loading p {
+            color: var(--dark-muted);
         }
 
         .account-info h3 {
@@ -93,15 +468,31 @@
             margin-bottom: 0.5rem;
         }
 
+        body.dark-mode .account-info h3 {
+            color: var(--dark-text);
+        }
+
         .account-info p {
             color: #666;
             font-size: 0.9rem;
+        }
+
+        body.dark-mode .account-info p {
+            color: var(--dark-muted);
         }
 
         .account-balance {
             font-size: 1.2rem;
             font-weight: bold;
             color: #28a745;
+        }
+
+        body.dark-mode .account-balance {
+            color: var(--dark-positive);
+        }
+
+        .account-balance.account-balance-large {
+            font-size: 1.3rem;
         }
 
         .transaction-item {
@@ -112,8 +503,21 @@
             border-bottom: 1px solid #e1e5e9;
         }
 
+        .transaction-item:hover {
+            background: #f5f7fa;
+        }
+
         .transaction-item:last-child {
             border-bottom: none;
+        }
+
+        body.dark-mode .transaction-item {
+            border-bottom: 1px solid rgba(148,163,184,0.18);
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        body.dark-mode .transaction-item:hover {
+            background: rgba(96, 165, 250, 0.12);
         }
 
         .transaction-info h4 {
@@ -121,9 +525,17 @@
             margin-bottom: 0.3rem;
         }
 
+        body.dark-mode .transaction-info h4 {
+            color: var(--dark-text);
+        }
+
         .transaction-info p {
             color: #666;
             font-size: 0.8rem;
+        }
+
+        body.dark-mode .transaction-info p {
+            color: var(--dark-muted);
         }
 
         .transaction-amount {
@@ -136,6 +548,14 @@
 
         .transaction-amount.negative {
             color: #dc3545;
+        }
+
+        body.dark-mode .transaction-amount.positive {
+            color: var(--dark-positive);
+        }
+
+        body.dark-mode .transaction-amount.negative {
+            color: var(--dark-negative);
         }
 
         .transaction-type {
@@ -152,14 +572,32 @@
             color: #155724;
         }
 
+        body.dark-mode .type-deposit {
+            background: rgba(74, 222, 128, 0.16);
+            color: var(--dark-positive);
+            border: 1px solid rgba(74, 222, 128, 0.25);
+        }
+
         .type-withdrawal {
             background: #f8d7da;
             color: #721c24;
         }
 
+        body.dark-mode .type-withdrawal {
+            background: rgba(248, 113, 113, 0.16);
+            color: var(--dark-negative);
+            border: 1px solid rgba(248, 113, 113, 0.25);
+        }
+
         .type-transfer {
             background: #d1ecf1;
             color: #0c5460;
+        }
+
+        body.dark-mode .type-transfer {
+            background: rgba(96, 165, 250, 0.16);
+            color: var(--dark-accent);
+            border: 1px solid rgba(96, 165, 250, 0.28);
         }
 
         .btn {
@@ -200,6 +638,10 @@
             font-weight: 500;
         }
 
+        body.dark-mode .form-group label {
+            color: #d5d8f0;
+        }
+
         .form-group input, .form-group select {
             width: 100%;
             padding: 0.75rem;
@@ -208,9 +650,21 @@
             font-size: 1rem;
         }
 
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group select {
+            background: #1f2333;
+            border-color: rgba(255,255,255,0.12);
+            color: #f5f5f5;
+        }
+
         .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        body.dark-mode .form-group input:focus,
+        body.dark-mode .form-group select:focus {
+            border-color: #8fa2ff;
         }
 
         .modal {
@@ -233,6 +687,13 @@
             max-width: 500px;
         }
 
+        body.dark-mode .modal-content {
+            background: var(--dark-card);
+            color: var(--dark-text);
+            border: 1px solid var(--dark-border);
+            box-shadow: 0 16px 36px rgba(8, 11, 20, 0.55);
+        }
+
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -250,6 +711,14 @@
             color: #000;
         }
 
+        body.dark-mode .close {
+            color: var(--dark-muted);
+        }
+
+        body.dark-mode .close:hover {
+            color: var(--dark-accent);
+        }
+
         .error {
             background: #fee;
             color: #c33;
@@ -259,6 +728,12 @@
             border: 1px solid #fcc;
         }
 
+        body.dark-mode .error {
+            background: rgba(248, 113, 113, 0.12);
+            color: var(--dark-negative);
+            border-color: rgba(248, 113, 113, 0.3);
+        }
+
         .success {
             background: #efe;
             color: #3c3;
@@ -266,6 +741,12 @@
             border-radius: 5px;
             margin-bottom: 1rem;
             border: 1px solid #cfc;
+        }
+
+        body.dark-mode .success {
+            background: rgba(74, 222, 128, 0.12);
+            color: var(--dark-positive);
+            border-color: rgba(74, 222, 128, 0.3);
         }
 
         .loading {
@@ -301,10 +782,19 @@
             transition: all 0.3s;
         }
 
+        body.dark-mode .tab {
+            color: #c6c9e8;
+        }
+
         .tab.active {
             border-bottom-color: #667eea;
             color: #667eea;
             font-weight: bold;
+        }
+
+        body.dark-mode .tab.active {
+            border-bottom-color: #8fa2ff;
+            color: #8fa2ff;
         }
 
         .tab-content {
@@ -335,6 +825,21 @@
         <h1>🏦 Banking App</h1>
         <div class="user-info">
             <span id="userName">Користувач</span>
+            <button class="theme-toggle" id="themeToggleBtn" title="Перемкнути тему">🌙</button>
+            <div class="profile-trigger">
+                <button class="profile-toggle" id="profileToggleBtn" title="Мій профіль">👤</button>
+                <div class="profile-popup" id="profilePopup">
+                    <div class="profile-popup-content">
+                        <div id="profileSummary">
+                            <p>Завантаження...</p>
+                        </div>
+                        <div class="profile-popup-actions">
+                            <button class="btn-link" id="profileExpandBtn">Розгорнути</button>
+                            <button class="btn-link" onclick="window.location.href='profile-setup.html'">Редагувати</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <button class="logout-btn" onclick="window.location.href='profile-setup.html'">Налаштування профілю</button>
             <button class="logout-btn" onclick="logout()">Вийти</button>
         </div>
@@ -344,31 +849,14 @@
         <div id="message"></div>
 
         <div class="tabs">
-            <div class="tab active" onclick="showTab('profile')">Мій профіль</div>
-            <div class="tab" onclick="showTab('accounts')">Мої акаунти</div>
+            <div class="tab active" onclick="showTab('accounts')">Мої акаунти</div>
             <div class="tab" onclick="showTab('transactions')">Історія транзакцій</div>
             <div class="tab" onclick="showTab('operations')">Операції</div>
             <div class="tab" onclick="showTab('exchange-rates')">Курси валют</div>
         </div>
 
-        <!-- Мій профіль -->
-        <div id="profile" class="tab-content active">
-            <div class="card">
-                <h2>Інформація про профіль</h2>
-                <div id="profileInfo">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>Завантаження інформації...</p>
-                    </div>
-                </div>
-                <button class="btn" onclick="window.location.href='profile-setup.html'" style="margin-top: 1rem;">
-                    Редагувати профіль
-                </button>
-            </div>
-        </div>
-
         <!-- Мої акаунти -->
-        <div id="accounts" class="tab-content">
+        <div id="accounts" class="tab-content active">
             <div class="card">
                 <h2>Мої акаунти</h2>
                 <div id="accountsList">
@@ -451,6 +939,30 @@
                         <button type="submit" class="btn">Переказати</button>
                     </form>
                 </div>
+
+                <div class="card">
+                    <h2>Швидка конвертація</h2>
+                    <div class="calculator-section" id="operationsQuickCalc" data-default-from="USD" data-default-to="UAH">
+                        <div class="form-group-inline">
+                            <div class="form-group" style="flex: 1;">
+                                <label>Сума:</label>
+                                <input type="number" data-role="amount" placeholder="100" min="0" step="0.01" value="100">
+                            </div>
+                            <div class="form-group" style="width: 140px;">
+                                <label>З валютy</label>
+                                <select data-role="from"></select>
+                            </div>
+                            <div class="form-group" style="width: 140px;">
+                                <label>У валюту</label>
+                                <select data-role="to"></select>
+                            </div>
+                        </div>
+                        <div class="result-box">
+                            <strong>Результат:</strong>
+                            <span data-role="result">—</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -458,7 +970,28 @@
         <div id="exchange-rates" class="tab-content">
             <div class="card">
                 <h2>Актуальні курси валют</h2>
-                <p style="margin-bottom: 1rem; color: #666;">Базова валюта: UAH</p>
+                <p class="section-note">Показує скільки гривень (UAH) потрібно заплатити за 1 одиницю валюти</p>
+                <div class="calculator-section" id="exchangeRatesQuickCalc" data-default-from="UAH" data-default-to="USD">
+                    <h3>Швидка конвертація</h3>
+                    <div class="form-group-inline">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Сума:</label>
+                            <input type="number" data-role="amount" placeholder="100" min="0" step="0.01" value="100">
+                        </div>
+                        <div class="form-group" style="width: 140px;">
+                            <label>З валютy</label>
+                            <select data-role="from"></select>
+                        </div>
+                        <div class="form-group" style="width: 140px;">
+                            <label>У валюту</label>
+                            <select data-role="to"></select>
+                        </div>
+                    </div>
+                    <div class="result-box">
+                        <strong>Результат:</strong>
+                        <span data-role="result">—</span>
+                    </div>
+                </div>
                 <div id="exchangeRatesList">
                     <div class="loading">
                         <div class="spinner"></div>
@@ -469,19 +1002,22 @@
             
             <div class="card">
                 <h2>Графіки курсів валют</h2>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 1rem;">
-                    <div>
-                        <h3 style="text-align: center; margin-bottom: 1rem;">USD (Долар США)</h3>
-                        <canvas id="usdChart"></canvas>
+                <div class="history-controls">
+                    <label for="historyRange">Період:</label>
+                    <select id="historyRange">
+                        <option value="7d">Останні 7 днів</option>
+                        <option value="14d">Останні 14 днів</option>
+                        <option value="1m">1 місяць</option>
+                        <option value="3m">3 місяці</option>
+                        <option value="6m">6 місяців</option>
+                        <option value="12m">1 рік</option>
+                    </select>
+                    <label for="historyCurrency">Валюта:</label>
+                    <select id="historyCurrency"></select>
                     </div>
-                    <div>
-                        <h3 style="text-align: center; margin-bottom: 1rem;">EUR (Євро)</h3>
-                        <canvas id="eurChart"></canvas>
-                    </div>
-                    <div>
-                        <h3 style="text-align: center; margin-bottom: 1rem;">GBP (Британський фунт)</h3>
-                        <canvas id="gbpChart"></canvas>
-                    </div>
+                <div style="margin-top: 1rem;">
+                    <h3 id="historyChartTitle" style="text-align: center; margin-bottom: 1rem;">USD (Долар США)</h3>
+                    <canvas id="historyChart"></canvas>
                 </div>
             </div>
         </div>
@@ -510,11 +1046,40 @@
         </div>
     </div>
 
+    <div id="profileOverlay" class="profile-overlay">
+        <div class="profile-overlay-content">
+            <div class="profile-overlay-header">
+                <h2>Мій профіль</h2>
+                <span class="close" id="profileOverlayClose">&times;</span>
+            </div>
+            <div class="profile-overlay-body" id="profileOverlayBody">
+                <p>Завантаження...</p>
+            </div>
+            <div class="profile-overlay-actions">
+                <button class="btn" onclick="window.location.href='profile-setup.html'">Редагувати</button>
+                <button class="btn btn-secondary" id="profileOverlayCollapse">Закрити</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark') {
+                    document.body.classList.add('dark-mode');
+                }
+            } catch (_) {
+                // ignore storage errors
+            }
+        })();
+
         const BASE_URL = 'http://localhost:9000/api';
         let currentCustomer = null;
         let accounts = [];
         let isLoading = false; // Прапорець для захисту від циклічного завантаження
+        let profileControlsInitialized = false;
+        let profilePopupVisible = false;
 
         // Безпечні утиліти для читання відповіді
         function isJsonResponse(response) {
@@ -565,6 +1130,31 @@
             }
         }
 
+        function applyTheme(theme) {
+            const useDark = theme === 'dark';
+            document.body.classList.toggle('dark-mode', useDark);
+            const toggles = [
+                document.getElementById('themeToggleBtn'),
+                document.getElementById('adminThemeToggleBtn')
+            ];
+            toggles.forEach(btn => {
+                if (btn) {
+                    btn.textContent = useDark ? '☀️' : '🌙';
+                    btn.title = useDark ? 'Увімкнути світлу тему' : 'Увімкнути темну тему';
+                }
+            });
+        }
+
+        function toggleTheme() {
+            const nextTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+            try {
+                localStorage.setItem('theme', nextTheme);
+            } catch (_) {
+                // ignore storage errors
+            }
+            applyTheme(nextTheme);
+        }
+
         // Перевіряємо авторизацію
         window.addEventListener('load', function() {
             const token = localStorage.getItem('accessToken');
@@ -580,6 +1170,14 @@
             }
 
             document.getElementById('userName').textContent = localStorage.getItem('username') || 'Користувач';
+            const initialTheme = localStorage.getItem('theme') || (document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            applyTheme(initialTheme);
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
+            if (themeToggleBtn && !themeToggleBtn.dataset.bound) {
+                themeToggleBtn.addEventListener('click', toggleTheme);
+                themeToggleBtn.dataset.bound = 'true';
+            }
+            setupProfileControls();
             
             // Завантажуємо дані тільки один раз
             if (!isLoading) {
@@ -800,34 +1398,124 @@
             }
         }
 
+        let cachedProfile = null;
+
         function displayProfile(customer) {
-            const container = document.getElementById('profileInfo');
+            cachedProfile = customer || null;
+            const summary = document.getElementById('profileSummary');
+            const overlayBody = document.getElementById('profileOverlayBody');
+            const toggleBtn = document.getElementById('profileToggleBtn');
+
+            if (!summary || !overlayBody || !toggleBtn) {
+                return;
+            }
             
             if (!customer) {
-                container.innerHTML = '<p class="error">Профіль не знайдено</p>';
+                summary.innerHTML = '<p class="error">Профіль не знайдено</p>';
+                overlayBody.innerHTML = '<p class="error">Профіль не знайдено</p>';
+                toggleBtn.disabled = true;
+                toggleBtn.title = 'Профіль недоступний';
                 return;
             }
 
-            const employers = customer.employers && customer.employers.length > 0 
+            toggleBtn.disabled = false;
+            toggleBtn.title = 'Переглянути профіль';
+
+            const employers = Array.isArray(customer.employers) && customer.employers.length > 0
                 ? customer.employers.join(', ') 
                 : 'Н/Д';
 
-            container.innerHTML = `
-                <div style="padding: 1rem;">
-                    <div style="margin-bottom: 1rem;">
-                        <strong>Ім'я:</strong> ${customer.name || 'Не вказано'}
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <strong>Email:</strong> ${customer.email || 'Не вказано'}
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <strong>Вік:</strong> ${customer.age || 'Не вказано'}
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <strong>Роботодавці:</strong> ${employers}
-                    </div>
-                </div>
+            summary.innerHTML = `
+                <p><strong>Ім'я:</strong> ${customer.name || 'Не вказано'}</p>
+                <p><strong>Email:</strong> ${customer.email || 'Не вказано'}</p>
+                <p><strong>Вік:</strong> ${customer.age || 'Не вказано'}</p>
             `;
+
+            overlayBody.innerHTML = `
+                <p><strong>Ім'я:</strong> ${customer.name || 'Не вказано'}</p>
+                <p><strong>Email:</strong> ${customer.email || 'Не вказано'}</p>
+                <p><strong>Вік:</strong> ${customer.age || 'Не вказано'}</p>
+                <p><strong>Роботодавці:</strong> ${employers}</p>
+                <p><strong>Всього акаунтів:</strong> ${Array.isArray(accounts) ? accounts.length : '—'}</p>
+            `;
+        }
+
+        function setupProfileControls() {
+            if (profileControlsInitialized) {
+                return;
+            }
+
+            const toggleBtn = document.getElementById('profileToggleBtn');
+            const popup = document.getElementById('profilePopup');
+            const expandBtn = document.getElementById('profileExpandBtn');
+            const overlay = document.getElementById('profileOverlay');
+            const overlayClose = document.getElementById('profileOverlayClose');
+            const overlayCollapse = document.getElementById('profileOverlayCollapse');
+
+            if (!toggleBtn || !popup || !overlay) {
+                return;
+            }
+
+            toggleBtn.addEventListener('click', function(event) {
+                event.stopPropagation();
+                if (!cachedProfile) {
+                    return;
+                }
+                profilePopupVisible = !profilePopupVisible;
+                popup.classList.toggle('show', profilePopupVisible);
+            });
+
+            if (expandBtn) {
+                expandBtn.addEventListener('click', function() {
+                    popup.classList.remove('show');
+                    profilePopupVisible = false;
+                    openProfileOverlay();
+                });
+            }
+
+            if (overlayClose) {
+                overlayClose.addEventListener('click', closeProfileOverlay);
+            }
+            if (overlayCollapse) {
+                overlayCollapse.addEventListener('click', closeProfileOverlay);
+            }
+
+            overlay.addEventListener('click', function(event) {
+                if (event.target === overlay) {
+                    closeProfileOverlay();
+                }
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!popup.contains(event.target) && event.target !== toggleBtn) {
+                    popup.classList.remove('show');
+                    profilePopupVisible = false;
+                }
+            });
+
+            profileControlsInitialized = true;
+        }
+
+        function openProfileOverlay() {
+            if (!cachedProfile) {
+                return;
+            }
+            const overlay = document.getElementById('profileOverlay');
+            if (overlay) {
+                overlay.classList.add('open');
+            }
+        }
+
+        function closeProfileOverlay() {
+            const overlay = document.getElementById('profileOverlay');
+            if (overlay) {
+                overlay.classList.remove('open');
+            }
+            const popup = document.getElementById('profilePopup');
+            if (popup) {
+                popup.classList.remove('show');
+            }
+            profilePopupVisible = false;
         }
 
         function displayAccounts(accounts) {
@@ -838,15 +1526,21 @@
                 return;
             }
 
-            container.innerHTML = accounts.map(account => `
+            container.innerHTML = accounts.map(account => {
+                const numericBalance = Number(account.balance ?? 0);
+                const isValid = Number.isFinite(numericBalance);
+                const displayBalance = isValid ? numericBalance.toFixed(2) : (account.balance ?? '0.00');
+
+                return `
                 <div class="account-item">
                     <div class="account-info">
                         <h3>${account.number}</h3>
-                        <p>Валюта: ${account.currency} | Баланс: ${account.balance}</p>
+                            <p>Валюта: ${account.currency} | Баланс: ${displayBalance}</p>
                     </div>
-                    <div class="account-balance">${account.balance} ${account.currency}</div>
+                        <div class="account-balance account-balance-large">${displayBalance} ${account.currency}</div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function displayTransactions(transactions) {
@@ -906,6 +1600,13 @@
             // Якщо відкриваємо вкладку курсів валют, завантажуємо дані
             if (tabName === 'exchange-rates') {
                 loadExchangeRates();
+            } else if (tabName === 'operations') {
+                setupQuickCalculators();
+                if (Object.keys(latestRatesUAH).length <= 1) {
+                    loadExchangeRates();
+                } else {
+                    updateAllQuickCalculators();
+                }
             }
         }
 
@@ -918,11 +1619,39 @@
         }
 
         // Графіки курсів валют
-        let exchangeRateCharts = {};
+        const CURRENCY_NAMES = {
+            'USD': 'Долар США',
+            'EUR': 'Євро',
+            'GBP': 'Британський фунт',
+            'CHF': 'Швейцарський франк'
+        };
+        const SUPPORTED_CURRENCIES = ['UAH', 'USD', 'EUR', 'GBP', 'CHF'];
+        const AVAILABLE_HISTORY_CURRENCIES = Object.keys(CURRENCY_NAMES);
+        const HISTORY_CURRENCY_LABELS = Object.fromEntries(
+            Object.entries(CURRENCY_NAMES).map(([code, name]) => [code, `${code} (${name})`])
+        );
+        const HISTORY_CHART_COLORS = {
+            'USD': { border: 'rgb(54, 162, 235)', background: 'rgba(54, 162, 235, 0.2)' },
+            'EUR': { border: 'rgb(255, 99, 132)', background: 'rgba(255, 99, 132, 0.2)' },
+            'GBP': { border: 'rgb(75, 192, 192)', background: 'rgba(75, 192, 192, 0.2)' },
+            'CHF': { border: 'rgb(153, 102, 255)', background: 'rgba(153, 102, 255, 0.2)' }
+        };
+        let currentHistoryPeriod = '7d';
+        let currentHistoryCurrency = 'USD';
+        let historyControlsInitialized = false;
+        let exchangeRateChart = null;
+        let latestRatesUAH = { 'UAH': 1 };
+        const QUICK_CALCULATOR_IDS = ['exchangeRatesQuickCalc', 'operationsQuickCalc'];
+        const initializedQuickCalculators = new Set();
 
         async function loadExchangeRates() {
             try {
-                const response = await fetchWithTimeout(`${BASE_URL}/exchange-rates/all?base=UAH`, {
+                const currencies = ['USD', 'EUR', 'GBP', 'CHF'];
+                const rates = {};
+
+                const fetchPromises = currencies.map(async currency => {
+                    try {
+                        const response = await fetchWithTimeout(`${BASE_URL}/exchange-rates?from=${currency}&to=UAH`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                     }
@@ -930,18 +1659,30 @@
 
                 if (response.ok) {
                     const data = await readResponseBodySafe(response);
-                    console.log('Exchange rates:', data);
-                    
-                    if (data && data.rates) {
-                        displayExchangeRates(data.rates);
-                        
-                        // Створюємо mock історичні дані для графіків (на практиці тут будуть дані з API)
-                        const mockHistory = generateMockHistory(data.rates);
-                        drawExchangeRateCharts(mockHistory);
+                            if (data && data.rate != null) {
+                                rates[currency] = Number(data.rate);
+                            }
+                        } else {
+                            const errorData = await readResponseBodySafe(response);
+                            console.error(`Failed to load rate for ${currency}:`, errorData);
+                        }
+                    } catch (error) {
+                        console.error(`Error loading rate for ${currency}:`, error);
                     }
+                });
+
+                await Promise.all(fetchPromises);
+
+                if (Object.keys(rates).length > 0) {
+                    console.log('Exchange rates (UAH per currency):', rates);
+                    latestRatesUAH = { 'UAH': 1, ...rates };
+                    displayExchangeRates(rates);
+                    setupHistoryControls();
+                    setupQuickCalculators();
+                    await loadExchangeRateHistory(currentHistoryPeriod);
+                    updateAllQuickCalculators();
                 } else {
-                    const errorText = await readResponseBodySafe(response);
-                    console.error('Failed to load exchange rates:', errorText);
+                    console.error('No exchange rates loaded');
                 }
             } catch (error) {
                 console.error('Error loading exchange rates:', error);
@@ -951,82 +1692,246 @@
         function displayExchangeRates(rates) {
             const container = document.getElementById('exchangeRatesList');
             
-            const currencyNames = {
-                'USD': 'Долар США',
-                'EUR': 'Євро',
-                'GBP': 'Британський фунт',
-                'CHF': 'Швейцарський франк'
-            };
-            
             container.innerHTML = Object.entries(rates).map(([currency, rate]) => `
                 <div class="account-item">
                     <div class="account-info">
-                        <h3>${currency}</h3>
-                        <p>${currencyNames[currency] || currency}</p>
+                        <h3>1 ${currency}</h3>
+                        <p>${CURRENCY_NAMES[currency] || currency}</p>
                     </div>
-                    <div class="account-balance">${rate.toFixed(2)} UAH</div>
+                    <div class="account-balance account-balance-large">${rate.toFixed(2)} UAH</div>
                 </div>
             `).join('');
         }
 
-        function generateMockHistory(rates) {
-            // Генеруємо mock історичні дані для останніх 7 днів
-            const history = {};
-            const today = new Date();
-            
-            Object.keys(rates).forEach(currency => {
-                const baseRate = rates[currency];
-                history[currency] = [];
-                
-                for (let i = 6; i >= 0; i--) {
-                    const date = new Date(today);
-                    date.setDate(date.getDate() - i);
-                    
-                    // Генеруємо випадкову варіацію ±2%
-                    const variation = (Math.random() * 0.04 - 0.02);
-                    const rate = baseRate * (1 + variation);
-                    
-                    history[currency].push({
-                        date: date.toLocaleDateString('uk-UA'),
-                        rate: parseFloat(rate.toFixed(2))
-                    });
+        async function loadExchangeRateHistory(period) {
+            try {
+                const params = new URLSearchParams({
+                    currencies: currentHistoryCurrency,
+                    period
+                });
+
+                const response = await fetchWithTimeout(`${BASE_URL}/exchange-rates/history?${params.toString()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await readResponseBodySafe(response);
+                    if (data && data.history) {
+                        drawExchangeRateCharts(data.history);
+                    } else {
+                        console.error('Unexpected history response format:', data);
+                    }
+                } else {
+                    const errorData = await readResponseBodySafe(response);
+                    console.error('Failed to load exchange rate history:', errorData);
                 }
+            } catch (error) {
+                console.error('Error loading exchange rate history:', error);
+            }
+        }
+
+        function setupHistoryControls() {
+            if (historyControlsInitialized) {
+                return;
+            }
+
+            const rangeSelect = document.getElementById('historyRange');
+            const currencySelect = document.getElementById('historyCurrency');
+            if (!rangeSelect || !currencySelect) {
+                return;
+            }
+
+            rangeSelect.value = currentHistoryPeriod;
+            rangeSelect.addEventListener('change', () => {
+                currentHistoryPeriod = rangeSelect.value;
+                loadExchangeRateHistory(currentHistoryPeriod);
             });
-            
-            return history;
+
+            if (currencySelect.options.length === 0) {
+                AVAILABLE_HISTORY_CURRENCIES.forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = HISTORY_CURRENCY_LABELS[code] || code;
+                    currencySelect.appendChild(option);
+                });
+            }
+
+            currencySelect.value = currentHistoryCurrency;
+            currencySelect.addEventListener('change', () => {
+                currentHistoryCurrency = currencySelect.value;
+                updateHistoryChartTitle();
+                loadExchangeRateHistory(currentHistoryPeriod);
+            });
+
+            updateHistoryChartTitle();
+
+            historyControlsInitialized = true;
+        }
+
+        function updateHistoryChartTitle() {
+            const titleEl = document.getElementById('historyChartTitle');
+            if (titleEl) {
+                titleEl.textContent = HISTORY_CURRENCY_LABELS[currentHistoryCurrency] || currentHistoryCurrency;
+            }
+        }
+
+        function setupQuickCalculators() {
+            QUICK_CALCULATOR_IDS.forEach(setupQuickCalculator);
+        }
+
+        function setupQuickCalculator(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container || initializedQuickCalculators.has(containerId)) {
+                return;
+            }
+
+            const amountInput = container.querySelector('[data-role="amount"]');
+            const fromSelect = container.querySelector('[data-role="from"]');
+            const toSelect = container.querySelector('[data-role="to"]');
+            const resultEl = container.querySelector('[data-role="result"]');
+
+            if (!amountInput || !fromSelect || !toSelect || !resultEl) {
+                return;
+            }
+
+            if (fromSelect.options.length === 0) {
+                SUPPORTED_CURRENCIES.forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = code === 'UAH' ? 'UAH (Гривня)' : (HISTORY_CURRENCY_LABELS[code] || code);
+                    fromSelect.appendChild(option.cloneNode(true));
+                    toSelect.appendChild(option);
+                });
+            }
+
+            const defaultFrom = container.dataset.defaultFrom || 'UAH';
+            const defaultTo = container.dataset.defaultTo || 'USD';
+
+            if (!fromSelect.value) {
+                fromSelect.value = SUPPORTED_CURRENCIES.includes(defaultFrom) ? defaultFrom : SUPPORTED_CURRENCIES[0];
+            }
+            if (!toSelect.value) {
+                const fallback = fromSelect.value !== defaultTo ? defaultTo : SUPPORTED_CURRENCIES.find(code => code !== fromSelect.value) || SUPPORTED_CURRENCIES[0];
+                toSelect.value = SUPPORTED_CURRENCIES.includes(defaultTo) ? defaultTo : fallback;
+            }
+
+            const handler = () => updateQuickCalculator(containerId);
+            [amountInput, fromSelect, toSelect].forEach(element => {
+                element.addEventListener('input', handler);
+                element.addEventListener('change', handler);
+            });
+
+            initializedQuickCalculators.add(containerId);
+            updateQuickCalculator(containerId);
+        }
+
+        function updateQuickCalculator(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) {
+                return;
+            }
+
+            const amountInput = container.querySelector('[data-role="amount"]');
+            const fromSelect = container.querySelector('[data-role="from"]');
+            const toSelect = container.querySelector('[data-role="to"]');
+            const resultEl = container.querySelector('[data-role="result"]');
+
+            if (!amountInput || !fromSelect || !toSelect || !resultEl) {
+                return;
+            }
+
+            const amount = Number(amountInput.value);
+            const fromCurrency = fromSelect.value;
+            const toCurrency = toSelect.value;
+
+            if (!fromCurrency || !toCurrency) {
+                resultEl.textContent = 'Оберіть валюти.';
+                return;
+            }
+
+            if (!Number.isFinite(amount) || amount <= 0) {
+                resultEl.textContent = 'Введіть суму більше 0.';
+                return;
+            }
+
+            const converted = convertAmountBetweenCurrencies(amount, fromCurrency, toCurrency);
+            if (converted == null) {
+                resultEl.textContent = 'Курси поки недоступні. Спробуйте пізніше.';
+                return;
+            }
+
+            resultEl.textContent = `${amount.toFixed(2)} ${fromCurrency} = ${converted.toFixed(2)} ${toCurrency}`;
+        }
+
+        function updateAllQuickCalculators() {
+            QUICK_CALCULATOR_IDS.forEach(updateQuickCalculator);
+        }
+
+        function convertAmountBetweenCurrencies(amount, fromCurrency, toCurrency) {
+            if (!Number.isFinite(amount) || amount < 0) {
+                return null;
+            }
+
+            const rateFrom = latestRatesUAH[fromCurrency];
+            const rateTo = latestRatesUAH[toCurrency];
+
+            if (typeof rateFrom !== 'number' || typeof rateTo !== 'number' || rateFrom <= 0 || rateTo <= 0) {
+                return null;
+            }
+
+            const amountInUAH = amount * rateFrom;
+            const converted = amountInUAH / rateTo;
+            return Number.isFinite(converted) ? converted : null;
         }
 
         function drawExchangeRateCharts(history) {
-            // Конфігурація кольорів для графіків
-            const chartColors = {
-                'USD': { border: 'rgb(54, 162, 235)', background: 'rgba(54, 162, 235, 0.2)' },
-                'EUR': { border: 'rgb(255, 99, 132)', background: 'rgba(255, 99, 132, 0.2)' },
-                'GBP': { border: 'rgb(75, 192, 192)', background: 'rgba(75, 192, 192, 0.2)' }
-            };
-            
-            Object.entries(chartColors).forEach(([currency, colors]) => {
-                const canvasId = currency.toLowerCase() + 'Chart';
-                const canvas = document.getElementById(canvasId);
-                
+            const canvas = document.getElementById('historyChart');
                 if (!canvas) {
-                    console.error('Canvas not found:', canvasId);
+                console.error('historyChart canvas not found');
                     return;
                 }
                 
-                // Знищуємо попередній графік якщо існує
-                if (exchangeRateCharts[currency]) {
-                    exchangeRateCharts[currency].destroy();
+            const currency = currentHistoryCurrency;
+            const currencyHistory = history && Array.isArray(history[currency]) ? history[currency] : [];
+            const labels = [];
+            const values = [];
+
+            currencyHistory.forEach(item => {
+                if (!item) return;
+                const numeric = Number(item.rate);
+                if (!Number.isFinite(numeric)) {
+                    return;
                 }
-                
-                const data = history[currency] || [];
-                
-                exchangeRateCharts[currency] = new Chart(canvas, {
+                const parsedDate = new Date(item.date);
+                const label = isNaN(parsedDate.getTime()) ? (item.date || '') : parsedDate.toLocaleDateString('uk-UA');
+                labels.push(label);
+                values.push(Number(numeric.toFixed(2)));
+            });
+
+            updateHistoryChartTitle();
+
+            if (exchangeRateChart) {
+                exchangeRateChart.destroy();
+                exchangeRateChart = null;
+            }
+
+            if (values.length === 0) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            const colors = HISTORY_CHART_COLORS[currency] || { border: 'rgb(54, 162, 235)', background: 'rgba(54, 162, 235, 0.2)' };
+
+            exchangeRateChart = new Chart(canvas, {
                     type: 'line',
                     data: {
-                        labels: data.map(d => d.date),
+                    labels,
                         datasets: [{
-                            label: `${currency}/UAH`,
-                            data: data.map(d => d.rate),
+                        label: `1 ${currency} = X UAH`,
+                        data: values,
                             borderColor: colors.border,
                             backgroundColor: colors.background,
                             borderWidth: 2,
@@ -1040,20 +1945,37 @@
                             legend: {
                                 display: true,
                                 position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `1 ${currency} = ${context.parsed.y.toFixed(2)} UAH`;
+                                }
+                            }
                             }
                         },
                         scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 8
+                            }
+                        },
                             y: {
                                 beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'UAH за 1 ' + currency
+                            },
                                 ticks: {
                                     callback: function(value) {
-                                        return value.toFixed(2) + ' UAH';
+                                    return Number(value).toFixed(2) + ' UAH';
                                     }
                                 }
                             }
                         }
                     }
-                });
             });
         }
 

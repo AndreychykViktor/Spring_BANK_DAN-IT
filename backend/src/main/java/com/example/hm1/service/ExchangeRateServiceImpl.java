@@ -1,13 +1,18 @@
 package com.example.hm1.service;
 
+import com.example.hm1.dto.ExchangeRateHistoryPoint;
 import com.example.hm1.entity.Currency;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Реалізація сервісу курсів валют
@@ -80,6 +85,51 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         }
         
         return rates;
+    }
+    
+    @Override
+    public Map<String, List<ExchangeRateHistoryPoint>> getHistoricalRates(List<Currency> currencies, int days) {
+        Map<String, List<ExchangeRateHistoryPoint>> history = new HashMap<>();
+        if (currencies == null || currencies.isEmpty() || days <= 0) {
+            return history;
+        }
+
+        LocalDate today = LocalDate.now();
+
+        for (Currency currency : currencies) {
+            if (currency == null || currency == Currency.UAH) {
+                continue;
+            }
+
+            BigDecimal baseRate = BASE_RATES_UAH.get(currency);
+            if (baseRate == null) {
+                continue;
+            }
+
+            List<ExchangeRateHistoryPoint> points = new ArrayList<>();
+            BigDecimal currentRate = baseRate;
+
+            for (int i = days - 1; i >= 0; i--) {
+                LocalDate date = today.minusDays(i);
+
+                if (!points.isEmpty()) {
+                    double variation = ThreadLocalRandom.current().nextDouble(-0.02, 0.02);
+                    currentRate = currentRate.multiply(BigDecimal.valueOf(1 + variation))
+                            .setScale(6, RoundingMode.HALF_UP);
+
+                    if (currentRate.compareTo(BigDecimal.ZERO) <= 0) {
+                        currentRate = baseRate;
+                    }
+                }
+
+                BigDecimal roundedRate = currentRate.setScale(2, RoundingMode.HALF_UP);
+                points.add(new ExchangeRateHistoryPoint(date.toString(), roundedRate));
+            }
+
+            history.put(currency.name(), points);
+        }
+
+        return history;
     }
 
     @Override

@@ -1,7 +1,9 @@
 package com.example.hm1.controller;
 
+import com.example.hm1.dto.EmployerRequestDTO;
 import com.example.hm1.entity.Employer;
 import com.example.hm1.service.EmployerService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,7 +20,10 @@ public class EmployerController {
     }
 
     @PostMapping
-    public Employer createEmployer(@RequestBody Employer employer) {
+    public Employer createEmployer(@Valid @RequestBody EmployerRequestDTO dto) {
+        Employer employer = new Employer();
+        employer.setName(dto.getName());
+        employer.setAddress(dto.getAddress());
         return employerService.save(employer);
     }
 

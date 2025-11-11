@@ -3,8 +3,10 @@ package com.example.hm1.controller;
 import com.example.hm1.dao.CustomerRepo;
 import com.example.hm1.dao.UserRepository;
 import com.example.hm1.dao.EmployerRepo;
+import com.example.hm1.dto.CustomerRequestDTO;
 import com.example.hm1.entity.User;
 import com.example.hm1.entity.Employer;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -160,7 +162,7 @@ public class CustomerController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<?> updateCurrentCustomer(@RequestBody Map<String, Object> customerData) {
+    public ResponseEntity<?> updateCurrentCustomer(@Valid @RequestBody CustomerRequestDTO customerDTO) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = authentication.getName();
@@ -182,112 +184,69 @@ public class CustomerController {
             // Якщо Customer не знайдено, створюємо нового
             if (customer == null) {
                 System.out.println("CustomerController.updateCurrentCustomer: Customer not found, creating new one");
-                // Створюємо нового Customer
-                String name = (String) customerData.get("name");
-                String email = (String) customerData.get("email");
-                Object ageObj = customerData.get("age");
-                Integer age = ageObj instanceof Integer ? (Integer) ageObj : 
-                             ageObj instanceof Number ? ((Number) ageObj).intValue() : null;
-                
-                if (name == null || email == null || age == null) {
-                    return ResponseEntity.badRequest().body("Name, email, and age are required");
-                }
-                
-                customer = new Customer(name, email, age);
+                customer = new Customer(customerDTO.getName(), customerDTO.getEmail(), customerDTO.getAge());
                 customer.setUser(user);
                 customer = customerRepo.save(customer);
                 System.out.println("CustomerController.updateCurrentCustomer: Created new customer with ID: " + customer.getId());
             }
             
             // Оновлюємо поля
-            if (customerData.containsKey("name")) {
-                String name = (String) customerData.get("name");
-                if (name != null && !name.trim().isEmpty()) {
-                    customer.setName(name.trim());
-                    System.out.println("CustomerController.updateCurrentCustomer: Updated name to: " + name);
-                }
+            if (customerDTO.getName() != null && !customerDTO.getName().trim().isEmpty()) {
+                customer.setName(customerDTO.getName().trim());
+                System.out.println("CustomerController.updateCurrentCustomer: Updated name to: " + customerDTO.getName());
             }
-            if (customerData.containsKey("email")) {
-                String email = (String) customerData.get("email");
-                if (email != null && !email.trim().isEmpty()) {
-                    customer.setEmail(email.trim());
-                    System.out.println("CustomerController.updateCurrentCustomer: Updated email to: " + email);
-                }
+            if (customerDTO.getEmail() != null && !customerDTO.getEmail().trim().isEmpty()) {
+                customer.setEmail(customerDTO.getEmail().trim());
+                System.out.println("CustomerController.updateCurrentCustomer: Updated email to: " + customerDTO.getEmail());
             }
-            if (customerData.containsKey("age")) {
-                Object ageObj = customerData.get("age");
-                if (ageObj != null) {
-                    Integer age;
-                    if (ageObj instanceof Integer) {
-                        age = (Integer) ageObj;
-                    } else if (ageObj instanceof Number) {
-                        age = ((Number) ageObj).intValue();
-                    } else {
-                        age = Integer.parseInt(ageObj.toString());
-                    }
-                    customer.setAge(age);
-                    System.out.println("CustomerController.updateCurrentCustomer: Updated age to: " + age);
-                }
+            if (customerDTO.getAge() != null) {
+                customer.setAge(customerDTO.getAge());
+                System.out.println("CustomerController.updateCurrentCustomer: Updated age to: " + customerDTO.getAge());
             }
             
             // Оновлюємо роботодавця
-            if (customerData.containsKey("employerId")) {
-                Object employerIdObj = customerData.get("employerId");
-                if (employerIdObj != null && !employerIdObj.toString().isEmpty()) {
-                    try {
-                        Long employerId = employerIdObj instanceof Number ? 
-                                ((Number) employerIdObj).longValue() : 
-                                Long.parseLong(employerIdObj.toString());
-                        
-                        if (employerId > 0) {
-                            Employer employer = employerRepo.findById(employerId).orElse(null);
-                            if (employer != null) {
-                                Set<Employer> employers = new HashSet<>();
-                                employers.add(employer);
-                                customer.setEmployers(employers);
-                            } else {
-                                System.err.println("Employer not found with ID: " + employerId);
-                            }
-                        }
-                    } catch (NumberFormatException e) {
-                        System.err.println("Invalid employerId format: " + employerIdObj);
-                    }
+            if (customerDTO.getEmployerId() != null && customerDTO.getEmployerId() > 0) {
+                Employer employer = employerRepo.findById(customerDTO.getEmployerId()).orElse(null);
+                if (employer != null) {
+                    Set<Employer> employers = new HashSet<>();
+                    employers.add(employer);
+                    customer.setEmployers(employers);
+                } else {
+                    System.err.println("Employer not found with ID: " + customerDTO.getEmployerId());
                 }
-            } else if (customerData.containsKey("employerName")) {
+            } else if (customerDTO.getEmployerName() != null && !customerDTO.getEmployerName().trim().isEmpty()) {
                 // Створюємо/підставляємо роботодавця за назвою
-                String employerName = (String) customerData.get("employerName");
-                String employerAddress = (String) customerData.get("employerAddress");
+                String employerName = customerDTO.getEmployerName().trim();
+                String employerAddress = customerDTO.getEmployerAddress() != null ? customerDTO.getEmployerAddress().trim() : "";
                 
-                if (employerName != null && !employerName.trim().isEmpty()) {
-                    Employer employer = employerRepo.findByNameIgnoreCase(employerName.trim()).orElse(null);
-                    if (employer == null) {
-                        try {
-                            employer = new Employer();
-                            employer.setName(employerName.trim());
-                            employer.setAddress(employerAddress != null ? employerAddress.trim() : "");
-                            employer = employerRepo.save(employer);
-                            System.out.println("CustomerController.updateCurrentCustomer: Created new employer: " + employer.getName() + " with ID: " + employer.getId());
-                        } catch (org.springframework.dao.DataIntegrityViolationException dup) {
-                            // Якщо паралельно створили — повторно зчитаємо
-                            employer = employerRepo.findByNameIgnoreCase(employerName.trim()).orElse(null);
-                            System.out.println("CustomerController.updateCurrentCustomer: Found existing employer after collision: " + (employer != null ? employer.getName() : "null"));
-                        }
+                Employer employer = employerRepo.findByNameIgnoreCase(employerName).orElse(null);
+                if (employer == null) {
+                    try {
+                        employer = new Employer();
+                        employer.setName(employerName);
+                        employer.setAddress(employerAddress);
+                        employer = employerRepo.save(employer);
+                        System.out.println("CustomerController.updateCurrentCustomer: Created new employer: " + employer.getName() + " with ID: " + employer.getId());
+                    } catch (org.springframework.dao.DataIntegrityViolationException dup) {
+                        // Якщо паралельно створили — повторно зчитаємо
+                        employer = employerRepo.findByNameIgnoreCase(employerName).orElse(null);
+                        System.out.println("CustomerController.updateCurrentCustomer: Found existing employer after collision: " + (employer != null ? employer.getName() : "null"));
+                    }
+                } else {
+                    System.out.println("CustomerController.updateCurrentCustomer: Using existing employer: " + employer.getName() + " with ID: " + employer.getId());
+                }
+                if (employer != null) {
+                    // Отримуємо існуючий set або створюємо новий
+                    Set<Employer> employers = customer.getEmployers();
+                    if (employers == null) {
+                        employers = new HashSet<>();
                     } else {
-                        System.out.println("CustomerController.updateCurrentCustomer: Using existing employer: " + employer.getName() + " with ID: " + employer.getId());
+                        // Очищаємо старі зв'язки, щоб уникнути дублікатів
+                        employers.clear();
                     }
-                    if (employer != null) {
-                        // Отримуємо існуючий set або створюємо новий
-                        Set<Employer> employers = customer.getEmployers();
-                        if (employers == null) {
-                            employers = new HashSet<>();
-                        } else {
-                            // Очищаємо старі зв'язки, щоб уникнути дублікатів
-                            employers.clear();
-                        }
-                        employers.add(employer);
-                        customer.setEmployers(employers);
-                        System.out.println("CustomerController.updateCurrentCustomer: Set employer for customer. Employer ID: " + employer.getId());
-                    }
+                    employers.add(employer);
+                    customer.setEmployers(employers);
+                    System.out.println("CustomerController.updateCurrentCustomer: Set employer for customer. Employer ID: " + employer.getId());
                 }
             }
             

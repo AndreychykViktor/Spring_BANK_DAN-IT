@@ -2,8 +2,11 @@
 package com.example.hm1.controller;
 
 import com.example.hm1.dao.AccountRepo;
+import com.example.hm1.dto.AccountOperationDTO;
+import com.example.hm1.dto.TransferDTO;
 import com.example.hm1.entity.Account;
 import com.example.hm1.service.AccountService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -44,9 +46,9 @@ public class AccountController {
 
     @PostMapping("/{accountNumber}/deposit")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<?> deposit(@PathVariable String accountNumber, @RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> deposit(@PathVariable String accountNumber, @Valid @RequestBody AccountOperationDTO dto) {
         try {
-            Double amount = ((Number) request.get("amount")).doubleValue();
+            Double amount = dto.getAmount().doubleValue();
             System.out.println("AccountController.deposit: accountNumber=" + accountNumber + ", amount=" + amount);
             
             Account account = accountRepo.findByNumber(accountNumber);
@@ -65,9 +67,9 @@ public class AccountController {
 
     @PostMapping("/{accountNumber}/withdraw")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<?> withdraw(@PathVariable String accountNumber, @RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> withdraw(@PathVariable String accountNumber, @Valid @RequestBody AccountOperationDTO dto) {
         try {
-            Double amount = ((Number) request.get("amount")).doubleValue();
+            Double amount = dto.getAmount().doubleValue();
             System.out.println("AccountController.withdraw: accountNumber=" + accountNumber + ", amount=" + amount);
             
             Account account = accountRepo.findByNumber(accountNumber);
@@ -86,10 +88,10 @@ public class AccountController {
 
     @PostMapping("/{fromAccountNumber}/transfer")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<?> transfer(@PathVariable String fromAccountNumber, @RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> transfer(@PathVariable String fromAccountNumber, @Valid @RequestBody TransferDTO dto) {
         try {
-            String toAccountNumber = (String) request.get("toAccountNumber");
-            Double amount = ((Number) request.get("amount")).doubleValue();
+            String toAccountNumber = dto.getToAccountNumber();
+            Double amount = dto.getAmount().doubleValue();
             System.out.println("AccountController.transfer: from=" + fromAccountNumber + ", to=" + toAccountNumber + ", amount=" + amount);
             
             Account fromAccount = accountRepo.findByNumber(fromAccountNumber);

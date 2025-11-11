@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Адмін панель - Banking App</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -11,10 +12,29 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --light-bg: #f5f7fa;
+            --dark-bg: #111827;
+            --dark-card: #1b2233;
+            --dark-card-alt: #1f273b;
+            --dark-border: rgba(148, 163, 184, 0.18);
+            --dark-text: #e5e9f5;
+            --dark-muted: #94a3b8;
+            --dark-accent: #f87171;
+            --dark-accent-secondary: #38bdf8;
+            --dark-hover: rgba(148, 163, 184, 0.08);
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: var(--light-bg);
             min-height: 100vh;
+            color: #222;
+        }
+
+        body.dark-mode {
+            background: var(--dark-bg);
+            color: var(--dark-text);
         }
 
         .header {
@@ -27,6 +47,11 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
+        body.dark-mode .header {
+            background: linear-gradient(135deg, #3a1f37 0%, #591d2f 50%, #2a1d3d 100%);
+            box-shadow: 0 6px 20px rgba(8, 11, 20, 0.55);
+        }
+
         .header h1 {
             font-size: 1.5rem;
         }
@@ -35,6 +60,31 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+        }
+
+        .theme-toggle {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.35rem 0.55rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.05rem;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-1px);
+        }
+
+        body.dark-mode .theme-toggle {
+            background: rgba(15, 23, 42, 0.55);
+            border-color: rgba(148,163,184,0.35);
+        }
+
+        body.dark-mode .theme-toggle:hover {
+            background: rgba(15, 23, 42, 0.75);
         }
 
         .logout-btn {
@@ -51,6 +101,15 @@
             background: rgba(255,255,255,0.3);
         }
 
+        body.dark-mode .logout-btn {
+            background: rgba(15, 23, 42, 0.55);
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+
+        body.dark-mode .logout-btn:hover {
+            background: rgba(15, 23, 42, 0.75);
+        }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -64,6 +123,76 @@
             margin-bottom: 2rem;
         }
 
+        .account-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            background: white;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .account-item:hover {
+            background: #fdf2f8;
+            border-color: #fecdd3;
+        }
+
+        body.dark-mode .account-item {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            box-shadow: 0 8px 24px rgba(8, 11, 20, 0.45);
+            color: var(--dark-text);
+        }
+
+        body.dark-mode .account-item:hover {
+            background: rgba(248, 113, 113, 0.16);
+            border-color: rgba(248, 113, 113, 0.35);
+            box-shadow: 0 10px 32px rgba(8, 11, 20, 0.6);
+        }
+
+        .account-item .account-info h3 {
+            margin-bottom: 0.35rem;
+            color: #333;
+        }
+
+        body.dark-mode .account-item .account-info h3 {
+            color: var(--dark-text);
+        }
+
+        .account-item .account-info p {
+            margin: 0;
+            color: #666;
+        }
+
+        body.dark-mode .account-item .account-info p {
+            color: var(--dark-muted);
+        }
+
+        .account-balance {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #dc3545;
+        }
+
+        body.dark-mode .account-balance {
+            color: var(--dark-accent);
+        }
+
+        .account-balance.account-balance-large {
+            font-size: 1.3rem;
+        }
+
+        .account-balance.account-balance-rate {
+            color: #2563eb;
+        }
+
+        body.dark-mode .account-balance.account-balance-rate {
+            color: var(--dark-accent-secondary);
+        }
+
         .stat-card {
             background: white;
             border-radius: 10px;
@@ -72,9 +201,41 @@
             text-align: center;
         }
 
+        body.dark-mode .stat-card {
+            background: var(--dark-card);
+            box-shadow: 0 8px 26px rgba(8, 11, 20, 0.55);
+            border: 1px solid var(--dark-border);
+        }
+
         .stat-card h3 {
             color: #333;
             margin-bottom: 0.5rem;
+        }
+
+        body.dark-mode .stat-card h3 {
+            color: var(--dark-text);
+        }
+
+        body.dark-mode .card h3,
+        body.dark-mode .card h4 {
+            color: var(--dark-text);
+        }
+
+        body.dark-mode .card p {
+            color: var(--dark-muted);
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        body.dark-mode .stat-label {
+            color: var(--dark-muted);
+        }
+
+        .stat-number {
+            font-size: 1.2rem;
         }
 
         .stat-card .number {
@@ -83,10 +244,18 @@
             color: #667eea;
         }
 
+        body.dark-mode .stat-card .number {
+            color: var(--dark-accent-secondary);
+        }
+
         .tabs {
             display: flex;
             margin-bottom: 1rem;
             border-bottom: 2px solid #e1e5e9;
+        }
+
+        body.dark-mode .tabs {
+            border-bottom-color: rgba(148,163,184,0.15);
         }
 
         .tab {
@@ -96,10 +265,19 @@
             transition: all 0.3s;
         }
 
+        body.dark-mode .tab {
+            color: var(--dark-muted);
+        }
+
         .tab.active {
             border-bottom-color: #dc3545;
             color: #dc3545;
             font-weight: bold;
+        }
+
+        body.dark-mode .tab.active {
+            border-bottom-color: var(--dark-accent);
+            color: var(--dark-accent);
         }
 
         .tab-content {
@@ -118,10 +296,269 @@
             margin-bottom: 1.5rem;
         }
 
+        body.dark-mode .card {
+            background: var(--dark-card);
+            box-shadow: 0 12px 32px rgba(8, 11, 20, 0.55);
+            border: 1px solid var(--dark-border);
+            color: var(--dark-text);
+        }
+
         .card h2 {
             color: #333;
             margin-bottom: 1rem;
             font-size: 1.2rem;
+        }
+
+        body.dark-mode .card h2 {
+            color: var(--dark-text);
+        }
+
+        .history-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .history-controls label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        body.dark-mode .history-controls label {
+            color: var(--dark-muted);
+        }
+
+        .history-controls select {
+            padding: 0.4rem 0.6rem;
+            border-radius: 5px;
+            border: 1px solid #e1e5e9;
+            background: #fff;
+        }
+
+        body.dark-mode .history-controls select {
+            background: var(--dark-card-alt);
+            border-color: rgba(148,163,184,0.25);
+            color: var(--dark-text);
+        }
+
+        .calculator-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group-inline {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .result-box {
+            background: #f5f7fa;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #e1e5e9;
+        }
+
+        body.dark-mode .result-box {
+            background: var(--dark-card-alt);
+            border-color: rgba(148,163,184,0.2);
+            color: var(--dark-text);
+        }
+
+        .result-box strong {
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+
+        body.dark-mode .result-box strong {
+            color: var(--dark-text);
+        }
+
+        .profile-trigger {
+            position: relative;
+        }
+
+        .profile-toggle {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.4rem 0.6rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background 0.3s;
+        }
+
+        .profile-toggle:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        body.dark-mode .profile-toggle {
+            background: rgba(15, 23, 42, 0.55);
+            border-color: rgba(148,163,184,0.35);
+        }
+
+        body.dark-mode .profile-toggle:hover {
+            background: rgba(15, 23, 42, 0.75);
+        }
+
+        .profile-popup {
+            position: absolute;
+            right: 0;
+            top: 2.5rem;
+            background: white;
+            border: 1px solid #e1e5e9;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            width: 260px;
+            max-width: 90vw;
+            display: none;
+            z-index: 1500;
+        }
+
+        body.dark-mode .profile-popup {
+            background: var(--dark-card);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .profile-popup.show {
+            display: block;
+        }
+
+        .profile-popup-content {
+            padding: 1rem;
+        }
+
+        .profile-popup-content p {
+            margin: 0.35rem 0;
+            color: #444;
+            font-size: 0.95rem;
+        }
+
+        body.dark-mode .profile-popup-content p {
+            color: var(--dark-muted);
+        }
+
+        .profile-popup-content p strong {
+            display: inline-block;
+            width: 90px;
+            color: #666;
+        }
+
+        body.dark-mode .profile-popup-content p strong {
+            color: var(--dark-accent);
+        }
+
+        .profile-popup-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .profile-popup-actions .btn-link {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.9rem;
+        }
+
+        .profile-popup-actions .btn-link:hover {
+            text-decoration: underline;
+        }
+
+        .profile-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 2rem 1rem;
+        }
+
+        .profile-overlay.open {
+            display: flex;
+        }
+
+        .profile-overlay-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 640px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        body.dark-mode .profile-overlay-content {
+            background: var(--dark-card);
+            color: var(--dark-text);
+        }
+
+        .profile-overlay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .profile-overlay-header h2 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .profile-overlay-header .close {
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        body.dark-mode .profile-overlay-header .close {
+            color: var(--dark-muted);
+        }
+
+        .profile-overlay-header .close:hover {
+            color: #000;
+        }
+
+        body.dark-mode .profile-overlay-header .close:hover {
+            color: var(--dark-accent);
+        }
+
+        .profile-overlay-body p {
+            margin: 0.5rem 0;
+            color: #333;
+        }
+
+        body.dark-mode .profile-overlay-body p {
+            color: var(--dark-muted);
+        }
+
+        body.dark-mode .profile-overlay-body p strong {
+            color: var(--dark-accent);
+        }
+
+        .profile-overlay-body p strong {
+            display: inline-block;
+            width: 120px;
+        }
+
+        .profile-overlay-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
         }
 
         .table {
@@ -136,14 +573,88 @@
             border-bottom: 1px solid #e1e5e9;
         }
 
+        body.dark-mode .table th,
+        body.dark-mode .table td {
+            color: var(--dark-text);
+            border-bottom: 1px solid rgba(148,163,184,0.15);
+        }
+
+        body.dark-mode .table td strong {
+            color: var(--dark-text);
+        }
+
         .table th {
             background: #f8f9fa;
             font-weight: 600;
             color: #333;
         }
 
+        body.dark-mode .table th {
+            background: rgba(30, 41, 59, 0.85);
+            color: var(--dark-muted);
+            letter-spacing: 0.02em;
+        }
+
         .table tr:hover {
             background: #f8f9fa;
+        }
+
+        body.dark-mode .table tr {
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        body.dark-mode .table tr:nth-child(even) {
+            background: rgba(15, 23, 42, 0.45);
+        }
+
+        body.dark-mode .table tr:nth-child(odd) {
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        body.dark-mode .table tr:hover {
+            background: rgba(248, 113, 113, 0.12);
+            color: var(--dark-text);
+            box-shadow: inset 0 0 0 1px rgba(248,113,113,0.25);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .details-section h3 {
+            margin-top: 1.5rem;
+        }
+
+        body.dark-mode .details-section h3 {
+            color: var(--dark-text);
+        }
+
+        .details-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background: #f8f9fa;
+        }
+
+        body.dark-mode .sticky-header {
+            background: rgba(30, 41, 59, 0.9);
+            color: var(--dark-muted);
+        }
+
+        .details-empty {
+            margin-top: 1rem;
+            color: #999;
+        }
+
+        body.dark-mode .details-empty {
+            color: var(--dark-muted);
         }
 
         .btn {
@@ -162,8 +673,21 @@
             transform: translateY(-2px);
         }
 
+        body.dark-mode .btn {
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            box-shadow: 0 6px 18px rgba(248, 113, 113, 0.35);
+        }
+
+        body.dark-mode .btn:hover {
+            box-shadow: 0 10px 24px rgba(248, 113, 113, 0.45);
+        }
+
         .btn-success {
             background: #28a745;
+        }
+
+        body.dark-mode .btn-success {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
         }
 
         .btn-warning {
@@ -171,12 +695,25 @@
             color: #333;
         }
 
+        body.dark-mode .btn-warning {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: #fff7ed;
+        }
+
         .btn-info {
             background: #17a2b8;
         }
 
+        body.dark-mode .btn-info {
+            background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+        }
+
         .btn-secondary {
             background: #6c757d;
+        }
+
+        body.dark-mode .btn-secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
         }
 
         .badge {
@@ -188,9 +725,20 @@
             text-transform: uppercase;
         }
 
+        body.dark-mode .badge {
+            background: rgba(148,163,184,0.14);
+            color: var(--dark-text);
+            border: 1px solid rgba(148,163,184,0.2);
+        }
+
         .badge-success {
             background: #d4edda;
             color: #155724;
+        }
+
+        body.dark-mode .badge-success {
+            background: rgba(34, 197, 94, 0.18);
+            color: #4ade80;
         }
 
         .badge-danger {
@@ -198,14 +746,29 @@
             color: #721c24;
         }
 
+        body.dark-mode .badge-danger {
+            background: rgba(248, 113, 113, 0.18);
+            color: var(--dark-accent);
+        }
+
         .badge-warning {
             background: #fff3cd;
             color: #856404;
         }
 
+        body.dark-mode .badge-warning {
+            background: rgba(251, 191, 36, 0.18);
+            color: #facc15;
+        }
+
         .badge-info {
             background: #d1ecf1;
             color: #0c5460;
+        }
+
+        body.dark-mode .badge-info {
+            background: rgba(56, 189, 248, 0.18);
+            color: var(--dark-accent-secondary);
         }
 
         .form-group {
@@ -219,6 +782,10 @@
             font-weight: 500;
         }
 
+        body.dark-mode .form-group label {
+            color: var(--dark-muted);
+        }
+
         .form-group input, .form-group select {
             width: 100%;
             padding: 0.75rem;
@@ -227,9 +794,21 @@
             font-size: 1rem;
         }
 
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group select {
+            background: var(--dark-card-alt);
+            border-color: rgba(148,163,184,0.25);
+            color: var(--dark-text);
+        }
+
         .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #dc3545;
+        }
+
+        body.dark-mode .form-group input:focus,
+        body.dark-mode .form-group select:focus {
+            border-color: var(--dark-accent);
         }
 
         .modal {
@@ -254,6 +833,13 @@
             overflow-y: auto;
         }
 
+        body.dark-mode .modal-content {
+            background: var(--dark-card);
+            color: var(--dark-text);
+            border: 1px solid var(--dark-border);
+            box-shadow: 0 18px 40px rgba(8, 11, 20, 0.6);
+        }
+
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -271,6 +857,14 @@
             color: #000;
         }
 
+        body.dark-mode .close {
+            color: var(--dark-muted);
+        }
+
+        body.dark-mode .close:hover {
+            color: var(--dark-accent);
+        }
+
         .error {
             background: #fee;
             color: #c33;
@@ -278,6 +872,12 @@
             border-radius: 5px;
             margin-bottom: 1rem;
             border: 1px solid #fcc;
+        }
+
+        body.dark-mode .error {
+            background: rgba(248, 113, 113, 0.12);
+            color: var(--dark-accent);
+            border-color: rgba(248, 113, 113, 0.3);
         }
 
         .success {
@@ -289,9 +889,19 @@
             border: 1px solid #cfc;
         }
 
+        body.dark-mode .success {
+            background: rgba(74, 222, 128, 0.12);
+            color: #4ade80;
+            border-color: rgba(74, 222, 128, 0.28);
+        }
+
         .loading {
             text-align: center;
             padding: 2rem;
+        }
+
+        body.dark-mode .loading p {
+            color: var(--dark-muted);
         }
 
         .spinner {
@@ -323,6 +933,12 @@
             border-radius: 5px;
         }
 
+        body.dark-mode .search-bar input {
+            background: var(--dark-card-alt);
+            border-color: rgba(148,163,184,0.25);
+            color: var(--dark-text);
+        }
+
         .pagination {
             display: flex;
             justify-content: center;
@@ -338,9 +954,21 @@
             border-radius: 5px;
         }
 
+        body.dark-mode .pagination button {
+            background: var(--dark-card-alt);
+            color: var(--dark-text);
+            border-color: rgba(148,163,184,0.2);
+        }
+
         .pagination button.active {
             background: #dc3545;
             color: white;
+        }
+
+        body.dark-mode .pagination button.active {
+            background: var(--dark-accent);
+            color: var(--dark-text);
+            border-color: rgba(248,113,113,0.35);
         }
 
         .pagination button:disabled {
@@ -348,9 +976,19 @@
             cursor: not-allowed;
         }
 
+        body.dark-mode .pagination button:disabled {
+            opacity: 0.35;
+        }
+
         .type-deposit {
             background: #d1ecf1;
             color: #0c5460;
+        }
+
+        body.dark-mode .type-deposit {
+            background: rgba(56, 189, 248, 0.18);
+            color: var(--dark-accent-secondary);
+            border: 1px solid rgba(56, 189, 248, 0.25);
         }
 
         .type-withdrawal {
@@ -358,9 +996,21 @@
             color: #856404;
         }
 
+        body.dark-mode .type-withdrawal {
+            background: rgba(251, 191, 36, 0.18);
+            color: #facc15;
+            border: 1px solid rgba(251, 191, 36, 0.25);
+        }
+
         .type-transfer {
             background: #d4edda;
             color: #155724;
+        }
+
+        body.dark-mode .type-transfer {
+            background: rgba(34, 197, 94, 0.18);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.25);
         }
 
         @media (max-width: 768px) {
@@ -387,37 +1037,33 @@
         <h1>🏦 Banking App - Адмін панель</h1>
         <div class="user-info">
             <span id="userName">Адміністратор</span>
-            <button class="logout-btn" onclick="logout()">Вийти</button>
+            <button class="theme-toggle" id="adminThemeToggleBtn" title="Перемкнути тему">🌙</button>
+            <div class="profile-trigger">
+                <button class="profile-toggle" id="adminProfileToggle" title="Мій профіль">👤</button>
+                <div class="profile-popup" id="adminProfilePopup">
+                    <div class="profile-popup-content">
+                        <div id="adminProfileSummary">
+                            <p>Завантаження...</p>
         </div>
+                        <div class="profile-popup-actions">
+                            <button class="btn-link" id="adminProfileExpand">Розгорнути</button>
+                            <button class="btn-link" onclick="window.location.href='profile-setup.html'">Редагувати</button>
     </div>
+            </div>
+            </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">Вийти</button>
+            </div>
+        </div>
 
     <div class="container">
         <div id="message"></div>
-
-        <!-- Статистика -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Всього користувачів</h3>
-                <div class="number" id="totalUsers">-</div>
-            </div>
-            <div class="stat-card">
-                <h3>Всього акаунтів</h3>
-                <div class="number" id="totalAccounts">-</div>
-            </div>
-            <div class="stat-card">
-                <h3>Всього транзакцій</h3>
-                <div class="number" id="totalTransactions">-</div>
-            </div>
-            <div class="stat-card">
-                <h3>Загальний баланс</h3>
-                <div class="number" id="totalBalance">-</div>
-            </div>
-        </div>
 
         <div class="tabs">
             <div class="tab active" onclick="showTab('users')">Користувачі</div>
             <div class="tab" onclick="showTab('transactions')">Транзакції</div>
             <div class="tab" onclick="showTab('accounts')">Акаунти</div>
+            <div class="tab" onclick="showTab('exchange')">Курси валют</div>
             <div class="tab" onclick="showTab('roles')">Управління ролями</div>
             <div class="tab" onclick="showTab('my-profile')">Мій профіль</div>
         </div>
@@ -425,7 +1071,13 @@
         <!-- Користувачі -->
         <div id="users" class="tab-content active">
             <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h2>Всі користувачі</h2>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span class="stat-label">Всього користувачів:</span>
+                        <span class="number stat-number" id="totalUsers">-</span>
+                    </div>
+                </div>
                 <div class="search-bar">
                     <input type="text" id="userSearch" placeholder="Пошук користувачів...">
                     <button class="btn" onclick="searchUsers()">Пошук</button>
@@ -442,7 +1094,13 @@
         <!-- Транзакції -->
         <div id="transactions" class="tab-content">
             <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h2>Всі транзакції</h2>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span class="stat-label">Всього транзакцій:</span>
+                        <span class="number stat-number" id="totalTransactions">-</span>
+                    </div>
+                </div>
                 <div class="search-bar">
                     <input type="date" id="startDate" placeholder="Дата початку">
                     <input type="date" id="endDate" placeholder="Дата кінця">
@@ -466,7 +1124,19 @@
         <!-- Акаунти -->
         <div id="accounts" class="tab-content">
             <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
                 <h2>Всі акаунти</h2>
+                    <div style="display: flex; align-items: center; gap: 2rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="stat-label">Всього акаунтів:</span>
+                            <span class="number stat-number" id="totalAccounts">-</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="stat-label">Загальний баланс:</span>
+                            <span class="number stat-number" id="totalBalance">-</span>
+                        </div>
+                    </div>
+                </div>
                 <div id="accountsList">
                     <div class="loading">
                         <div class="spinner"></div>
@@ -474,51 +1144,74 @@
                     </div>
                 </div>
             </div>
+
         </div>
 
-        <!-- Управління ролями -->
-        <div id="roles" class="tab-content">
+        <div id="exchange" class="tab-content">
             <div class="card">
-                <h2>Управління ролями</h2>
-                <div class="form-group">
-                    <label>Користувач:</label>
-                    <select id="roleUserSelect">
-                        <option value="">Оберіть користувача</option>
-                    </select>
+                <h2>Курси валют</h2>
+                <p class="stat-label" style="margin-bottom: 1rem;">Поточні курси (UAH за 1 одиницю) та швидка конвертація.</p>
+                <div class="calculator-section" id="adminExchangeCalc" data-default-from="UAH" data-default-to="USD">
+                    <div class="form-group-inline">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Сума:</label>
+                            <input type="number" data-role="amount" placeholder="100" min="0" step="0.01" value="100">
                 </div>
-                <div class="form-group">
-                    <label>Роль:</label>
-                    <select id="roleSelect">
-                        <option value="ROLE_USER">Користувач</option>
-                        <option value="ROLE_ADMIN">Адміністратор</option>
-                    </select>
+                        <div class="form-group" style="width: 140px;">
+                            <label>З валютy</label>
+                            <select data-role="from"></select>
                 </div>
-                <button class="btn btn-success" onclick="assignRole()">Призначити роль</button>
-                <button class="btn btn-warning" onclick="removeRole()">Видалити роль</button>
+                        <div class="form-group" style="width: 140px;">
+                            <label>У валюту</label>
+                            <select data-role="to"></select>
+                        </div>
+                    </div>
+                    <div class="result-box">
+                        <strong>Результат:</strong>
+                        <span data-role="result">—</span>
+                    </div>
+                </div>
+                <div id="adminExchangeRatesList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Завантаження курсів...</p>
+                    </div>
             </div>
         </div>
 
-        <!-- Мій профіль (для адміна) -->
+            <div class="card">
+                <h2>Графік курсів</h2>
+                <div class="history-controls">
+                    <label for="adminHistoryRange">Період:</label>
+                    <select id="adminHistoryRange">
+                        <option value="7d">Останні 7 днів</option>
+                        <option value="14d">Останні 14 днів</option>
+                        <option value="1m">1 місяць</option>
+                        <option value="3m">3 місяці</option>
+                        <option value="6m">6 місяців</option>
+                        <option value="12m">1 рік</option>
+                    </select>
+                    <label for="adminHistoryCurrency">Валюта:</label>
+                    <select id="adminHistoryCurrency"></select>
+                </div>
+                <canvas id="adminHistoryChart"></canvas>
+            </div>
+            </div>
+
         <div id="my-profile" class="tab-content">
             <div class="card">
-                <h2>Мої особисті дані</h2>
-                <div id="adminProfileInfo">
-                    <div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>
-                </div>
-                <button class="btn" onclick="window.location.href='profile-setup.html'">Редагувати профіль</button>
-            </div>
-
-            <div class="card">
                 <h2>Мої рахунки</h2>
-                <button class="btn btn-success" onclick="openCreateAdminAccountModal()" style="margin-bottom: 1rem;">Створити новий рахунок</button>
                 <div id="adminAccountsList">
-                    <div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Завантаження власних рахунків...</p>
+                    </div>
                 </div>
             </div>
 
             <div class="card">
-                <h2>Операції з рахунками</h2>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                <h2>Операції з моїми рахунками</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
                     <div>
                         <h3>Поповнення</h3>
                         <form id="adminDepositForm">
@@ -572,6 +1265,26 @@
                             </div>
                             <button type="submit" class="btn">Переказати</button>
                         </form>
+                        <div class="calculator-section" id="adminTransferCalc" data-default-from="USD" data-default-to="UAH">
+                            <div class="form-group-inline">
+                                <div class="form-group" style="flex: 1;">
+                                    <label>Швидкий розрахунок суми:</label>
+                                    <input type="number" placeholder="100" min="0" step="0.01" data-role="amount" value="100">
+                    </div>
+                                <div class="form-group" style="width: 140px;">
+                                    <label>З валютy</label>
+                                    <select data-role="from"></select>
+                                </div>
+                                <div class="form-group" style="width: 140px;">
+                                    <label>У валюту</label>
+                                    <select data-role="to"></select>
+                                </div>
+                            </div>
+                            <div class="result-box">
+                                <strong>Результат:</strong>
+                                <span data-role="result">—</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -579,33 +1292,36 @@
             <div class="card">
                 <h2>Мої транзакції</h2>
                 <div id="adminTransactionsList">
-                    <div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Завантаження транзакцій...</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Модальне вікно для створення рахунку адміна -->
-    <div id="createAdminAccountModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Створити новий рахунок</h2>
-                <span class="close" onclick="closeCreateAdminAccountModal()">&times;</span>
-            </div>
-            <form id="createAdminAccountForm">
+        <!-- Управління ролями -->
+        <div id="roles" class="tab-content">
+            <div class="card">
+                <h2>Управління ролями</h2>
                 <div class="form-group">
-                    <label>Валюта:</label>
-                    <select id="adminAccountCurrency" required>
-                        <option value="USD">USD - Долар США</option>
-                        <option value="EUR">EUR - Євро</option>
-                        <option value="UAH">UAH - Гривня</option>
-                        <option value="CHF">CHF - Швейцарський франк</option>
-                        <option value="GBP">GBP - Британський фунт</option>
+                    <label>Користувач:</label>
+                    <select id="roleUserSelect">
+                        <option value="">Оберіть користувача</option>
+                    </select>
+            </div>
+                <div class="form-group">
+                    <label>Роль:</label>
+                    <select id="roleSelect">
+                        <option value="ROLE_USER">Користувач</option>
+                        <option value="ROLE_ADMIN">Адміністратор</option>
                     </select>
                 </div>
-                <button type="submit" class="btn">Створити рахунок</button>
-            </form>
+                <button class="btn btn-success" onclick="assignRole()">Призначити роль</button>
+                <button class="btn btn-warning" onclick="removeRole()">Видалити роль</button>
         </div>
+        </div>
+
     </div>
 
     <!-- Модальне вікно для деталей користувача -->
@@ -624,7 +1340,34 @@
         </div>
     </div>
 
+    <div id="adminProfileOverlay" class="profile-overlay">
+        <div class="profile-overlay-content">
+            <div class="profile-overlay-header">
+                <h2>Мій профіль</h2>
+                <span class="close" id="adminProfileOverlayClose">&times;</span>
+            </div>
+            <div class="profile-overlay-body" id="adminProfileOverlayBody">
+                <p>Завантаження...</p>
+            </div>
+            <div class="profile-overlay-actions">
+                <button class="btn" onclick="window.location.href='profile-setup.html'">Редагувати</button>
+                <button class="btn btn-secondary" id="adminProfileOverlayCollapse">Закрити</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark') {
+                    document.body.classList.add('dark-mode');
+                }
+            } catch (_) {
+                // ignore storage errors
+            }
+        })();
+
         const BASE_URL = 'http://localhost:9000/api';
         let users = [];
         let transactions = [];
@@ -633,6 +1376,57 @@
         const USERS_PER_PAGE = 20;
         let transactionsPage = 1;
         const TRANSACTIONS_PER_PAGE = 20;
+        const ADMIN_SUPPORTED_CURRENCIES = ['UAH', 'USD', 'EUR', 'GBP', 'CHF'];
+        const ADMIN_CURRENCY_LABELS = {
+            'USD': 'USD (Долар США)',
+            'EUR': 'EUR (Євро)',
+            'GBP': 'GBP (Британський фунт)',
+            'CHF': 'CHF (Швейцарський франк)',
+            'UAH': 'UAH (Гривня)'
+        };
+        const ADMIN_CALCULATOR_IDS = ['adminExchangeCalc', 'adminTransferCalc'];
+        const ADMIN_HISTORY_COLORS = {
+            'USD': { border: 'rgb(54, 162, 235)', background: 'rgba(54, 162, 235, 0.2)' },
+            'EUR': { border: 'rgb(255, 99, 132)', background: 'rgba(255, 99, 132, 0.2)' },
+            'GBP': { border: 'rgb(75, 192, 192)', background: 'rgba(75, 192, 192, 0.2)' },
+            'CHF': { border: 'rgb(153, 102, 255)', background: 'rgba(153, 102, 255, 0.2)' },
+            'UAH': { border: 'rgb(201, 203, 207)', background: 'rgba(201, 203, 207, 0.2)' }
+        };
+        let adminRatesUAH = { 'UAH': 1 };
+        let adminHistoryPeriod = '7d';
+        let adminHistoryCurrency = 'USD';
+        let adminHistoryChart = null;
+        let adminExchangeLoaded = false;
+        let adminExchangeInitialized = false;
+        let adminAccounts = [];
+        let adminTransactions = [];
+
+        function applyTheme(theme) {
+            const useDark = theme === 'dark';
+            document.body.classList.toggle('dark-mode', useDark);
+
+            const userToggle = document.getElementById('themeToggleBtn');
+            if (userToggle) {
+                userToggle.textContent = useDark ? '☀️' : '🌙';
+                userToggle.title = useDark ? 'Увімкнути світлу тему' : 'Увімкнути темну тему';
+            }
+
+            const adminToggle = document.getElementById('adminThemeToggleBtn');
+            if (adminToggle) {
+                adminToggle.textContent = useDark ? '☀️' : '🌙';
+                adminToggle.title = useDark ? 'Увімкнути світлу тему' : 'Увімкнути темну тему';
+            }
+        }
+
+        function toggleTheme() {
+            const nextTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+            try {
+                localStorage.setItem('theme', nextTheme);
+            } catch (_) {
+                // ignore storage errors
+            }
+            applyTheme(nextTheme);
+        }
 
         // Безпечні утиліти для читання відповіді
         function isJsonResponse(response) {
@@ -678,6 +1472,15 @@
             }
 
             document.getElementById('userName').textContent = localStorage.getItem('username') || 'Адміністратор';
+            const initialTheme = localStorage.getItem('theme') || (document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            applyTheme(initialTheme);
+            const adminThemeToggleBtn = document.getElementById('adminThemeToggleBtn');
+            if (adminThemeToggleBtn && !adminThemeToggleBtn.dataset.bound) {
+                adminThemeToggleBtn.addEventListener('click', toggleTheme);
+                adminThemeToggleBtn.dataset.bound = 'true';
+            }
+            setupAdminProfileControls();
+            setupAdminOperations();
             loadDashboardData();
         });
 
@@ -687,6 +1490,7 @@
                 await loadTransactions();
                 await loadAccounts();
                 await loadStats();
+                await loadAdminProfile();
             } catch (e) {
                 console.error('Помилка завантаження дашборду:', e);
             }
@@ -737,6 +1541,8 @@
                     transactions = (typeof data === 'string') ? [] : data;
                     transactionsPage = 1;
                     renderTransactionsPage();
+                    // Оновлюємо показники
+                    updateTransactionsCount();
                 } else {
                     const err = await readResponseBodySafe(response);
                     showMessage('Помилка завантаження транзакцій: ' + (err || response.statusText), 'error');
@@ -758,6 +1564,8 @@
                     const data = await readResponseBodySafe(response);
                     accounts = (typeof data === 'string') ? [] : data;
                     displayAccounts(accounts);
+                    // Оновлюємо показники
+                    updateAccountsStats();
                 } else {
                     const err = await readResponseBodySafe(response);
                     showMessage('Помилка завантаження акаунтів: ' + (err || response.statusText), 'error');
@@ -793,6 +1601,44 @@
                 document.getElementById('totalBalance').textContent = totalBalance.toFixed(2);
             } catch (error) {
                 console.error('Помилка завантаження статистики:', error);
+            }
+        }
+
+        function updateUsersCount() {
+            const usersCountEl = document.getElementById('totalUsers');
+            if (usersCountEl) {
+                if (Array.isArray(users) && users.length > 0) {
+                    usersCountEl.textContent = users.length;
+                } else if (usersCountEl.textContent === '-') {
+                    loadUsers();
+                }
+            }
+        }
+
+        function updateAccountsStats() {
+            const accountsCountEl = document.getElementById('totalAccounts');
+            const totalBalanceEl = document.getElementById('totalBalance');
+            if (accountsCountEl) {
+                if (Array.isArray(accounts) && accounts.length > 0) {
+                    accountsCountEl.textContent = accounts.length;
+                    if (totalBalanceEl) {
+                        const totalBalance = accounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+                        totalBalanceEl.textContent = totalBalance.toFixed(2);
+                    }
+                } else if (accountsCountEl.textContent === '-') {
+                    loadAccounts();
+                }
+            }
+        }
+
+        function updateTransactionsCount() {
+            const transactionsCountEl = document.getElementById('totalTransactions');
+            if (transactionsCountEl) {
+                if (Array.isArray(transactions) && transactions.length > 0) {
+                    transactionsCountEl.textContent = transactions.length;
+                } else if (transactionsCountEl.textContent === '-') {
+                    loadTransactions();
+                }
             }
         }
 
@@ -936,6 +1782,297 @@
             renderTransactionsPage();
         }
 
+        async function loadAdminExchangeRates(force = false) {
+            if (adminExchangeLoaded && !force) {
+                renderAdminExchangeRates(adminRatesUAH);
+                updateAdminQuickCalculator();
+                return;
+            }
+
+            const token = localStorage.getItem('accessToken');
+            const currencies = ADMIN_SUPPORTED_CURRENCIES.filter(code => code !== 'UAH');
+            const rates = {};
+
+            await Promise.all(currencies.map(async currency => {
+                try {
+                    const response = await fetch(`${BASE_URL}/exchange-rates?from=${currency}&to=UAH`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        const data = await readResponseBodySafe(response);
+                        if (data && data.rate != null) {
+                            rates[currency] = Number(data.rate);
+                        }
+                    }
+                } catch (error) {
+                    console.error('loadAdminExchangeRates:', error);
+                }
+            }));
+
+            if (Object.keys(rates).length === 0) {
+                const list = document.getElementById('adminExchangeRatesList');
+                if (list) {
+                    list.innerHTML = '<p class="error">Не вдалося завантажити курси валют.</p>';
+                }
+                return;
+            }
+
+            adminRatesUAH = { 'UAH': 1, ...rates };
+            renderAdminExchangeRates(rates);
+        setupAdminExchangeControls();
+        setupAdminCalculators();
+        await loadAdminRateHistory(adminHistoryPeriod);
+        updateAllAdminCalculators();
+            adminExchangeLoaded = true;
+        }
+
+        function renderAdminExchangeRates(rates) {
+            const container = document.getElementById('adminExchangeRatesList');
+            if (!container) return;
+
+            const entries = Object.entries(rates);
+            if (!entries.length) {
+                container.innerHTML = '<p>Дані поки відсутні.</p>';
+                return;
+            }
+
+            container.innerHTML = entries.map(([currency, rate]) => `
+                <div class="account-item">
+                    <div class="account-info">
+                        <h3>${currency}</h3>
+                        <p>${ADMIN_CURRENCY_LABELS[currency] || currency}</p>
+                    </div>
+                    <div class="account-balance account-balance-rate account-balance-large">
+                        ${rate.toFixed(2)} UAH
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setupAdminExchangeControls() {
+            if (adminExchangeInitialized) {
+                return;
+            }
+
+            const rangeSelect = document.getElementById('adminHistoryRange');
+            const currencySelect = document.getElementById('adminHistoryCurrency');
+
+            if (currencySelect && currencySelect.options.length === 0) {
+                ADMIN_SUPPORTED_CURRENCIES.filter(code => code !== 'UAH').forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = ADMIN_CURRENCY_LABELS[code] || code;
+                    currencySelect.appendChild(option);
+                });
+                currencySelect.value = adminHistoryCurrency;
+                currencySelect.addEventListener('change', () => {
+                    adminHistoryCurrency = currencySelect.value;
+                    loadAdminRateHistory(adminHistoryPeriod);
+                });
+            }
+
+            if (rangeSelect) {
+                rangeSelect.value = adminHistoryPeriod;
+                rangeSelect.addEventListener('change', () => {
+                    adminHistoryPeriod = rangeSelect.value;
+                    loadAdminRateHistory(adminHistoryPeriod);
+                });
+            }
+
+            adminExchangeInitialized = true;
+        }
+
+        function adminConvertAmount(amount, fromCurrency, toCurrency) {
+            if (!Number.isFinite(amount) || amount < 0) {
+                return null;
+            }
+            const rateFrom = adminRatesUAH[fromCurrency];
+            const rateTo = adminRatesUAH[toCurrency];
+            if (typeof rateFrom !== 'number' || typeof rateTo !== 'number' || rateFrom <= 0 || rateTo <= 0) {
+                return null;
+            }
+            return (amount * rateFrom) / rateTo;
+        }
+
+        function setupAdminCalculators() {
+            ADMIN_CALCULATOR_IDS.forEach(setupAdminCalculator);
+        }
+
+        function setupAdminCalculator(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container || container.dataset.initialized) {
+                return;
+            }
+
+            const fromSelect = container.querySelector('[data-role="from"]');
+            const toSelect = container.querySelector('[data-role="to"]');
+            const amountInput = container.querySelector('[data-role="amount"]');
+
+            if (!fromSelect || !toSelect || !amountInput) {
+                return;
+            }
+
+            if (fromSelect.options.length === 0 && toSelect.options.length === 0) {
+                ADMIN_SUPPORTED_CURRENCIES.forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = ADMIN_CURRENCY_LABELS[code] || code;
+                    fromSelect.appendChild(option.cloneNode(true));
+                    toSelect.appendChild(option);
+                });
+            }
+
+            const defaultFrom = container.dataset.defaultFrom || 'UAH';
+            const defaultTo = container.dataset.defaultTo || 'USD';
+
+            if (!fromSelect.value) {
+                fromSelect.value = ADMIN_SUPPORTED_CURRENCIES.includes(defaultFrom) ? defaultFrom : ADMIN_SUPPORTED_CURRENCIES[0];
+            }
+            if (!toSelect.value) {
+                const fallback = fromSelect.value !== defaultTo ? defaultTo : ADMIN_SUPPORTED_CURRENCIES.find(code => code !== fromSelect.value) || ADMIN_SUPPORTED_CURRENCIES[0];
+                toSelect.value = ADMIN_SUPPORTED_CURRENCIES.includes(defaultTo) ? defaultTo : fallback;
+            }
+
+            const handler = () => updateAdminCalculator(containerId);
+            amountInput.addEventListener('input', handler);
+            fromSelect.addEventListener('change', handler);
+            toSelect.addEventListener('change', handler);
+
+            container.dataset.initialized = 'true';
+            updateAdminCalculator(containerId);
+        }
+
+        function updateAdminCalculator(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const amountInput = container.querySelector('[data-role="amount"]');
+            const fromSelect = container.querySelector('[data-role="from"]');
+            const toSelect = container.querySelector('[data-role="to"]');
+            const resultEl = container.querySelector('[data-role="result"]');
+
+            if (!amountInput || !fromSelect || !toSelect || !resultEl) return;
+
+            const amount = Number(amountInput.value);
+            const fromCurrency = fromSelect.value;
+            const toCurrency = toSelect.value;
+
+            if (!fromCurrency || !toCurrency) {
+                resultEl.textContent = 'Оберіть валюту.';
+                return;
+            }
+            if (!Number.isFinite(amount) || amount <= 0) {
+                resultEl.textContent = 'Введіть суму більше 0.';
+                return;
+            }
+
+            const converted = adminConvertAmount(amount, fromCurrency, toCurrency);
+            if (converted == null) {
+                resultEl.textContent = 'Курс недоступний.';
+                return;
+            }
+
+            resultEl.textContent = `${amount.toFixed(2)} ${fromCurrency} = ${converted.toFixed(2)} ${toCurrency}`;
+        }
+
+        function updateAllAdminCalculators() {
+            ADMIN_CALCULATOR_IDS.forEach(updateAdminCalculator);
+        }
+
+        async function loadAdminRateHistory(period) {
+            const token = localStorage.getItem('accessToken');
+            try {
+                const params = new URLSearchParams({
+                    currencies: adminHistoryCurrency,
+                    period
+                });
+                const response = await fetch(`${BASE_URL}/exchange-rates/history?${params.toString()}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await readResponseBodySafe(response);
+                    if (data && data.history) {
+                        drawAdminHistoryChart(data.history);
+                    }
+                }
+            } catch (error) {
+                console.error('loadAdminRateHistory:', error);
+            }
+        }
+
+        function drawAdminHistoryChart(history) {
+            const canvas = document.getElementById('adminHistoryChart');
+            if (!canvas) return;
+
+            const currencyHistory = history && Array.isArray(history[adminHistoryCurrency])
+                ? history[adminHistoryCurrency]
+                : [];
+
+            const labels = [];
+            const values = [];
+
+            currencyHistory.forEach(entry => {
+                if (!entry) return;
+                const value = Number(entry.rate);
+                if (!Number.isFinite(value)) return;
+                const parsedDate = new Date(entry.date);
+                labels.push(isNaN(parsedDate.getTime()) ? (entry.date || '') : parsedDate.toLocaleDateString('uk-UA'));
+                values.push(Number(value.toFixed(2)));
+            });
+
+            if (adminHistoryChart) {
+                adminHistoryChart.destroy();
+                adminHistoryChart = null;
+            }
+
+            if (!values.length) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            const colors = ADMIN_HISTORY_COLORS[adminHistoryCurrency] || ADMIN_HISTORY_COLORS['USD'];
+
+            adminHistoryChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: `1 ${adminHistoryCurrency} = X UAH`,
+                        data: values,
+                        borderColor: colors.border,
+                        backgroundColor: colors.background,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `1 ${adminHistoryCurrency} = ${context.parsed.y.toFixed(2)} UAH`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            title: { display: true, text: 'UAH за 1 ' + adminHistoryCurrency },
+                            ticks: {
+                                callback: value => `${Number(value).toFixed(2)} UAH`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         function displayAccounts(accountsToShow) {
             const container = document.getElementById('accountsList');
             
@@ -993,10 +2130,19 @@
             event.target.classList.add('active');
             document.getElementById(tabName).classList.add('active');
             
-            // Завантажуємо дані для "Мій профіль"
-            if (tabName === 'my-profile') {
+            // Оновлюємо показники при переключенні вкладок
+            if (tabName === 'users') {
+                updateUsersCount();
+            } else if (tabName === 'accounts') {
+                updateAccountsStats();
+            } else if (tabName === 'transactions') {
+                updateTransactionsCount();
+            } else if (tabName === 'exchange') {
+                loadAdminExchangeRates();
+            } else if (tabName === 'my-profile') {
                 loadAdminProfile();
             }
+            
         }
 
         function searchUsers() {
@@ -1135,8 +2281,8 @@
             const content = document.getElementById('userDetailsContent');
             
             content.innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                    <div>
+                <div class="details-grid">
+                    <div class="details-section">
                         <h3>Інформація про користувача</h3>
                         <table class="table" style="margin-top: 1rem;">
                             <tr><td><strong>ID:</strong></td><td>${details.userId}</td></tr>
@@ -1154,7 +2300,7 @@
                             </td></tr>
                         </table>
 
-                        <h3 style="margin-top: 1.5rem;">Особисті дані</h3>
+                        <h3>Особисті дані</h3>
                         <table class="table" style="margin-top: 1rem;">
                             <tr><td><strong>Ім'я:</strong></td><td>${details.customerName || 'Н/Д'}</td></tr>
                             <tr><td><strong>Вік:</strong></td><td>${details.customerAge || 'Н/Д'}</td></tr>
@@ -1162,7 +2308,7 @@
                         </table>
                     </div>
 
-                    <div>
+                    <div class="details-section">
                         <h3>Рахунки (${details.accounts ? details.accounts.length : 0})</h3>
                         ${details.accounts && details.accounts.length > 0 ? `
                             <table class="table" style="margin-top: 1rem;">
@@ -1183,16 +2329,16 @@
                                     `).join('')}
                                 </tbody>
                             </table>
-                        ` : '<p style="margin-top: 1rem; color: #999;">Рахунків не знайдено</p>'}
+                        ` : '<p class="details-empty">Рахунків не знайдено</p>'}
                     </div>
                 </div>
 
-                <div style="margin-top: 2rem;">
+                <div class="details-section" style="margin-top: 2rem;">
                     <h3>Транзакції (${details.transactions ? details.transactions.length : 0})</h3>
                     ${details.transactions && details.transactions.length > 0 ? `
-                        <div style="max-height: 400px; overflow-y: auto; margin-top: 1rem;">
+                        <div class="details-scroll">
                             <table class="table">
-                                <thead style="position: sticky; top: 0; background: white;">
+                                <thead class="sticky-header">
                                     <tr>
                                         <th>ID</th>
                                         <th>Тип</th>
@@ -1220,7 +2366,7 @@
                                 </tbody>
                             </table>
                         </div>
-                    ` : '<p style="margin-top: 1rem; color: #999;">Транзакцій не знайдено</p>'}
+                    ` : '<p class="details-empty">Транзакцій не знайдено</p>'}
                 </div>
             `;
         }
@@ -1231,116 +2377,243 @@
 
         // Закриття модального вікна при кліку поза ним
         window.onclick = function(event) {
-            const modal = document.getElementById('userDetailsModal');
-            if (event.target === modal) {
+            const userModal = document.getElementById('userDetailsModal');
+            if (event.target === userModal) {
                 closeUserDetailsModal();
             }
-            const adminModal = document.getElementById('createAdminAccountModal');
-            if (event.target === adminModal) {
-                closeCreateAdminAccountModal();
+            const profileOverlay = document.getElementById('adminProfileOverlay');
+            if (event.target === profileOverlay) {
+                closeAdminProfileOverlay();
             }
         }
 
-        // ===== ФУНКЦІЇ ДЛЯ ПРОФІЛЮ АДМІНА =====
-        let adminCurrentCustomer = null;
-        let adminAccounts = [];
+        // ===== Профіль адміна =====
+        let adminCachedProfile = null;
+        let adminProfileInitialized = false;
+        let adminProfilePopupVisible = false;
 
-        async function loadAdminProfile() {
-            await loadAdminCustomerData();
-            await loadAdminAccounts();
-            await loadAdminTransactions();
+        function setupAdminProfileControls() {
+            if (adminProfileInitialized) {
+                return;
+            }
+
+            const toggleBtn = document.getElementById('adminProfileToggle');
+            const popup = document.getElementById('adminProfilePopup');
+            const expandBtn = document.getElementById('adminProfileExpand');
+            const overlay = document.getElementById('adminProfileOverlay');
+            const overlayClose = document.getElementById('adminProfileOverlayClose');
+            const overlayCollapse = document.getElementById('adminProfileOverlayCollapse');
+
+            if (!toggleBtn || !popup || !overlay) {
+                return;
+            }
+
+            toggleBtn.addEventListener('click', function(event) {
+                event.stopPropagation();
+                if (!adminCachedProfile) {
+                return;
+            }
+                adminProfilePopupVisible = !adminProfilePopupVisible;
+                popup.classList.toggle('show', adminProfilePopupVisible);
+            });
+
+            if (expandBtn) {
+                expandBtn.addEventListener('click', function() {
+                    popup.classList.remove('show');
+                    adminProfilePopupVisible = false;
+                    openAdminProfileOverlay();
+                });
+            }
+
+            overlayClose?.addEventListener('click', closeAdminProfileOverlay);
+            overlayCollapse?.addEventListener('click', closeAdminProfileOverlay);
+
+            overlay.addEventListener('click', function(event) {
+                if (event.target === overlay) {
+                    closeAdminProfileOverlay();
+                }
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!popup.contains(event.target) && event.target !== toggleBtn) {
+                    popup.classList.remove('show');
+                    adminProfilePopupVisible = false;
+                }
+            });
+
+            adminProfileInitialized = true;
         }
 
-        async function loadAdminCustomerData() {
+        function openAdminProfileOverlay() {
+            if (!adminCachedProfile) {
+                return;
+            }
+            const overlay = document.getElementById('adminProfileOverlay');
+            if (overlay) {
+                overlay.classList.add('open');
+            }
+        }
+
+        function closeAdminProfileOverlay() {
+            const overlay = document.getElementById('adminProfileOverlay');
+            if (overlay) {
+                overlay.classList.remove('open');
+            }
+            const popup = document.getElementById('adminProfilePopup');
+            if (popup) {
+                popup.classList.remove('show');
+            }
+            adminProfilePopupVisible = false;
+        }
+
+        async function loadAdminProfile() {
             try {
                 const response = await fetch(`${BASE_URL}/customers/me`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
                 });
-                if (response.ok) {
-                    const data = await readResponseBodySafe(response);
-                    console.log('Admin customer data:', data);
-                    console.log('Admin customer data type:', typeof data);
-                    
+
+                if (!response.ok) {
+                    console.warn('Admin profile response status:', response.status);
+                    renderAdminProfile(null);
+                    renderAdminAccountsList([]);
+                    renderAdminTransactionsList([]);
+                    return;
+                }
+
+                const data = await readResponseBodySafe(response);
                     if (typeof data === 'object' && data !== null) {
-                        adminCurrentCustomer = data;
-                        console.log('Admin customer keys:', Object.keys(adminCurrentCustomer));
-                        console.log('Admin customer ID:', adminCurrentCustomer.id);
-                        
-                        // Нормалізуємо ID
-                        const customerId = adminCurrentCustomer.id || adminCurrentCustomer.customerId || adminCurrentCustomer.ID;
-                        if (customerId) {
-                            adminCurrentCustomer.id = Number(customerId);
-                            console.log('Normalized admin customer ID:', adminCurrentCustomer.id);
-                            displayAdminProfile(adminCurrentCustomer);
+                    const normalizedId = data.id || data.customerId || data.ID;
+                    if (normalizedId) {
+                        data.id = Number(normalizedId);
+                    }
+                    renderAdminProfile(data);
+
+                    if (data.id) {
+                        await Promise.all([
+                            loadAdminAccounts(data.id),
+                            loadAdminTransactions(data.id)
+                        ]);
                         } else {
-                            console.error('Admin customer has no ID');
-                            document.getElementById('adminProfileInfo').innerHTML = '<p class="error">Помилка: ID профілю не знайдено. Об\'єкт: ' + JSON.stringify(adminCurrentCustomer).substring(0, 200) + '</p>';
+                        renderAdminAccountsList([]);
+                        renderAdminTransactionsList([]);
                         }
                     } else {
-                        console.error('Admin customer data is not an object:', data);
-                        document.getElementById('adminProfileInfo').innerHTML = '<p class="error">Помилка: некоректний формат даних</p>';
-                    }
-                } else {
-                    console.warn('Admin customer not found, status:', response.status);
-                    document.getElementById('adminProfileInfo').innerHTML = '<p>Профіль не заповнено. Натисніть "Редагувати профіль" для налаштування.</p>';
+                    renderAdminProfile(null);
+                    renderAdminAccountsList([]);
+                    renderAdminTransactionsList([]);
                 }
             } catch (error) {
                 console.error('Error loading admin profile:', error);
-                showMessage('Помилка завантаження профілю: ' + error.message, 'error');
+                renderAdminProfile(null);
+                renderAdminAccountsList([]);
+                renderAdminTransactionsList([]);
             }
         }
 
-        function displayAdminProfile(customer) {
-            const container = document.getElementById('adminProfileInfo');
-            container.innerHTML = `
-                <table class="table">
-                    <tr><td><strong>Ім'я:</strong></td><td>${customer.name || 'Н/Д'}</td></tr>
-                    <tr><td><strong>Email:</strong></td><td>${customer.email || 'Н/Д'}</td></tr>
-                    <tr><td><strong>Вік:</strong></td><td>${customer.age || 'Н/Д'}</td></tr>
-                    <tr><td><strong>ID:</strong></td><td>${customer.id || 'Н/Д'}</td></tr>
-                </table>
+        function renderAdminProfile(profile) {
+            adminCachedProfile = profile || null;
+            const summary = document.getElementById('adminProfileSummary');
+            const overlayBody = document.getElementById('adminProfileOverlayBody');
+            const toggleBtn = document.getElementById('adminProfileToggle');
+
+            if (!summary || !overlayBody || !toggleBtn) {
+                return;
+            }
+
+            if (!adminCachedProfile) {
+                summary.innerHTML = '<p class="error">Профіль не знайдено</p>';
+                overlayBody.innerHTML = '<p class="error">Профіль не знайдено</p>';
+                toggleBtn.disabled = true;
+                toggleBtn.title = 'Профіль недоступний';
+                return;
+            }
+
+            toggleBtn.disabled = false;
+            toggleBtn.title = 'Переглянути профіль';
+
+            const employers = Array.isArray(adminCachedProfile.employers) && adminCachedProfile.employers.length
+                ? adminCachedProfile.employers.join(', ')
+                : 'Н/Д';
+
+            summary.innerHTML = `
+                <p><strong>Ім'я:</strong> ${adminCachedProfile.name || 'Не вказано'}</p>
+                <p><strong>Email:</strong> ${adminCachedProfile.email || 'Не вказано'}</p>
+                <p><strong>Вік:</strong> ${adminCachedProfile.age || 'Не вказано'}</p>
+            `;
+
+            overlayBody.innerHTML = `
+                <p><strong>Ім'я:</strong> ${adminCachedProfile.name || 'Не вказано'}</p>
+                <p><strong>Email:</strong> ${adminCachedProfile.email || 'Не вказано'}</p>
+                <p><strong>Вік:</strong> ${adminCachedProfile.age || 'Не вказано'}</p>
+                <p><strong>ID:</strong> ${adminCachedProfile.id || 'Н/Д'}</p>
+                <p><strong>Роботодавці:</strong> ${employers}</p>
             `;
         }
 
-        async function loadAdminAccounts() {
-            console.log('loadAdminAccounts called, adminCurrentCustomer:', adminCurrentCustomer);
-            if (!adminCurrentCustomer || !adminCurrentCustomer.id) {
-                console.warn('Cannot load admin accounts: customer or ID is missing');
-                document.getElementById('adminAccountsList').innerHTML = '<p>Спочатку заповніть профіль</p>';
-                return;
-            }
+        async function loadAdminAccounts(customerId) {
             try {
-                console.log('Fetching accounts for customer ID:', adminCurrentCustomer.id);
-                const response = await fetch(`${BASE_URL}/customers/${adminCurrentCustomer.id}/accounts`, {
+                const response = await fetch(`${BASE_URL}/customers/${customerId}/accounts`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
                 });
+
                 if (response.ok) {
-                    adminAccounts = await readResponseBodySafe(response);
-                    console.log('Admin accounts loaded:', adminAccounts);
-                    displayAdminAccounts(adminAccounts);
-                    updateAdminAccountSelects();
+                    const data = await readResponseBodySafe(response);
+                    adminAccounts = Array.isArray(data) ? data : [];
                 } else {
-                    console.error('Failed to load admin accounts, status:', response.status);
-                    document.getElementById('adminAccountsList').innerHTML = '<p class="error">Помилка завантаження рахунків (статус ' + response.status + ')</p>';
+                    adminAccounts = [];
                 }
             } catch (error) {
                 console.error('Error loading admin accounts:', error);
-                showMessage('Помилка завантаження рахунків: ' + error.message, 'error');
+                adminAccounts = [];
             }
+
+            renderAdminAccountsList(adminAccounts);
+            updateAdminAccountSelects();
         }
 
-        function displayAdminAccounts(accounts) {
+        async function loadAdminTransactions(customerId) {
+            try {
+                const response = await fetch(`${BASE_URL}/transactions/history/${customerId}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+                });
+
+                if (response.ok) {
+                    const data = await readResponseBodySafe(response);
+                    adminTransactions = Array.isArray(data) ? data : [];
+                } else {
+                    adminTransactions = [];
+                }
+            } catch (error) {
+                console.error('Error loading admin transactions:', error);
+                adminTransactions = [];
+            }
+
+            renderAdminTransactionsList(adminTransactions);
+        }
+
+        function renderAdminAccountsList(accounts) {
             const container = document.getElementById('adminAccountsList');
-            if (accounts.length === 0) {
-                container.innerHTML = '<p>У вас поки немає рахунків. Створіть перший!</p>';
+            if (!container) return;
+
+            if (!accounts || accounts.length === 0) {
+                container.innerHTML = '<p>Власних рахунків поки немає.</p>';
                 return;
             }
-            container.innerHTML = accounts.map(acc => `
-                <div class="account-item" style="background: white; padding: 1rem; margin-bottom: 0.5rem; border-radius: 5px; display: flex; justify-content: space-between;">
-                    <div><h3>${acc.number}</h3><p>Валюта: ${acc.currency} | Баланс: ${acc.balance}</p></div>
-                    <div style="font-size: 1.5rem; font-weight: bold;">${acc.balance} ${acc.currency}</div>
+
+            container.innerHTML = accounts.map(account => {
+                const numericBalance = Number(account.balance ?? 0);
+                const isValid = Number.isFinite(numericBalance);
+                const displayBalance = isValid ? numericBalance.toFixed(2) : (account.balance ?? '0.00');
+                return `
+                    <div class="account-item">
+                        <div class="account-info">
+                            <h3>${account.number}</h3>
+                            <p>Валюта: ${account.currency} | Баланс: ${displayBalance}</p>
                 </div>
-            `).join('');
+                        <div class="account-balance account-balance-large">${displayBalance} ${account.currency}</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function updateAdminAccountSelects() {
@@ -1349,44 +2622,23 @@
                 document.getElementById('adminWithdrawAccount'),
                 document.getElementById('adminFromAccount')
             ];
+
             selects.forEach(select => {
+                if (!select) return;
                 select.innerHTML = '<option value="">Оберіть рахунок</option>' +
-                    adminAccounts.map(acc => `<option value="${acc.number}">${acc.number} (${acc.balance} ${acc.currency})</option>`).join('');
+                    adminAccounts.map(account => `<option value="${account.number}">${account.number} (${Number(account.balance || 0).toFixed(2)} ${account.currency})</option>`).join('');
             });
         }
 
-        async function loadAdminTransactions() {
-            console.log('loadAdminTransactions called, adminCurrentCustomer:', adminCurrentCustomer);
-            if (!adminCurrentCustomer || !adminCurrentCustomer.id) {
-                console.warn('Cannot load admin transactions: customer or ID is missing');
-                document.getElementById('adminTransactionsList').innerHTML = '<p>Спочатку заповніть профіль</p>';
-                return;
-            }
-            try {
-                console.log('Fetching transactions for customer ID:', adminCurrentCustomer.id);
-                const response = await fetch(`${BASE_URL}/transactions/history/${adminCurrentCustomer.id}`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
-                });
-                if (response.ok) {
-                    const transactions = await readResponseBodySafe(response);
-                    console.log('Admin transactions loaded:', transactions);
-                    displayAdminTransactions(transactions);
-                } else {
-                    console.error('Failed to load admin transactions, status:', response.status);
-                    document.getElementById('adminTransactionsList').innerHTML = '<p class="error">Помилка завантаження транзакцій (статус ' + response.status + ')</p>';
-                }
-            } catch (error) {
-                console.error('Error loading admin transactions:', error);
-                showMessage('Помилка завантаження транзакцій: ' + error.message, 'error');
-            }
-        }
-
-        function displayAdminTransactions(transactions) {
+        function renderAdminTransactionsList(transactions) {
             const container = document.getElementById('adminTransactionsList');
-            if (transactions.length === 0) {
+            if (!container) return;
+
+            if (!transactions || transactions.length === 0) {
                 container.innerHTML = '<p>Транзакцій поки немає.</p>';
                 return;
             }
+
             container.innerHTML = `
                 <table class="table">
                     <thead>
@@ -1395,12 +2647,12 @@
                     <tbody>
                         ${transactions.map(t => `
                             <tr>
-                                <td>${t.id}</td>
-                                <td><span class="badge type-${(t.type||'').toLowerCase()}">${t.type}</span></td>
-                                <td>${t.amount}</td>
-                                <td>${t.description || '-'}</td>
+                                <td>${t.id ?? ''}</td>
+                                <td><span class="badge type-${(t.type || '').toLowerCase()}">${t.type ?? ''}</span></td>
+                                <td>${t.amount ?? ''}</td>
+                                <td>${t.description || '—'}</td>
                                 <td>${t.timestamp ? new Date(t.timestamp).toLocaleString('uk-UA') : ''}</td>
-                                <td><span class="badge ${t.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">${t.status}</span></td>
+                                <td><span class="badge ${t.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">${t.status || ''}</span></td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -1408,103 +2660,93 @@
             `;
         }
 
-        function openCreateAdminAccountModal() {
-            document.getElementById('createAdminAccountModal').style.display = 'block';
-        }
+        function setupAdminOperations() {
+            const depositForm = document.getElementById('adminDepositForm');
+            depositForm?.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const accountNumber = document.getElementById('adminDepositAccount').value;
+                const amount = parseFloat(document.getElementById('adminDepositAmount').value);
+                if (!accountNumber || !Number.isFinite(amount) || amount <= 0) {
+                    showMessage('Вкажіть рахунок та суму для поповнення.', 'error');
+                    return;
+                }
+                await performAdminOperation('deposit', { accountNumber, amount });
+                event.target.reset();
+            });
 
-        function closeCreateAdminAccountModal() {
-            document.getElementById('createAdminAccountModal').style.display = 'none';
-        }
+            const withdrawForm = document.getElementById('adminWithdrawForm');
+            withdrawForm?.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const accountNumber = document.getElementById('adminWithdrawAccount').value;
+                const amount = parseFloat(document.getElementById('adminWithdrawAmount').value);
+                if (!accountNumber || !Number.isFinite(amount) || amount <= 0) {
+                    showMessage('Вкажіть рахунок та суму для зняття.', 'error');
+                    return;
+                }
+                await performAdminOperation('withdraw', { accountNumber, amount });
+                event.target.reset();
+            });
 
-        document.getElementById('createAdminAccountForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            if (!adminCurrentCustomer || !adminCurrentCustomer.id) {
-                showMessage('Помилка: дані користувача не завантажені.', 'error');
+            const transferForm = document.getElementById('adminTransferForm');
+            transferForm?.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const fromAccount = document.getElementById('adminFromAccount').value;
+                const toAccountNumber = document.getElementById('adminToAccountNumber').value.trim();
+                const amount = parseFloat(document.getElementById('adminTransferAmount').value);
+                if (!fromAccount || !toAccountNumber || !Number.isFinite(amount) || amount <= 0) {
+                    showMessage('Заповніть усі поля для переказу.', 'error');
                 return;
             }
-            const currency = document.getElementById('adminAccountCurrency').value;
-            try {
-                const response = await fetch(`${BASE_URL}/customers/${adminCurrentCustomer.id}/accounts`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                    },
-                    body: JSON.stringify({ currency })
-                });
-                if (response.ok) {
-                    showMessage('Рахунок успішно створено!', 'success');
-                    loadAdminAccounts();
-                    closeCreateAdminAccountModal();
-                    document.getElementById('createAdminAccountForm').reset();
-                } else {
-                    const errorData = await response.text();
-                    showMessage('Помилка створення рахунку: ' + errorData, 'error');
-                }
-            } catch (error) {
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                await performAdminOperation('transfer', { accountNumber: fromAccount, toAccountNumber, amount });
+                event.target.reset();
+            });
+
+            setupAdminCalculators();
+            updateAllAdminCalculators();
+        }
+
+        async function performAdminOperation(type, { accountNumber, toAccountNumber, amount }) {
+            if (!adminCachedProfile || !adminCachedProfile.id) {
+                showMessage('Профіль не завантажено. Оновіть сторінку.', 'error');
+                return;
             }
-        });
 
-        // Форми транзакцій адміна
-        document.getElementById('adminDepositForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const form = e.target;
-            const accountNumber = document.getElementById('adminDepositAccount').value;
-            const amount = document.getElementById('adminDepositAmount').value;
-            await performAdminTransaction('deposit', accountNumber, null, amount, form);
-        });
+            const token = localStorage.getItem('accessToken');
+            let endpoint = '';
+            const body = { amount };
 
-        document.getElementById('adminWithdrawForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const form = e.target;
-            const accountNumber = document.getElementById('adminWithdrawAccount').value;
-            const amount = document.getElementById('adminWithdrawAmount').value;
-            await performAdminTransaction('withdraw', accountNumber, null, amount, form);
-        });
-
-        document.getElementById('adminTransferForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const form = e.target;
-            const fromAccount = document.getElementById('adminFromAccount').value;
-            const toAccount = document.getElementById('adminToAccountNumber').value;
-            const amount = document.getElementById('adminTransferAmount').value;
-            await performAdminTransaction('transfer', fromAccount, toAccount, amount, form);
-        });
-
-        async function performAdminTransaction(type, fromAccount, toAccount, amount, form) {
-            try {
-                let endpoint, body;
                 if (type === 'deposit') {
-                    endpoint = `${BASE_URL}/accounts/${fromAccount}/deposit`;
-                    body = { amount: parseFloat(amount) };
+                endpoint = `${BASE_URL}/accounts/${accountNumber}/deposit`;
                 } else if (type === 'withdraw') {
-                    endpoint = `${BASE_URL}/accounts/${fromAccount}/withdraw`;
-                    body = { amount: parseFloat(amount) };
+                endpoint = `${BASE_URL}/accounts/${accountNumber}/withdraw`;
                 } else if (type === 'transfer') {
-                    endpoint = `${BASE_URL}/accounts/${fromAccount}/transfer`;
-                    body = { toAccountNumber: toAccount, amount: parseFloat(amount) };
-                }
-                
+                endpoint = `${BASE_URL}/accounts/${accountNumber}/transfer`;
+                body.toAccountNumber = toAccountNumber;
+            } else {
+                showMessage('Невідома операція.', 'error');
+                return;
+            }
+
+            try {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(body)
                 });
 
                 if (response.ok) {
                     showMessage('Операція виконана успішно!', 'success');
-                    loadAdminAccounts();
-                    loadAdminTransactions();
-                    if (form) form.reset();
+                    await loadAdminAccounts(adminCachedProfile.id);
+                    await loadAdminTransactions(adminCachedProfile.id);
                 } else {
-                    const errorData = await response.text();
-                    showMessage('Помилка транзакції: ' + errorData, 'error');
+                    const errorText = await response.text();
+                    showMessage('Помилка операції: ' + (errorText || response.statusText), 'error');
                 }
             } catch (error) {
+                console.error('performAdminOperation:', error);
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
             }
         }

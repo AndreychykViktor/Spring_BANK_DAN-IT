@@ -1,5 +1,6 @@
 package com.example.hm1.controller;
 
+import com.example.hm1.dto.ExchangeRateHistoryPoint;
 import com.example.hm1.entity.Currency;
 import com.example.hm1.service.ExchangeRateService;
 import org.springframework.http.ResponseEntity;
@@ -7,6 +8,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -92,6 +95,35 @@ public class ExchangeRateController {
     }
 
     /**
+     * Отримати історію курсів валют за період
+     * GET /api/exchange-rates/history?currencies=USD,EUR&period=7d
+     */
+    @GetMapping("/history")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> getRateHistory(
+            @RequestParam(required = false) String currencies,
+            @RequestParam(defaultValue = "7d") String period) {
+        try {
+            List<Currency> requestedCurrencies = parseCurrencies(currencies);
+            int days = resolvePeriodToDays(period);
+
+            Map<String, List<ExchangeRateHistoryPoint>> history = exchangeRateService.getHistoricalRates(requestedCurrencies, days);
+            return ResponseEntity.ok(Map.of(
+                "period", period,
+                "days", days,
+                "history", history
+            ));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest()
+                .body("Error parsing request: " + ex.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                .body("Error getting rate history: " + e.getMessage());
+        }
+    }
+
+    /**
      * Оновити курси валют (тільки для адміна)
      * POST /api/exchange-rates/update
      */
@@ -105,6 +137,51 @@ public class ExchangeRateController {
             e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body("Error updating rates: " + e.getMessage());
+        }
+    }
+
+    private List<Currency> parseCurrencies(String currencies) {
+        List<Currency> defaults = List.of(Currency.USD, Currency.EUR, Currency.GBP);
+        if (currencies == null || currencies.isBlank()) {
+            return defaults;
+        }
+
+        List<Currency> result = new ArrayList<>();
+        String[] parts = currencies.split(",");
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(Currency.valueOf(trimmed.toUpperCase()));
+            }
+        }
+
+        return result.isEmpty() ? defaults : result;
+    }
+
+    private int resolvePeriodToDays(String period) {
+        if (period == null) {
+            return 7;
+        }
+
+        String normalized = period.trim().toLowerCase();
+        switch (normalized) {
+            case "14d":
+                return 14;
+            case "1m":
+                return 30;
+            case "3m":
+                return 90;
+            case "6m":
+                return 180;
+            case "12m":
+                return 365;
+            case "7d":
+            default:
+                if (normalized.endsWith("d")) {
+                    String value = normalized.substring(0, normalized.length() - 1);
+                    return Math.max(Integer.parseInt(value), 1);
+                }
+                return 7;
         }
     }
 }

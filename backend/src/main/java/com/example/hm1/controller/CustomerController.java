@@ -3,6 +3,7 @@ package com.example.hm1.controller;
 import com.example.hm1.dao.CustomerRepo;
 import com.example.hm1.dao.UserRepository;
 import com.example.hm1.dao.EmployerRepo;
+import com.example.hm1.dto.AccountResponseDTO;
 import com.example.hm1.dto.CustomerRequestDTO;
 import com.example.hm1.entity.User;
 import com.example.hm1.entity.Employer;
@@ -19,10 +20,12 @@ import com.example.hm1.entity.Currency;
 import com.example.hm1.entity.Customer;
 import com.example.hm1.service.CustomerService;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Collectors;
 
 @RestController
@@ -303,20 +306,27 @@ public class CustomerController {
     }
 
     @GetMapping("/{customerId}/accounts")
-    public ResponseEntity<List<Account>> getCustomerAccounts(@PathVariable Long customerId) {
+    public ResponseEntity<List<AccountResponseDTO>> getCustomerAccounts(@PathVariable Long customerId) {
         try {
             Customer customer = customerService.getCustomerById(customerId);
             if (customer == null) {
                 return ResponseEntity.notFound().build();
             }
-            return ResponseEntity.ok(customer.getAccounts());
+            Comparator<Account> byIdDesc = Comparator.comparing(Account::getId, Comparator.nullsLast(Long::compareTo)).reversed();
+            List<AccountResponseDTO> accounts = customer.getAccounts() == null
+                    ? List.of()
+                    : customer.getAccounts().stream()
+                        .sorted(byIdDesc)
+                        .map(AccountResponseDTO::from)
+                        .collect(Collectors.toList());
+            return ResponseEntity.ok(accounts);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @PostMapping("/{customerId}/accounts")
-    public ResponseEntity<Account> createAccountForCustomer(
+    public ResponseEntity<AccountResponseDTO> createAccountForCustomer(
             @PathVariable Long customerId,
             @RequestBody Map<String, String> requestBody) {
         try {
@@ -337,7 +347,7 @@ public class CustomerController {
             String password = requestBody.get("password");
             Account account = customerService.createAccountForCustomer(customerId, currency, email, password);
             System.out.println("CustomerController.createAccountForCustomer: Account created successfully");
-            return ResponseEntity.status(HttpStatus.CREATED).body(account);
+            return ResponseEntity.status(HttpStatus.CREATED).body(AccountResponseDTO.from(account));
         } catch (IllegalArgumentException e) {
             System.err.println("CustomerController.createAccountForCustomer: IllegalArgumentException: " + e.getMessage());
             e.printStackTrace();

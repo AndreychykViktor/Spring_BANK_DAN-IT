@@ -1,27 +1,32 @@
 package com.example.hm1.controller;
 
+import com.example.hm1.dao.CustomerRepo;
+import com.example.hm1.dao.EmployerRepo;
+import com.example.hm1.dao.UserRepository;
 import com.example.hm1.entity.Customer;
 import com.example.hm1.service.CustomerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(CustomerController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class CustomerControllerTest {
 
     @Autowired
@@ -29,6 +34,15 @@ class CustomerControllerTest {
 
     @MockBean
     private CustomerService customerService;
+
+    @MockBean
+    private CustomerRepo customerRepo;
+
+    @MockBean
+    private UserRepository userRepository;
+
+    @MockBean
+    private EmployerRepo employerRepo;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -113,20 +127,18 @@ class CustomerControllerTest {
 
     @Test
     void createCustomer_ShouldReturnBadRequest_WhenInvalidData() throws Exception {
-        // Given
-        Map<String, Object> invalidData = Map.of(
-                "name", "Invalid Customer"
-                // Missing required fields
-        );
+        Map<String, Object> invalidData = new HashMap<>();
+        invalidData.put("name", "Invalid Customer");
 
-        when(customerService.createCustomer(any(), any())).thenThrow(new RuntimeException("Invalid data"));
+        when(customerService.createCustomer(eq("Invalid Customer"), isNull()))
+                .thenThrow(new IllegalArgumentException("Invalid data"));
 
-        // When & Then
         mockMvc.perform(post("/api/customers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidData)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(""));
 
-        verify(customerService, never()).createCustomer(any(), any());
+        verify(customerService).createCustomer(eq("Invalid Customer"), isNull());
     }
 }

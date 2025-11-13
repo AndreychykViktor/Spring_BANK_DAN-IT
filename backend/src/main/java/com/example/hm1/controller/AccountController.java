@@ -3,6 +3,7 @@ package com.example.hm1.controller;
 
 import com.example.hm1.dao.AccountRepo;
 import com.example.hm1.dto.AccountOperationDTO;
+import com.example.hm1.dto.AccountResponseDTO;
 import com.example.hm1.dto.TransferDTO;
 import com.example.hm1.entity.Account;
 import com.example.hm1.service.AccountService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -30,18 +32,24 @@ public class AccountController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<Account>> getAllAccounts() {
+    public ResponseEntity<List<AccountResponseDTO>> getAllAccounts() {
         List<Account> accounts = accountRepo.findAll();
         accounts.sort(Comparator.comparing(Account::getId).reversed());
-        return ResponseEntity.ok(accounts);
+        List<AccountResponseDTO> response = accounts.stream()
+                .map(AccountResponseDTO::from)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/customer/{customerId}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<Account>> getAccountsByCustomer(@PathVariable Long customerId) {
+    public ResponseEntity<List<AccountResponseDTO>> getAccountsByCustomer(@PathVariable Long customerId) {
         List<Account> accounts = accountRepo.findByCustomerId(customerId);
         accounts.sort(Comparator.comparing(Account::getId).reversed());
-        return ResponseEntity.ok(accounts);
+        List<AccountResponseDTO> response = accounts.stream()
+                .map(AccountResponseDTO::from)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{accountNumber}/deposit")

@@ -27,7 +27,9 @@ CREATE TABLE IF NOT EXISTS accounts (
                                         number VARCHAR(100) UNIQUE NOT NULL,
                                         currency VARCHAR(10) NOT NULL,
                                         balance NUMERIC(19,2) NOT NULL DEFAULT 0,
-                                        customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE CASCADE
+                                        customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                                        created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        last_modified_date TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS roles (
@@ -72,5 +74,10 @@ CREATE TABLE IF NOT EXISTS transactions (
 ALTER TABLE transactions
     ADD COLUMN IF NOT EXISTS created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ADD COLUMN IF NOT EXISTS last_modified_date TIMESTAMP;
+
+ALTER TABLE accounts
+    ADD COLUMN IF NOT EXISTS created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ADD COLUMN IF NOT EXISTS last_modified_date TIMESTAMP;
+
 
 

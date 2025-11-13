@@ -1063,11 +1063,17 @@
     </div>
 
     <script>
+        const USER_THEME_STORAGE_KEY = 'userDashboardTheme';
+        const LEGACY_THEME_STORAGE_KEY = 'theme';
+
         (function() {
             try {
-                const savedTheme = localStorage.getItem('theme');
+                const savedTheme = localStorage.getItem(USER_THEME_STORAGE_KEY) || localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
                 if (savedTheme === 'dark') {
                     document.body.classList.add('dark-mode');
+                }
+                if (savedTheme && savedTheme !== localStorage.getItem(USER_THEME_STORAGE_KEY)) {
+                    localStorage.setItem(USER_THEME_STORAGE_KEY, savedTheme);
                 }
             } catch (_) {
                 // ignore storage errors
@@ -1080,6 +1086,18 @@
         let isLoading = false; // Прапорець для захисту від циклічного завантаження
         let profileControlsInitialized = false;
         let profilePopupVisible = false;
+
+        function updateProfileAccountCount() {
+            const countValue = Array.isArray(accounts) ? accounts.length : 0;
+            const summaryCountEl = document.getElementById('profileAccountsCount');
+            const overlayCountEl = document.getElementById('profileOverlayAccountsCount');
+            if (summaryCountEl) {
+                summaryCountEl.textContent = countValue;
+            }
+            if (overlayCountEl) {
+                overlayCountEl.textContent = countValue;
+            }
+        }
 
         // Безпечні утиліти для читання відповіді
         function isJsonResponse(response) {
@@ -1148,7 +1166,7 @@
         function toggleTheme() {
             const nextTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
             try {
-                localStorage.setItem('theme', nextTheme);
+                localStorage.setItem(USER_THEME_STORAGE_KEY, nextTheme);
             } catch (_) {
                 // ignore storage errors
             }
@@ -1170,7 +1188,9 @@
             }
 
             document.getElementById('userName').textContent = localStorage.getItem('username') || 'Користувач';
-            const initialTheme = localStorage.getItem('theme') || (document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            const initialTheme = localStorage.getItem(USER_THEME_STORAGE_KEY)
+                || localStorage.getItem(LEGACY_THEME_STORAGE_KEY)
+                || (document.body.classList.contains('dark-mode') ? 'dark' : 'light');
             applyTheme(initialTheme);
             const themeToggleBtn = document.getElementById('themeToggleBtn');
             if (themeToggleBtn && !themeToggleBtn.dataset.bound) {
@@ -1429,6 +1449,7 @@
                 <p><strong>Ім'я:</strong> ${customer.name || 'Не вказано'}</p>
                 <p><strong>Email:</strong> ${customer.email || 'Не вказано'}</p>
                 <p><strong>Вік:</strong> ${customer.age || 'Не вказано'}</p>
+                <p><strong>Акаунтів:</strong> <span id="profileAccountsCount">${Array.isArray(accounts) ? accounts.length : '—'}</span></p>
             `;
 
             overlayBody.innerHTML = `
@@ -1436,8 +1457,10 @@
                 <p><strong>Email:</strong> ${customer.email || 'Не вказано'}</p>
                 <p><strong>Вік:</strong> ${customer.age || 'Не вказано'}</p>
                 <p><strong>Роботодавці:</strong> ${employers}</p>
-                <p><strong>Всього акаунтів:</strong> ${Array.isArray(accounts) ? accounts.length : '—'}</p>
+                <p><strong>Всього акаунтів:</strong> <span id="profileOverlayAccountsCount">${Array.isArray(accounts) ? accounts.length : '—'}</span></p>
             `;
+
+            updateProfileAccountCount();
         }
 
         function setupProfileControls() {
@@ -1523,6 +1546,7 @@
             
             if (accounts.length === 0) {
                 container.innerHTML = '<p>У вас поки немає акаунтів. Створіть перший акаунт!</p>';
+                updateProfileAccountCount();
                 return;
             }
 
@@ -1530,17 +1554,20 @@
                 const numericBalance = Number(account.balance ?? 0);
                 const isValid = Number.isFinite(numericBalance);
                 const displayBalance = isValid ? numericBalance.toFixed(2) : (account.balance ?? '0.00');
+                const createdOn = account.createdDate ? new Date(account.createdDate).toLocaleDateString('uk-UA') : '—';
 
                 return `
                 <div class="account-item">
                     <div class="account-info">
                         <h3>${account.number}</h3>
-                            <p>Валюта: ${account.currency} | Баланс: ${displayBalance}</p>
+                        <p>Валюта: ${account.currency} | Баланс: ${displayBalance}</p>
+                        <p>Створено: ${createdOn}</p>
                     </div>
                         <div class="account-balance account-balance-large">${displayBalance} ${account.currency}</div>
                 </div>
                 `;
             }).join('');
+            updateProfileAccountCount();
         }
 
         function displayTransactions(transactions) {
@@ -1580,8 +1607,10 @@
                 select.innerHTML = '<option value="">Оберіть акаунт</option>';
                 accounts.forEach(account => {
                     const option = document.createElement('option');
+                    const numericBalance = Number(account.balance ?? 0);
+                    const formattedBalance = Number.isFinite(numericBalance) ? numericBalance.toFixed(2) : (account.balance ?? '0.00');
                     option.value = account.number;
-                    option.textContent = `${account.number} (${account.currency}) - ${account.balance}`;
+                    option.textContent = `${account.number} (${account.currency}) - ${formattedBalance}`;
                     select.appendChild(option);
                 });
                 console.log('updateAccountSelects: Updated', selectId, 'with', accounts.length, 'options');

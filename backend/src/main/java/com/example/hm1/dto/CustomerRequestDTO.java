@@ -19,7 +19,7 @@ public class CustomerRequestDTO {
     private Integer age;
     
     @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Телефон має бути валідним (формат: +380XXXXXXXXX або 0XXXXXXXXX)")
-    private String phone; // Необов'язкове поле
+    private String phone;
     
     private Long employerId;
     private String employerName;

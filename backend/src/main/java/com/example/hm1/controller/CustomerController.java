@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*")
 public class CustomerController {
 
-    // DTO для безпечної серіалізації Customer
     public static class CustomerDTO {
         public Long id;
         public String name;
@@ -96,7 +95,6 @@ public class CustomerController {
             
             System.out.println("CustomerController: Found user with ID: " + user.getId());
             
-            // Використовуємо findByUserId для прямого пошуку за ID
             Customer customer = customerRepo.findByUserId(user.getId())
                     .orElse(null);
             
@@ -115,12 +113,10 @@ public class CustomerController {
             System.out.println("CustomerController: Found customer with ID: " + customer.getId() + 
                              ", name: " + customer.getName() + ", email: " + customer.getEmail());
             
-            // Додаткова валідація перед поверненням
             if (customer.getId() == null) {
                 System.err.println("CustomerController: WARNING! Customer ID is null before returning");
             }
             
-            // Повертаємо DTO замість entity щоб уникнути проблем серіалізації
             try {
                 CustomerDTO dto = new CustomerDTO(customer);
                 System.out.println("CustomerController: Successfully created DTO with ID: " + dto.id);
@@ -218,7 +214,6 @@ public class CustomerController {
                     System.err.println("Employer not found with ID: " + customerDTO.getEmployerId());
                 }
             } else if (customerDTO.getEmployerName() != null && !customerDTO.getEmployerName().trim().isEmpty()) {
-                // Створюємо/підставляємо роботодавця за назвою
                 String employerName = customerDTO.getEmployerName().trim();
                 String employerAddress = customerDTO.getEmployerAddress() != null ? customerDTO.getEmployerAddress().trim() : "";
                 
@@ -342,7 +337,6 @@ public class CustomerController {
             Currency currency = Currency.valueOf(currencyStr.toUpperCase());
             System.out.println("CustomerController.createAccountForCustomer: Parsed currency: " + currency);
             
-            // email та password не потрібні для створення акаунту, але залишаємо для сумісності
             String email = requestBody.get("email");
             String password = requestBody.get("password");
             Account account = customerService.createAccountForCustomer(customerId, currency, email, password);

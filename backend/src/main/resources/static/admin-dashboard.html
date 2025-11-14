@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Адмін панель - Banking App</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -25,16 +27,26 @@
             --dark-hover: rgba(148, 163, 184, 0.08);
         }
 
+        html, body {
+            height: 100%;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--light-bg);
             min-height: 100vh;
             color: #222;
+            margin: 0;
+            overflow-y: auto;
         }
 
         body.dark-mode {
             background: var(--dark-bg);
             color: var(--dark-text);
+        }
+
+        body.chat-lock {
+            overflow: hidden;
         }
 
         .header {
@@ -111,9 +123,17 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1500px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 110px);
+        }
+
+        .container.chat-mode {
+            overflow: hidden;
+            height: calc(100vh - 110px);
         }
 
         .stats-grid {
@@ -121,6 +141,27 @@
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        #chat.tab-content {
+            flex: 1;
+            min-height: 0;
+        }
+
+        #chat.tab-content.active {
+            overflow: hidden;
         }
 
         .account-item {
@@ -250,42 +291,444 @@
 
         .tabs {
             display: flex;
-            margin-bottom: 1rem;
-            border-bottom: 2px solid #e1e5e9;
-        }
-
-        body.dark-mode .tabs {
-            border-bottom-color: rgba(148,163,184,0.15);
+            align-items: center;
+            gap: 0.75rem;
         }
 
         .tab {
-            padding: 0.75rem 1.5rem;
+            padding: 0.6rem 1.2rem;
             cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            border-radius: 999px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.92);
+            transition: background 0.3s, border-color 0.3s, color 0.3s;
+        }
+
+        .tab:hover {
+            background: rgba(255,255,255,0.24);
+        }
+
+        .tab.active {
+            background: rgba(220,53,69,0.28);
+            border-color: rgba(220,53,69,0.85);
+            color: #fff;
         }
 
         body.dark-mode .tab {
             color: var(--dark-muted);
         }
 
-        .tab.active {
-            border-bottom-color: #dc3545;
-            color: #dc3545;
-            font-weight: bold;
+        body.dark-mode .tab:hover {
+            background: rgba(248,113,113,0.2);
         }
 
         body.dark-mode .tab.active {
-            border-bottom-color: var(--dark-accent);
             color: var(--dark-accent);
+            border-color: var(--dark-accent);
+            background: rgba(248,113,113,0.22);
         }
 
-        .tab-content {
-            display: none;
+        .header-tabs {
+            flex: 1;
+            justify-content: center;
+            margin: 0 2rem;
         }
 
-        .tab-content.active {
+        .chat-card {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .chat-layout {
+            display: grid;
+            grid-template-columns: 250px minmax(0, 1fr);
+            gap: 1.25rem;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .chat-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 0;
+        }
+
+        .chat-search {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .chat-search input {
+            padding: 0.6rem 0.7rem;
+            border-radius: 8px;
+            border: 1px solid #d5d9e0;
+            background: #fff;
+        }
+
+        body.dark-mode .chat-search input {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .chat-threads {
+            flex: 1;
+            border-radius: 12px;
+            border: 1px solid #e1e5ee;
+            background: #f8fafc;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        body.dark-mode .chat-threads {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+        }
+
+        .chat-thread {
+            padding: 1rem 1.1rem;
+            border-bottom: 1px solid rgba(148,163,184,0.16);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-thread:hover {
+            background: rgba(220,53,69,0.12);
+        }
+
+        .chat-thread.active {
+            background: rgba(220,53,69,0.18);
+        }
+
+        .chat-thread.unread {
+            position: relative;
+        }
+
+        .chat-thread.unread::after {
+            content: '';
+            position: absolute;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #34d399;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 0 10px rgba(52,211,153,0.5);
+        }
+
+        body.dark-mode .chat-thread {
+            border-color: var(--dark-border);
+        }
+
+        body.dark-mode .chat-thread:hover {
+            background: rgba(248,113,113,0.16);
+        }
+
+        body.dark-mode .chat-thread.active {
+            background: rgba(248,113,113,0.22);
+        }
+
+        .chat-thread span {
             display: block;
+            font-weight: 600;
+        }
+
+        .chat-main {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 0;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            background: #f1f4ff;
+            border: 1px solid #e1e5ee;
+        }
+
+        body.dark-mode .chat-header {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .chat-history {
+            flex: 1;
+            border-radius: 12px;
+            border: 1px solid #e1e5ee;
+            background: #fff;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            min-height: 0;
+        }
+
+        body.dark-mode .chat-history {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+        }
+
+        .chat-message {
+            max-width: 70%;
+            padding: 0.85rem 1.1rem;
+            border-radius: 16px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            animation: fadeInUp 0.25s ease;
+        }
+
+        .chat-text {
+            white-space: pre-wrap;
+            line-height: 1.35;
+        }
+
+        .chat-message.own {
+            margin-left: auto;
+            background: linear-gradient(135deg, #dc3545, #f87171);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(220,53,69,0.35);
+        }
+
+        .chat-message.received {
+            background: #f1f4ff;
+            color: #1f2937;
+        }
+
+        body.dark-mode .chat-message.received {
+            background: rgba(148,163,184,0.18);
+            color: var(--dark-text);
+        }
+
+        .chat-message.transfer-message {
+            background: rgba(59, 130, 246, 0.18);
+            border: 1px solid rgba(59, 130, 246, 0.45);
+            color: #0f172a;
+        }
+
+        .chat-message.transfer-message.own {
+            background: rgba(37, 99, 235, 0.24);
+            color: #0b1120;
+        }
+
+        body.dark-mode .chat-message.transfer-message {
+            background: rgba(34, 197, 94, 0.24);
+            border: 1px solid rgba(34, 197, 94, 0.55);
+            color: var(--dark-text);
+            box-shadow: 0 0 24px rgba(34, 197, 94, 0.35);
+        }
+
+        body.dark-mode .chat-message.transfer-message.own {
+            background: rgba(22, 163, 74, 0.42);
+        }
+
+        .chat-message.transfer-success {
+            box-shadow: 0 0 25px rgba(74,222,128,0.35);
+            border: 1px solid rgba(74,222,128,0.6);
+        }
+
+        .chat-message.transfer-failed {
+            background: rgba(248,113,113,0.12);
+            border: 1px solid rgba(248,113,113,0.35);
+            color: #b91c1c;
+        }
+
+        .chat-message.transfer-success::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 16px;
+            border: 2px solid rgba(74,222,128,0.35);
+            animation: transferGlow 1.6s ease-out forwards;
+        }
+
+        .chat-message .chat-meta {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .transfer-details {
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .transfer-details strong {
+            font-size: 1rem;
+        }
+
+        .chat-composer {
+            border-radius: 12px;
+            border: 1px solid #e1e5ee;
+            background: #fff;
+            padding: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+
+        body.dark-mode .chat-composer {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+        }
+
+        .chat-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .chat-textarea {
+            width: 100%;
+            min-height: 80px;
+            resize: none;
+            padding: 0.8rem;
+            border-radius: 10px;
+            border: 1px solid #d5d9e0;
+            font-size: 0.95rem;
+        }
+
+        body.dark-mode .chat-textarea {
+            background: var(--dark-card);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .chat-send-btn {
+            padding: 0.6rem 1.3rem;
+            background: linear-gradient(135deg, #dc3545, #f97373);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 8px 20px rgba(220,53,69,0.35);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .chat-send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(220,53,69,0.4);
+        }
+
+        .chat-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chat-controls button {
+            background: rgba(220,53,69,0.12);
+            color: #dc3545;
+            border: none;
+            border-radius: 8px;
+            padding: 0.45rem 0.7rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-controls button:hover {
+            background: rgba(220,53,69,0.18);
+        }
+
+        body.dark-mode .chat-controls button {
+            background: rgba(248,113,113,0.18);
+            color: var(--dark-text);
+        }
+
+        .chat-start-btn {
+            background: linear-gradient(135deg, #ef4444, #f97316);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.55rem 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 22px rgba(249,115,22,0.28);
+        }
+
+        .chat-start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 26px rgba(249,115,22,0.34);
+        }
+
+        body.dark-mode .chat-start-btn {
+            background: linear-gradient(135deg, #f97316, #db2777);
+        }
+
+        .emoji-picker {
+            position: absolute;
+            bottom: 70px;
+            left: 10px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 18px 40px rgba(15,23,42,0.25);
+            padding: 0.6rem;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.35rem;
+            max-width: 220px;
+            visibility: hidden;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 10;
+        }
+
+        .emoji-picker.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .emoji-picker button {
+            font-size: 1.2rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+        body.dark-mode .emoji-picker {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes transferGlow {
+            from {
+                opacity: 0.9;
+            }
+            to {
+                opacity: 0;
+            }
         }
 
         .card {
@@ -294,6 +737,23 @@
             padding: 1.5rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 1.5rem;
+        }
+
+        .card-header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-header-actions h2 {
+            margin: 0;
+        }
+
+        .scroll-section {
+            max-height: calc(100vh - 320px);
+            overflow-y: auto;
         }
 
         body.dark-mode .card {
@@ -1035,6 +1495,15 @@
 <body>
     <div class="header">
         <h1>🏦 Banking App - Адмін панель</h1>
+        <div class="tabs header-tabs">
+            <div class="tab active" data-tab="users" onclick="showTab('users', event)">Користувачі</div>
+            <div class="tab" data-tab="transactions" onclick="showTab('transactions', event)">Транзакції</div>
+            <div class="tab" data-tab="accounts" onclick="showTab('accounts', event)">Акаунти</div>
+            <div class="tab" data-tab="exchange" onclick="showTab('exchange', event)">Курси валют</div>
+            <div class="tab" data-tab="roles" onclick="showTab('roles', event)">Управління ролями</div>
+            <div class="tab" data-tab="my-profile" onclick="showTab('my-profile', event)">Мій профіль</div>
+            <div class="tab" data-tab="chat" onclick="showTab('chat', event)">Месенджер</div>
+        </div>
         <div class="user-info">
             <span id="userName">Адміністратор</span>
             <button class="theme-toggle" id="adminThemeToggleBtn" title="Перемкнути тему">🌙</button>
@@ -1059,15 +1528,6 @@
     <div class="container">
         <div id="message"></div>
 
-        <div class="tabs">
-            <div class="tab active" onclick="showTab('users')">Користувачі</div>
-            <div class="tab" onclick="showTab('transactions')">Транзакції</div>
-            <div class="tab" onclick="showTab('accounts')">Акаунти</div>
-            <div class="tab" onclick="showTab('exchange')">Курси валют</div>
-            <div class="tab" onclick="showTab('roles')">Управління ролями</div>
-            <div class="tab" onclick="showTab('my-profile')">Мій профіль</div>
-        </div>
-
         <!-- Користувачі -->
         <div id="users" class="tab-content active">
             <div class="card">
@@ -1082,7 +1542,7 @@
                     <input type="text" id="userSearch" placeholder="Пошук користувачів...">
                     <button class="btn" onclick="searchUsers()">Пошук</button>
                 </div>
-                <div id="usersList">
+                <div id="usersList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
                         <p>Завантаження користувачів...</p>
@@ -1112,7 +1572,7 @@
                     </select>
                     <button class="btn" onclick="filterTransactions()">Фільтр</button>
                 </div>
-                <div id="transactionsList">
+                <div id="transactionsList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
                         <p>Завантаження транзакцій...</p>
@@ -1200,8 +1660,11 @@
 
         <div id="my-profile" class="tab-content">
             <div class="card">
+                <div class="card-header-actions">
                 <h2>Мої рахунки</h2>
-                <div id="adminAccountsList">
+                    <button class="btn" id="adminOpenCreateAccountBtn">Створити рахунок</button>
+                </div>
+                <div id="adminAccountsList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
                         <p>Завантаження власних рахунків...</p>
@@ -1291,7 +1754,7 @@
 
             <div class="card">
                 <h2>Мої транзакції</h2>
-                <div id="adminTransactionsList">
+                <div id="adminTransactionsList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
                         <p>Завантаження транзакцій...</p>
@@ -1322,6 +1785,50 @@
         </div>
         </div>
 
+        <div id="chat" class="tab-content">
+            <div class="card chat-card">
+                <div class="chat-layout">
+                    <div class="chat-sidebar">
+                        <div class="chat-search">
+                            <label for="adminChatContactInput">Новий діалог</label>
+                            <input id="adminChatContactInput" type="text" placeholder="@sasha" autocomplete="off" />
+                            <button class="chat-start-btn" id="adminStartChatBtn" type="button">Почати чат</button>
+                        </div>
+                        <div class="chat-threads" id="adminChatThreads">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <p>Завантаження діалогів...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-main">
+                        <div class="chat-header" id="adminChatHeader">
+                            <div>
+                                <strong id="adminChatActiveTitle">Оберіть діалог</strong>
+                                <div id="adminChatActiveStatus" style="font-size:0.85rem; opacity:0.75;">Команда $cash доступна після вибору співрозмовника</div>
+                            </div>
+                            <div>
+                                <small>Використовуйте формат <code>$cash 400 EUR -></code> щоб переказати кошти</small>
+                            </div>
+                        </div>
+                        <div class="chat-history" id="adminChatHistory">
+                            <p style="opacity:0.7;">Виберіть співрозмовника або створіть новий діалог.</p>
+                        </div>
+                        <div class="chat-composer" id="adminChatComposer">
+                            <textarea id="adminChatInput" class="chat-textarea" placeholder="Напишіть повідомлення..." disabled></textarea>
+                            <div class="chat-actions">
+                                <div class="chat-controls">
+                                    <button type="button" id="adminEmojiToggleBtn">😀</button>
+                                </div>
+                                <button class="chat-send-btn" type="button" id="adminChatSendBtn" disabled>Відправити</button>
+                            </div>
+                            <div class="emoji-picker" id="adminEmojiPicker"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Модальне вікно для деталей користувача -->
@@ -1340,6 +1847,29 @@
         </div>
     </div>
 
+    <!-- Модальне вікно для створення рахунку -->
+    <div id="adminCreateAccountModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Створити новий рахунок</h2>
+                <span class="close" id="adminCreateAccountClose">&times;</span>
+            </div>
+            <form id="adminCreateAccountForm">
+                <div class="form-group">
+                    <label>Валюта:</label>
+                    <select id="adminAccountCurrency" required>
+                        <option value="USD">USD - Долар США</option>
+                        <option value="EUR">EUR - Євро</option>
+                        <option value="UAH">UAH - Гривня</option>
+                        <option value="CHF">CHF - Швейцарський франк</option>
+                        <option value="GBP">GBP - Британський фунт</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Створити рахунок</button>
+            </form>
+        </div>
+    </div>
+
     <div id="adminProfileOverlay" class="profile-overlay">
         <div class="profile-overlay-content">
             <div class="profile-overlay-header">
@@ -1347,8 +1877,8 @@
                 <span class="close" id="adminProfileOverlayClose">&times;</span>
             </div>
             <div class="profile-overlay-body" id="adminProfileOverlayBody">
-                <p>Завантаження...</p>
-            </div>
+                    <p>Завантаження...</p>
+                </div>
             <div class="profile-overlay-actions">
                 <button class="btn" onclick="window.location.href='profile-setup.html'">Редагувати</button>
                 <button class="btn btn-secondary" id="adminProfileOverlayCollapse">Закрити</button>
@@ -1406,6 +1936,38 @@
         let adminExchangeInitialized = false;
         let adminAccounts = [];
         let adminTransactions = [];
+        const ADMIN_CHAT_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😎','🤔','🤩','🤗','😇','🤝','👍','🙏','💼','📊','💸','💰','🔥','✨','🚀','💙','💚','🎉','💵','💳','🤑','💬','📈','✅','❌'];
+        const adminChatState = {
+            initialized: false,
+            profile: null,
+            contacts: [],
+            threads: [],
+            messages: [],
+            messageIds: new Set(),
+            activeThreadId: null,
+            activeRecipientId: null,
+            currentSubscription: null,
+            pendingSubscriptionThreadId: null,
+            stompClient: null,
+            currentUsername: null,
+            currentUserId: null
+        };
+
+        function adminNormalizeHandle(value) {
+            if (!value) return '';
+            return value.trim().replace(/^@+/, '').toLowerCase();
+        }
+
+        function findAdminContact(handle) {
+            if (!handle) return null;
+            return adminChatState.contacts.find(contact => (contact.username || '').toLowerCase() === handle);
+        }
+
+        function setAdminChatContactInput(username) {
+            const input = document.getElementById('adminChatContactInput');
+            if (!input) return;
+            input.value = username ? `@${username}` : '';
+        }
 
         function applyTheme(theme) {
             const useDark = theme === 'dark';
@@ -1460,6 +2022,23 @@
                     const text = await response.text();
                     try { return JSON.parse(text); } catch (_) { return text; }
                 } catch (_) { return ''; }
+            }
+        }
+
+        // Fetch з timeout 10 секунд
+        async function fetchWithTimeout(url, options = {}) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
+            try {
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                clearTimeout(timeout);
+                return response;
+            } catch (error) {
+                clearTimeout(timeout);
+                if (error.name === 'AbortError') {
+                    throw new Error('Час вичерпано (10 секунд)');
+                }
+                throw error;
             }
         }
 
@@ -2129,16 +2708,25 @@
             });
         }
 
-        function showTab(tabName) {
-            // Приховуємо всі таби
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        function showTab(tabName, evt) {
+            const tabs = document.querySelectorAll('.header-tabs .tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            const targetTab = evt && evt.currentTarget ? evt.currentTarget : document.querySelector(`.header-tabs .tab[data-tab="${tabName}"]`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const targetContent = document.getElementById(tabName);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            document.body.classList.toggle('chat-lock', tabName === 'chat');
+            const container = document.querySelector('.container');
+            if (container) {
+                container.classList.toggle('chat-mode', tabName === 'chat');
+            }
             
-            // Показуємо обраний таб
-            event.target.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
-            
-            // Оновлюємо показники при переключенні вкладок
             if (tabName === 'users') {
                 updateUsersCount();
             } else if (tabName === 'accounts') {
@@ -2149,6 +2737,8 @@
                 loadAdminExchangeRates();
             } else if (tabName === 'my-profile') {
                 loadAdminProfile();
+            } else if (tabName === 'chat' && !adminChatState.initialized) {
+                initializeAdminChat();
             }
             
         }
@@ -2242,6 +2832,624 @@
             } catch (error) {
                 showMessage('Помилка з\'єднання: ' + error.message, 'error');
             }
+        }
+
+        async function initializeAdminChat() {
+            if (adminChatState.initialized) {
+                return;
+            }
+            adminChatState.initialized = true;
+            updateAdminChatStatus('Завантаження даних...', 'info');
+            try {
+                const [profile, contacts, threads] = await Promise.all([
+                    fetchAdminChatJson('/chat/me'),
+                    fetchAdminChatJson('/chat/contacts'),
+                    fetchAdminChatJson('/chat/threads')
+                ]);
+
+                adminChatState.profile = profile;
+                adminChatState.currentUsername = profile.username;
+                adminChatState.currentUserId = profile.id;
+                adminChatState.contacts = Array.isArray(contacts) ? contacts : [];
+                adminChatState.threads = Array.isArray(threads) ? sortAdminChatThreads(threads) : [];
+
+                renderAdminChatThreads();
+                bindAdminChatControls();
+                connectAdminChatSocket();
+                updateAdminChatStatus('Оберіть діалог або створіть новий', 'info');
+            } catch (error) {
+                console.error('Admin chat initialization failed:', error);
+                updateAdminChatStatus('Не вдалося завантажити чат. Спробуйте пізніше.', 'error');
+                showMessage('Помилка завантаження месенджера: ' + (error.message || error), 'error');
+            }
+        }
+
+        function bindAdminChatControls() {
+            const sendBtn = document.getElementById('adminChatSendBtn');
+            const input = document.getElementById('adminChatInput');
+            const startBtn = document.getElementById('adminStartChatBtn');
+            const emojiToggle = document.getElementById('adminEmojiToggleBtn');
+            const emojiPicker = document.getElementById('adminEmojiPicker');
+            const contactInput = document.getElementById('adminChatContactInput');
+
+            if (sendBtn && !sendBtn.dataset.bound) {
+                sendBtn.addEventListener('click', sendAdminChatMessage);
+                sendBtn.dataset.bound = 'true';
+            }
+
+            if (input && !input.dataset.bound) {
+                input.addEventListener('keydown', function(evt) {
+                    if (evt.key === 'Enter' && !evt.shiftKey) {
+                        evt.preventDefault();
+                        sendAdminChatMessage();
+                    }
+                });
+                input.dataset.bound = 'true';
+            }
+
+            if (startBtn && !startBtn.dataset.bound) {
+                startBtn.addEventListener('click', () => startAdminChatWithHandle());
+                startBtn.dataset.bound = 'true';
+            }
+
+            if (contactInput && !contactInput.dataset.bound) {
+                contactInput.addEventListener('keydown', (evt) => {
+                    if (evt.key === 'Enter') {
+                        evt.preventDefault();
+                        startAdminChatWithHandle();
+                    }
+                });
+                contactInput.dataset.bound = 'true';
+            }
+
+            if (emojiToggle && !emojiToggle.dataset.bound) {
+                emojiToggle.addEventListener('click', toggleAdminEmojiPicker);
+                emojiToggle.dataset.bound = 'true';
+            }
+
+            if (emojiPicker && !emojiPicker.dataset.rendered) {
+                renderAdminEmojiPicker();
+                emojiPicker.dataset.rendered = 'true';
+            }
+
+            document.addEventListener('click', function(evt) {
+                const picker = document.getElementById('adminEmojiPicker');
+                const toggle = document.getElementById('adminEmojiToggleBtn');
+                if (!picker || !toggle) return;
+                if (!picker.contains(evt.target) && evt.target !== toggle) {
+                    picker.classList.remove('show');
+                }
+            });
+        }
+
+        async function loadAdminChatThreads(highlightThreadId) {
+            try {
+                const threads = await fetchAdminChatJson('/chat/threads');
+                adminChatState.threads = Array.isArray(threads) ? sortAdminChatThreads(threads) : [];
+                if (highlightThreadId && highlightThreadId !== adminChatState.activeThreadId) {
+                    const target = adminChatState.threads.find(thread => thread.id === highlightThreadId);
+                    if (target) {
+                        target.unread = true;
+                    }
+                }
+                renderAdminChatThreads();
+            } catch (error) {
+                console.error('Failed to load admin chat threads:', error);
+                updateAdminChatStatus('Не вдалося оновити список діалогів', 'error');
+            }
+        }
+
+        function sortAdminChatThreads(threads) {
+            return threads.slice().sort((a, b) => {
+                const dateA = a.updatedAt || a.createdAt || '';
+                const dateB = b.updatedAt || b.createdAt || '';
+                return dateB.localeCompare(dateA);
+            });
+        }
+
+        function renderAdminChatThreads() {
+            const container = document.getElementById('adminChatThreads');
+            if (!container) return;
+
+            if (!adminChatState.threads.length) {
+                container.innerHTML = '<p style="padding:1rem; opacity:0.7;">Немає активних діалогів. Оберіть користувача вище, щоб розпочати.</p>';
+                return;
+            }
+
+            container.innerHTML = adminChatState.threads.map(thread => {
+                const other = getAdminOtherParticipant(thread);
+                const isActive = thread.id === adminChatState.activeThreadId;
+                const classes = ['chat-thread'];
+                if (isActive) classes.push('active');
+                if (!isActive && thread.unread) classes.push('unread');
+                return `
+                    <div class="${classes.join(' ')}" data-thread-id="${thread.id}">
+                        <span>${other && other.username ? '@' + other.username : 'Невідомий'}</span>
+                    </div>
+                `;
+            }).join('');
+
+            Array.from(container.querySelectorAll('[data-thread-id]')).forEach(el => {
+                el.addEventListener('click', () => selectAdminChatThread(Number(el.dataset.threadId)));
+            });
+        }
+
+        function selectAdminChatThread(threadId) {
+            const thread = adminChatState.threads.find(t => t.id === threadId);
+            if (!thread) return;
+
+            adminChatState.activeThreadId = threadId;
+            const other = getAdminOtherParticipant(thread);
+            adminChatState.activeRecipientId = other ? other.id : null;
+            adminChatState.messages = [];
+            adminChatState.messageIds = new Set();
+
+            if (other && other.username) {
+                setAdminChatContactInput(other.username);
+            }
+
+            cleanupAdminChatSubscription();
+            subscribeToAdminChatThread(threadId);
+            loadAdminChatMessages(threadId);
+            const displayName = other && other.username ? `@${other.username}` : 'Співрозмовник';
+            updateAdminChatHeader(displayName, 'Діалог активний', 'info');
+            updateAdminChatComposerState(true);
+            renderAdminChatThreads();
+        }
+
+        function startAdminChatWithHandle(options = {}) {
+            const { silent = false } = options;
+            const input = document.getElementById('adminChatContactInput');
+            if (!input) return null;
+
+            const rawValue = (input.value || '').trim();
+            if (!rawValue.startsWith('@')) {
+                if (!silent) {
+                    updateAdminChatStatus('Почніть нік із символу @', 'info');
+                }
+                return null;
+            }
+
+            const handle = adminNormalizeHandle(rawValue);
+            if (!handle) {
+                if (!silent) {
+                    updateAdminChatStatus('Введіть нік у форматі @username', 'info');
+                }
+                return null;
+            }
+
+            if (adminChatState.currentUsername && adminChatState.currentUsername.toLowerCase() === handle) {
+                if (!silent) {
+                    updateAdminChatStatus('Неможливо написати самому собі', 'error');
+                }
+                return null;
+            }
+
+            const contact = findAdminContact(handle);
+            if (!contact) {
+                if (!silent) {
+                    updateAdminChatStatus(`Користувача @${handle} не знайдено`, 'error');
+                }
+                return null;
+            }
+
+            setAdminChatContactInput(contact.username);
+
+            const existingThread = adminChatState.threads.find(thread =>
+                thread.participants.some(participant => participant.id === contact.id)
+            );
+
+            if (existingThread) {
+                selectAdminChatThread(existingThread.id);
+                return contact;
+            }
+
+            adminChatState.activeThreadId = null;
+            adminChatState.activeRecipientId = contact.id;
+            adminChatState.messages = [];
+            adminChatState.messageIds = new Set();
+            cleanupAdminChatSubscription();
+            renderAdminChatMessages([]);
+            if (!silent) {
+                updateAdminChatHeader(`@${contact.username}`, 'Напишіть перше повідомлення', 'info');
+            } else {
+                const headerTitle = document.getElementById('adminChatActiveTitle');
+                if (headerTitle) {
+                    headerTitle.textContent = `@${contact.username}`;
+                }
+            }
+            updateAdminChatComposerState(true);
+            return contact;
+        }
+
+        async function loadAdminChatMessages(threadId) {
+            try {
+                const messages = await fetchAdminChatJson(`/chat/threads/${threadId}/messages`);
+                const list = Array.isArray(messages) ? messages : [];
+                adminChatState.messages = [];
+                adminChatState.messageIds = new Set();
+                renderAdminChatMessages(list);
+                markAdminThreadAsRead(threadId);
+            } catch (error) {
+                console.error('Failed to load admin chat messages:', error);
+                updateAdminChatStatus('Не вдалося завантажити повідомлення', 'error');
+            }
+        }
+
+        function renderAdminChatMessages(messages) {
+            const history = document.getElementById('adminChatHistory');
+            if (!history) return;
+            if (!messages.length) {
+                history.innerHTML = '<p style="opacity:0.7;">Повідомлень поки що немає. Напишіть перше повідомлення.</p>';
+                return;
+            }
+            history.innerHTML = '';
+            messages.forEach(message => appendAdminChatMessage(message, false));
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function appendAdminChatMessage(message, scrollToBottom = true) {
+            if (!message) {
+                return;
+            }
+            if (!message.type && message.messageType) {
+                message.type = message.messageType;
+            }
+            if (!message.senderId && message.sender && message.sender.id) {
+                message.senderId = message.sender.id;
+            }
+            if (!message.id) {
+                message.id = message._tempId || Date.now();
+            }
+            if (adminChatState.messageIds.has(message.id)) {
+                return;
+            }
+            adminChatState.messageIds.add(message.id);
+            adminChatState.messages.push(message);
+
+            const history = document.getElementById('adminChatHistory');
+            if (!history) return;
+
+            const isOwn = message.senderId === adminChatState.currentUserId;
+            const classes = ['chat-message', isOwn ? 'own' : 'received'];
+            if (message.type === 'TRANSFER') {
+                classes.push('transfer-message');
+                if (message.transfer?.status === 'SUCCESS') {
+                    classes.push('transfer-success');
+                } else if (message.transfer?.status === 'FAILED') {
+                    classes.push('transfer-failed');
+                }
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = classes.join(' ');
+            wrapper.dataset.messageId = message.id;
+
+            let displayContent = message.content || '';
+            if (message.type === 'TRANSFER') {
+                displayContent = formatAdminTransferDisplay(message);
+            }
+
+            const textBlock = document.createElement('div');
+            textBlock.className = 'chat-text';
+            textBlock.textContent = displayContent;
+            wrapper.appendChild(textBlock);
+
+            if (message.type === 'TRANSFER' && message.transfer) {
+                const transferBox = document.createElement('div');
+                transferBox.className = 'transfer-details';
+                const amount = message.transfer.amount != null ? Number(message.transfer.amount) : null;
+                const amountText = amount != null && !Number.isNaN(amount)
+                    ? amount.toFixed(2)
+                    : (message.transfer.amount || '—');
+                transferBox.innerHTML = `
+                    <strong>${amountText} ${message.transfer.currency || ''}</strong>
+                    <span>Статус: ${formatAdminTransferStatus(message.transfer.status)}</span>
+                `;
+                if (message.transfer.status === 'FAILED') {
+                    const failureReason = extractAdminTransferFailureReason(message.content);
+                    transferBox.innerHTML += `<span style="color:#dc2626;">${failureReason || 'Недостатньо коштів або помилка переказу'}</span>`;
+                }
+                wrapper.appendChild(transferBox);
+            }
+
+            const meta = document.createElement('div');
+            meta.className = 'chat-meta';
+            meta.textContent = formatAdminChatTimestamp(message.createdAt);
+            wrapper.appendChild(meta);
+
+            history.appendChild(wrapper);
+            if (scrollToBottom) {
+                history.scrollTop = history.scrollHeight;
+            }
+        }
+
+        function formatAdminTransferStatus(status) {
+            switch (status) {
+                case 'SUCCESS':
+                    return 'Переказ виконано';
+                case 'FAILED':
+                    return 'Переказ не виконано';
+                case 'PENDING':
+                    return 'Очікує обробки';
+                default:
+                    return status || 'Невідомо';
+            }
+        }
+
+        function extractAdminTransferFailureReason(content) {
+            if (!content) {
+                return '';
+            }
+            const parts = content.split('\n');
+            if (parts.length < 2) {
+                return '';
+            }
+            const reason = parts.slice(1).join('\n').trim();
+            return reason.replace(/^\(|\)$/g, '').trim();
+        }
+
+        function formatAdminTransferDisplay(message) {
+            const amountRaw = message?.transfer?.amount;
+            const currency = message?.transfer?.currency;
+            let amountText = '';
+            if (amountRaw !== undefined && amountRaw !== null && amountRaw !== '') {
+                const numeric = Number(amountRaw);
+                amountText = Number.isFinite(numeric) ? numeric.toFixed(2) : String(amountRaw);
+            }
+
+            let core = '';
+            if (amountText && currency) {
+                core = `${amountText} ${currency}`;
+            } else if (message && typeof message.content === 'string') {
+                const match = message.content.match(/\$cash\s+([\d.,]+)\s+([A-Za-z]{3})\s*->/i);
+                core = match ? `${match[1]} ${match[2]}` : '';
+            }
+
+            core = (core || 'TRANSFER').trim();
+            if (core && !core.endsWith('->')) {
+                core = `${core} ->`;
+            }
+            return `TRANSFER ${core}`.toUpperCase();
+        }
+
+        function formatAdminChatTimestamp(timestamp) {
+            if (!timestamp) return '';
+            try {
+                const date = new Date(timestamp);
+                return date.toLocaleString('uk-UA', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit'
+                });
+            } catch (_) {
+                return timestamp;
+            }
+        }
+
+        async function sendAdminChatMessage() {
+            if (!adminChatState.profile) {
+                updateAdminChatStatus('Спочатку увімкніть чат', 'info');
+                return;
+            }
+            const input = document.getElementById('adminChatInput');
+            const sendBtn = document.getElementById('adminChatSendBtn');
+            if (!input || !sendBtn) return;
+
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (!adminChatState.activeThreadId && !adminChatState.activeRecipientId) {
+                const handleInput = document.getElementById('adminChatContactInput');
+                if (handleInput && handleInput.value) {
+                    startAdminChatWithHandle({ silent: true });
+                }
+            }
+
+            if (!adminChatState.activeThreadId && !adminChatState.activeRecipientId) {
+                updateAdminChatStatus('Оберіть співрозмовника, щоб надіслати повідомлення', 'info');
+                return;
+            }
+
+            sendBtn.disabled = true;
+            try {
+                const payload = { content: text };
+                if (adminChatState.activeThreadId) {
+                    payload.threadId = adminChatState.activeThreadId;
+                }
+                if (!adminChatState.activeThreadId && adminChatState.activeRecipientId) {
+                    payload.recipientUserId = adminChatState.activeRecipientId;
+                }
+                if (!payload.threadId && !payload.recipientUserId) {
+                    throw new Error('Не вказано отримувача повідомлення');
+                }
+
+                const response = await fetchAdminChatJson('/chat/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                input.value = '';
+                if (!adminChatState.activeThreadId && response.threadId) {
+                    adminChatState.activeThreadId = response.threadId;
+                    subscribeToAdminChatThread(response.threadId);
+                }
+
+                appendAdminChatMessage(response);
+                updateAdminChatStatus('Повідомлення надіслано', 'success');
+                loadAdminChatThreads();
+            } catch (error) {
+                console.error('Failed to send admin chat message:', error);
+                updateAdminChatStatus('Не вдалося надіслати повідомлення: ' + error.message, 'error');
+                showMessage('Не вдалося надіслати повідомлення: ' + error.message, 'error');
+            } finally {
+                sendBtn.disabled = false;
+                const history = document.getElementById('adminChatHistory');
+                if (history) history.scrollTop = history.scrollHeight;
+                input.focus();
+            }
+        }
+
+        function connectAdminChatSocket() {
+            if (adminChatState.stompClient) return;
+            const socket = new SockJS('/ws');
+            const client = Stomp.over(socket);
+            client.debug = () => {};
+            const headers = {};
+            const token = localStorage.getItem('accessToken');
+            if (token) headers.Authorization = `Bearer ${token}`;
+            client.connect(headers, () => {
+                adminChatState.stompClient = client;
+                if (adminChatState.activeThreadId) {
+                    subscribeToAdminChatThread(adminChatState.activeThreadId);
+                } else if (adminChatState.pendingSubscriptionThreadId) {
+                    subscribeToAdminChatThread(adminChatState.pendingSubscriptionThreadId);
+                }
+            }, (error) => {
+                console.error('Admin chat WebSocket error:', error);
+                updateAdminChatStatus('Немає з\'єднання з сервером чату', 'error');
+            });
+        }
+
+        function subscribeToAdminChatThread(threadId) {
+            if (!threadId) return;
+            if (!adminChatState.stompClient || !adminChatState.stompClient.connected) {
+                adminChatState.pendingSubscriptionThreadId = threadId;
+                return;
+            }
+            if (adminChatState.currentSubscription) {
+                adminChatState.currentSubscription.unsubscribe();
+                adminChatState.currentSubscription = null;
+            }
+            adminChatState.currentSubscription = adminChatState.stompClient.subscribe(`/topic/chat/${threadId}`, (message) => {
+                try {
+                    const payload = JSON.parse(message.body);
+                    handleIncomingAdminChatMessage(payload);
+                } catch (error) {
+                    console.error('Failed to parse admin chat message:', error);
+                }
+            });
+            adminChatState.pendingSubscriptionThreadId = null;
+        }
+
+        function cleanupAdminChatSubscription() {
+            if (adminChatState.currentSubscription) {
+                adminChatState.currentSubscription.unsubscribe();
+                adminChatState.currentSubscription = null;
+            }
+        }
+
+        function handleIncomingAdminChatMessage(message) {
+            if (!message || !message.threadId) return;
+            const isCurrentThread = message.threadId === adminChatState.activeThreadId;
+            if (isCurrentThread) {
+                appendAdminChatMessage(message);
+                markAdminThreadAsRead(message.threadId);
+            } else {
+                markAdminThreadAsUnread(message.threadId);
+            }
+            loadAdminChatThreads(isCurrentThread ? undefined : message.threadId);
+        }
+
+        function markAdminThreadAsUnread(threadId) {
+            const thread = adminChatState.threads.find(t => t.id === threadId);
+            if (thread) {
+                thread.unread = true;
+            }
+        }
+
+        function markAdminThreadAsRead(threadId) {
+            const thread = adminChatState.threads.find(t => t.id === threadId);
+            if (thread) {
+                thread.unread = false;
+            }
+        }
+
+        function getAdminOtherParticipant(thread) {
+            if (!thread || !Array.isArray(thread.participants)) return null;
+            return thread.participants.find(p => p.id !== adminChatState.currentUserId) || thread.participants[0] || null;
+        }
+
+        function updateAdminChatHeader(title, status, tone) {
+            const headerTitle = document.getElementById('adminChatActiveTitle');
+            if (headerTitle) headerTitle.textContent = title || 'Співрозмовник';
+            updateAdminChatStatus(status || '', tone);
+        }
+
+        function updateAdminChatStatus(message, tone = 'info') {
+            const statusEl = document.getElementById('adminChatActiveStatus');
+            if (!statusEl) return;
+            statusEl.textContent = message || '';
+            if (tone === 'error') {
+                statusEl.style.color = '#dc2626';
+            } else if (tone === 'success') {
+                statusEl.style.color = '#16a34a';
+            } else {
+                statusEl.style.color = '';
+            }
+        }
+
+        function updateAdminChatComposerState(enabled) {
+            const input = document.getElementById('adminChatInput');
+            const sendBtn = document.getElementById('adminChatSendBtn');
+            if (!input || !sendBtn) return;
+            input.disabled = !enabled;
+            sendBtn.disabled = !enabled;
+            if (enabled) input.focus();
+        }
+
+        function renderAdminEmojiPicker() {
+            const picker = document.getElementById('adminEmojiPicker');
+            if (!picker) return;
+            picker.innerHTML = '';
+            ADMIN_CHAT_EMOJIS.forEach(emoji => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = emoji;
+                button.addEventListener('click', () => {
+                    const input = document.getElementById('adminChatInput');
+                    if (!input) return;
+                    const start = input.selectionStart || input.value.length;
+                    const end = input.selectionEnd || input.value.length;
+                    const value = input.value;
+                    input.value = value.substring(0, start) + emoji + value.substring(end);
+                    input.selectionStart = input.selectionEnd = start + emoji.length;
+                    input.focus();
+                });
+                picker.appendChild(button);
+            });
+        }
+
+        function toggleAdminEmojiPicker(event) {
+            event.stopPropagation();
+            const picker = document.getElementById('adminEmojiPicker');
+            if (!picker) return;
+            picker.classList.toggle('show');
+        }
+
+        async function fetchAdminChatJson(path, init = {}) {
+            const token = localStorage.getItem('accessToken');
+            const headers = Object.assign({
+                'Authorization': token ? `Bearer ${token}` : ''
+            }, init.headers || {});
+            const response = await fetchWithTimeout(`${BASE_URL}${path}`, Object.assign({}, init, { headers }));
+            const data = await readResponseBodySafe(response);
+            if (!response.ok) {
+                let errorMessage;
+                if (typeof data === 'string') {
+                    errorMessage = data;
+                } else if (data && typeof data === 'object') {
+                    errorMessage = data.message || data.error || JSON.stringify(data);
+                } else {
+                    errorMessage = 'Помилка запиту';
+                }
+                const details = `[${response.status}] ${errorMessage}`;
+                console.error('fetchAdminChatJson error', path, details, data);
+                throw new Error(details);
+            }
+            return data;
         }
 
         function viewUserDetails(userId) {
@@ -2383,6 +3591,83 @@
             document.getElementById('userDetailsModal').style.display = 'none';
         }
 
+        function openAdminCreateAccountModal() {
+            const modal = document.getElementById('adminCreateAccountModal');
+            if (modal) {
+                modal.style.display = 'block';
+            }
+        }
+
+        function closeAdminCreateAccountModal() {
+            const modal = document.getElementById('adminCreateAccountModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function setupAdminCreateAccountModal() {
+            const openBtn = document.getElementById('adminOpenCreateAccountBtn');
+            if (openBtn && !openBtn.dataset.bound) {
+                openBtn.addEventListener('click', openAdminCreateAccountModal);
+                openBtn.dataset.bound = 'true';
+            }
+
+            const closeBtn = document.getElementById('adminCreateAccountClose');
+            if (closeBtn && !closeBtn.dataset.bound) {
+                closeBtn.addEventListener('click', closeAdminCreateAccountModal);
+                closeBtn.dataset.bound = 'true';
+            }
+
+            const modal = document.getElementById('adminCreateAccountModal');
+            if (modal && !modal.dataset.bound) {
+                modal.addEventListener('click', (event) => {
+                    if (event.target === modal) {
+                        closeAdminCreateAccountModal();
+                    }
+                });
+                modal.dataset.bound = 'true';
+            }
+
+            const form = document.getElementById('adminCreateAccountForm');
+            if (form && !form.dataset.bound) {
+                form.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    if (!adminCachedProfile || !adminCachedProfile.id) {
+                        showMessage('Профіль не завантажено. Оновіть сторінку.', 'error');
+                        return;
+                    }
+
+                    const currency = document.getElementById('adminAccountCurrency').value;
+                    const token = localStorage.getItem('accessToken');
+
+                    try {
+                        const response = await fetchWithTimeout(`${BASE_URL}/customers/${adminCachedProfile.id}/accounts`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ currency })
+                        });
+
+                        if (response.ok) {
+                            showMessage('Рахунок успішно створено!', 'success');
+                            await loadAdminAccounts(adminCachedProfile.id);
+                            closeAdminCreateAccountModal();
+                            form.reset();
+                        } else {
+                            const errorData = await readResponseBodySafe(response);
+                            const message = typeof errorData === 'string' ? errorData : response.statusText;
+                            showMessage('Помилка створення рахунку: ' + message, 'error');
+                        }
+                    } catch (error) {
+                        showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                    }
+                });
+                form.dataset.bound = 'true';
+            }
+        }
+
         // Закриття модального вікна при кліку поза ним
         window.onclick = function(event) {
             const userModal = document.getElementById('userDetailsModal');
@@ -2392,6 +3677,10 @@
             const profileOverlay = document.getElementById('adminProfileOverlay');
             if (event.target === profileOverlay) {
                 closeAdminProfileOverlay();
+            }
+            const createAccountModal = document.getElementById('adminCreateAccountModal');
+            if (event.target === createAccountModal) {
+                closeAdminCreateAccountModal();
             }
         }
 
@@ -2669,6 +3958,8 @@
         }
 
         function setupAdminOperations() {
+            setupAdminCreateAccountModal();
+
             const depositForm = document.getElementById('adminDepositForm');
             depositForm?.addEventListener('submit', async function(event) {
                 event.preventDefault();
@@ -2689,8 +3980,8 @@
                 const amount = parseFloat(document.getElementById('adminWithdrawAmount').value);
                 if (!accountNumber || !Number.isFinite(amount) || amount <= 0) {
                     showMessage('Вкажіть рахунок та суму для зняття.', 'error');
-                    return;
-                }
+                return;
+            }
                 await performAdminOperation('withdraw', { accountNumber, amount });
                 event.target.reset();
             });
@@ -2764,6 +4055,13 @@
             localStorage.removeItem('userRole');
             localStorage.removeItem('username');
             window.location.href = 'login.html';
+        }
+
+        const initialAdminChatActive = document.getElementById('chat')?.classList.contains('active');
+        document.body.classList.toggle('chat-lock', Boolean(initialAdminChatActive));
+        const adminContainer = document.querySelector('.container');
+        if (adminContainer) {
+            adminContainer.classList.toggle('chat-mode', Boolean(initialAdminChatActive));
         }
     </script>
 </body>

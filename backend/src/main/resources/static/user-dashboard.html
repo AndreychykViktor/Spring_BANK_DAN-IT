@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Особистий кабінет - Banking App</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -27,11 +29,21 @@
             --dark-hover: rgba(96, 165, 250, 0.14);
         }
 
+        html, body {
+            height: 100%;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--light-bg);
             min-height: 100vh;
             color: #222;
+            margin: 0;
+            overflow-y: auto;
+        }
+
+        body.chat-lock {
+            overflow: hidden;
         }
 
         body.dark-mode {
@@ -113,9 +125,17 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 110px);
+        }
+
+        .container.chat-mode {
+            overflow: hidden;
+            height: calc(100vh - 110px);
         }
 
         .dashboard-grid {
@@ -125,11 +145,38 @@
             margin-bottom: 2rem;
         }
 
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        #chat.tab-content {
+            flex: 1;
+            min-height: 0;
+        }
+
+        #chat.tab-content.active {
+            overflow: hidden;
+        }
+
         .card {
             background: white;
             border-radius: 10px;
             padding: 1.5rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .scroll-section {
+            max-height: calc(100vh - 320px);
+            overflow-y: auto;
         }
 
         body.dark-mode .card {
@@ -771,38 +818,439 @@
 
         .tabs {
             display: flex;
-            margin-bottom: 1rem;
-            border-bottom: 2px solid #e1e5e9;
+            align-items: center;
+            gap: 0.75rem;
         }
 
         .tab {
-            padding: 0.75rem 1.5rem;
+            padding: 0.55rem 1.1rem;
             cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            border-radius: 999px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            transition: color 0.3s, background 0.3s, border-color 0.3s;
         }
 
-        body.dark-mode .tab {
-            color: #c6c9e8;
+        .tab:hover {
+            background: rgba(255,255,255,0.22);
         }
 
         .tab.active {
-            border-bottom-color: #667eea;
-            color: #667eea;
-            font-weight: bold;
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.85);
+            color: #fff;
+        }
+
+        body.dark-mode .tab {
+            color: var(--dark-muted);
+        }
+
+        body.dark-mode .tab:hover {
+            background: rgba(96,165,250,0.14);
         }
 
         body.dark-mode .tab.active {
-            border-bottom-color: #8fa2ff;
-            color: #8fa2ff;
+            color: var(--dark-accent);
+            border-color: var(--dark-accent);
+            background: rgba(96,165,250,0.22);
         }
 
-        .tab-content {
-            display: none;
+        .header-tabs {
+            flex: 1;
+            justify-content: center;
+            margin: 0 2rem;
         }
 
-        .tab-content.active {
+        .chat-card {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .chat-layout {
+            display: grid;
+            grid-template-columns: 240px minmax(0, 1fr);
+            gap: 1.25rem;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .chat-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 0;
+        }
+
+        .chat-search {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .chat-search input {
+            padding: 0.55rem 0.65rem;
+            border-radius: 8px;
+            border: 1px solid #d5d9e0;
+            background: #fff;
+        }
+
+        body.dark-mode .chat-search input {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .chat-threads {
+            flex: 1;
+            border-radius: 12px;
+            background: #f8f9ff;
+            border: 1px solid #e1e5ee;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        body.dark-mode .chat-threads {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+        }
+
+        .chat-thread {
+            padding: 0.9rem 1.1rem;
+            border-bottom: 1px solid rgba(148,163,184,0.2);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-thread:hover {
+            background: rgba(102,126,234,0.12);
+        }
+
+        .chat-thread.active {
+            background: rgba(102,126,234,0.18);
+        }
+
+        .chat-thread.unread {
+            position: relative;
+        }
+
+        .chat-thread.unread::after {
+            content: '';
+            position: absolute;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #34d399;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 0 8px rgba(52,211,153,0.6);
+        }
+
+        body.dark-mode .chat-thread {
+            border-color: var(--dark-border);
+        }
+
+        body.dark-mode .chat-thread:hover {
+            background: rgba(96,165,250,0.12);
+        }
+
+        body.dark-mode .chat-thread.active {
+            background: rgba(96,165,250,0.18);
+        }
+
+        .chat-thread span {
             display: block;
+            font-weight: 600;
+        }
+
+        .chat-main {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 0;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            background: #f1f4ff;
+            border: 1px solid #e1e5ee;
+        }
+
+        body.dark-mode .chat-header {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .chat-history {
+            flex: 1;
+            border-radius: 12px;
+            border: 1px solid #e1e5ee;
+            background: #fff;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            min-height: 0;
+        }
+
+        body.dark-mode .chat-history {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+        }
+
+        .chat-message {
+            max-width: 68%;
+            padding: 0.75rem 1rem;
+            border-radius: 14px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            animation: fadeInUp 0.25s ease;
+        }
+
+        .chat-message.own {
+            margin-left: auto;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(102,126,234,0.35);
+        }
+
+        .chat-message.received {
+            background: #f1f4ff;
+            color: #1f2937;
+        }
+
+        body.dark-mode .chat-message.received {
+            background: rgba(148,163,184,0.18);
+            color: var(--dark-text);
+        }
+
+        .chat-message.transfer-message {
+            background: rgba(59, 130, 246, 0.18);
+            border: 1px solid rgba(59, 130, 246, 0.45);
+            color: #0f172a;
+        }
+
+        .chat-message.transfer-message.own {
+            background: rgba(37, 99, 235, 0.25);
+            color: #0b1120;
+        }
+
+        body.dark-mode .chat-message.transfer-message {
+            background: rgba(34, 197, 94, 0.22);
+            border: 1px solid rgba(34, 197, 94, 0.55);
+            color: var(--dark-text);
+            box-shadow: 0 0 24px rgba(34, 197, 94, 0.35);
+        }
+
+        body.dark-mode .chat-message.transfer-message.own {
+            background: rgba(22, 163, 74, 0.4);
+        }
+
+        .chat-message .chat-meta {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .chat-message.transfer-success {
+            box-shadow: 0 0 25px rgba(74,222,128,0.35);
+            border: 1px solid rgba(74,222,128,0.6);
+        }
+
+        .chat-message.transfer-failed {
+            background: rgba(248,113,113,0.12);
+            border: 1px solid rgba(248,113,113,0.35);
+            color: #b91c1c;
+        }
+
+        .chat-message.transfer-success::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 16px;
+            border: 2px solid rgba(74, 222, 128, 0.35);
+            animation: transferGlow 1.6s ease-out forwards;
+        }
+
+        .transfer-details {
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .transfer-details strong {
+            font-size: 1rem;
+        }
+
+        .chat-composer {
+            border-radius: 12px;
+            border: 1px solid #e1e5ee;
+            background: #fff;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        body.dark-mode .chat-composer {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+        }
+
+        .chat-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .chat-textarea {
+            width: 100%;
+            min-height: 70px;
+            resize: none;
+            padding: 0.75rem;
+            border-radius: 10px;
+            border: 1px solid #d5d9e0;
+            font-size: 0.95rem;
+        }
+
+        body.dark-mode .chat-textarea {
+            background: var(--dark-card);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .emoji-picker {
+            position: absolute;
+            bottom: 60px;
+            left: 10px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 18px 40px rgba(15,23,42,0.25);
+            padding: 0.6rem;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.35rem;
+            max-width: 220px;
+            visibility: hidden;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 10;
+        }
+
+        .emoji-picker.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .emoji-picker button {
+            font-size: 1.2rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+        body.dark-mode .emoji-picker {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+        }
+
+        .chat-send-btn {
+            padding: 0.65rem 1.4rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 8px 18px rgba(102,126,234,0.35);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .chat-send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 22px rgba(102,126,234,0.35);
+        }
+
+        .chat-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chat-controls button {
+            background: rgba(102,126,234,0.12);
+            color: #4c51bf;
+            border: none;
+            border-radius: 8px;
+            padding: 0.45rem 0.7rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-controls button:hover {
+            background: rgba(102,126,234,0.22);
+        }
+
+        body.dark-mode .chat-controls button {
+            background: rgba(96,165,250,0.16);
+            color: var(--dark-text);
+        }
+
+        .chat-start-btn {
+            background: linear-gradient(135deg, #60a5fa, #4c51bf);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.55rem 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .chat-start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 26px rgba(79, 70, 229, 0.32);
+        }
+
+        body.dark-mode .chat-start-btn {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes transferGlow {
+            from {
+                opacity: 0.9;
+            }
+            to {
+                opacity: 0;
+            }
         }
 
         @media (max-width: 768px) {
@@ -823,6 +1271,13 @@
 <body>
     <div class="header">
         <h1>🏦 Banking App</h1>
+        <div class="tabs header-tabs">
+            <div class="tab active" data-tab="accounts" onclick="showTab('accounts', event)">Мої акаунти</div>
+            <div class="tab" data-tab="transactions" onclick="showTab('transactions', event)">Історія транзакцій</div>
+            <div class="tab" data-tab="operations" onclick="showTab('operations', event)">Операції</div>
+            <div class="tab" data-tab="exchange-rates" onclick="showTab('exchange-rates', event)">Курси валют</div>
+            <div class="tab" data-tab="chat" onclick="showTab('chat', event)">Месенджер</div>
+        </div>
         <div class="user-info">
             <span id="userName">Користувач</span>
             <button class="theme-toggle" id="themeToggleBtn" title="Перемкнути тему">🌙</button>
@@ -832,34 +1287,27 @@
                     <div class="profile-popup-content">
                         <div id="profileSummary">
                             <p>Завантаження...</p>
-                        </div>
+        </div>
                         <div class="profile-popup-actions">
                             <button class="btn-link" id="profileExpandBtn">Розгорнути</button>
                             <button class="btn-link" onclick="window.location.href='profile-setup.html'">Редагувати</button>
-                        </div>
+    </div>
+        </div>
                     </div>
                 </div>
-            </div>
             <button class="logout-btn" onclick="window.location.href='profile-setup.html'">Налаштування профілю</button>
             <button class="logout-btn" onclick="logout()">Вийти</button>
+            </div>
         </div>
-    </div>
 
     <div class="container">
         <div id="message"></div>
-
-        <div class="tabs">
-            <div class="tab active" onclick="showTab('accounts')">Мої акаунти</div>
-            <div class="tab" onclick="showTab('transactions')">Історія транзакцій</div>
-            <div class="tab" onclick="showTab('operations')">Операції</div>
-            <div class="tab" onclick="showTab('exchange-rates')">Курси валют</div>
-        </div>
 
         <!-- Мої акаунти -->
         <div id="accounts" class="tab-content active">
             <div class="card">
                 <h2>Мої акаунти</h2>
-                <div id="accountsList">
+                <div id="accountsList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
                         <p>Завантаження акаунтів...</p>
@@ -873,7 +1321,7 @@
         <div id="transactions" class="tab-content">
             <div class="card">
                 <h2>Історія транзакцій</h2>
-                <div id="transactionsList">
+                <div id="transactionsList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
                         <p>Завантаження транзакцій...</p>
@@ -1021,6 +1469,50 @@
                 </div>
             </div>
         </div>
+
+        <div id="chat" class="tab-content">
+            <div class="card chat-card">
+                <div class="chat-layout">
+                    <div class="chat-sidebar">
+                        <div class="chat-search">
+                            <label for="chatContactInput">Новий діалог</label>
+                            <input id="chatContactInput" type="text" placeholder="@sasha" autocomplete="off" />
+                            <button class="chat-start-btn" id="startChatBtn" type="button">Почати чат</button>
+                        </div>
+                        <div class="chat-threads" id="chatThreads">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <p>Завантаження діалогів...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-main">
+                        <div class="chat-header" id="chatHeader">
+                    <div>
+                                <strong id="chatActiveTitle">Оберіть діалог</strong>
+                                <div id="chatActiveStatus" style="font-size:0.85rem; opacity:0.75;">Переводи через $cash доступні після вибору співрозмовника</div>
+                    </div>
+                    <div>
+                                <small>Використовуйте команду <code>$cash 400 UAH -></code> для швидкого переказу</small>
+                    </div>
+                </div>
+                        <div class="chat-history" id="chatHistory">
+                            <p style="opacity:0.7;">Почніть нову розмову або оберіть існуючий діалог.</p>
+            </div>
+                        <div class="chat-composer" id="chatComposer">
+                            <textarea id="chatInput" class="chat-textarea" placeholder="Напишіть повідомлення..." disabled></textarea>
+                            <div class="chat-actions">
+                                <div class="chat-controls">
+                                    <button type="button" id="emojiToggleBtn">😀</button>
+                                </div>
+                                <button class="chat-send-btn" type="button" id="chatSendBtn" disabled>Відправити</button>
+                            </div>
+                            <div class="emoji-picker" id="emojiPicker"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Модальне вікно для створення акаунту -->
@@ -1086,6 +1578,40 @@
         let isLoading = false; // Прапорець для захисту від циклічного завантаження
         let profileControlsInitialized = false;
         let profilePopupVisible = false;
+
+        const chatState = {
+            initialized: false,
+            profile: null,
+            contacts: [],
+            threads: [],
+            messages: [],
+            messageIds: new Set(),
+            activeThreadId: null,
+            activeRecipientId: null,
+            currentSubscription: null,
+            pendingSubscriptionThreadId: null,
+            stompClient: null,
+            currentUsername: null,
+            currentUserId: null
+        };
+
+        function normalizeHandle(value) {
+            if (!value) return '';
+            return value.trim().replace(/^@+/, '').toLowerCase();
+        }
+
+        function findChatContact(handle) {
+            if (!handle) return null;
+            return chatState.contacts.find(contact => (contact.username || '').toLowerCase() === handle);
+        }
+
+        function setChatContactInput(username) {
+            const input = document.getElementById('chatContactInput');
+            if (!input) return;
+            input.value = username ? `@${username}` : '';
+        }
+
+        const CHAT_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😎','🤔','🤩','🤗','😇','🤝','👍','🙏','💸','💰','🔥','✨','🚀','💙','💚','🎉','💵','💳','🤑','💬','📈','✅','❌'];
 
         function updateProfileAccountCount() {
             const countValue = Array.isArray(accounts) ? accounts.length : 0;
@@ -1617,16 +2143,25 @@
             });
         }
 
-        function showTab(tabName) {
-            // Приховуємо всі таби
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        function showTab(tabName, evt) {
+            const tabs = document.querySelectorAll('.header-tabs .tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            const targetTab = evt && evt.currentTarget ? evt.currentTarget : document.querySelector(`.header-tabs .tab[data-tab="${tabName}"]`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const targetContent = document.getElementById(tabName);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            document.body.classList.toggle('chat-lock', tabName === 'chat');
+            const container = document.querySelector('.container');
+            if (container) {
+                container.classList.toggle('chat-mode', tabName === 'chat');
+            }
             
-            // Показуємо обраний таб
-            event.target.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
-            
-            // Якщо відкриваємо вкладку курсів валют, завантажуємо дані
             if (tabName === 'exchange-rates') {
                 loadExchangeRates();
             } else if (tabName === 'operations') {
@@ -1636,7 +2171,657 @@
                 } else {
                     updateAllQuickCalculators();
                 }
+            } else if (tabName === 'chat' && !chatState.initialized) {
+                initializeChat();
             }
+        }
+
+        const initialChatActive = document.getElementById('chat')?.classList.contains('active');
+        document.body.classList.toggle('chat-lock', Boolean(initialChatActive));
+        const initialContainer = document.querySelector('.container');
+        if (initialContainer) {
+            initialContainer.classList.toggle('chat-mode', Boolean(initialChatActive));
+        }
+
+        async function initializeChat() {
+            if (chatState.initialized) {
+                return;
+            }
+            chatState.initialized = true;
+            updateChatStatus('Завантаження даних...', 'info');
+            try {
+                const [profile, contacts, threads] = await Promise.all([
+                    fetchChatJson('/chat/me'),
+                    fetchChatJson('/chat/contacts'),
+                    fetchChatJson('/chat/threads')
+                ]);
+
+                chatState.profile = profile;
+                chatState.currentUsername = profile.username;
+                chatState.currentUserId = profile.id;
+                chatState.contacts = Array.isArray(contacts) ? contacts : [];
+                chatState.threads = Array.isArray(threads) ? sortThreads(threads) : [];
+
+                renderChatThreads();
+                bindChatControls();
+                connectChatSocket();
+                updateChatStatus('Оберіть діалог або створіть новий', 'info');
+            } catch (error) {
+                console.error('Chat initialization failed:', error);
+                updateChatStatus('Не вдалося завантажити чат. Спробуйте пізніше.', 'error');
+                showMessage('Помилка завантаження месенджера: ' + (error.message || error), 'error');
+            }
+        }
+
+        function bindChatControls() {
+            const chatSendBtn = document.getElementById('chatSendBtn');
+            const chatInput = document.getElementById('chatInput');
+            const startChatBtn = document.getElementById('startChatBtn');
+            const emojiToggleBtn = document.getElementById('emojiToggleBtn');
+            const emojiPicker = document.getElementById('emojiPicker');
+            const contactInput = document.getElementById('chatContactInput');
+
+            if (chatSendBtn && !chatSendBtn.dataset.bound) {
+                chatSendBtn.addEventListener('click', sendChatMessage);
+                chatSendBtn.dataset.bound = 'true';
+            }
+
+            if (chatInput && !chatInput.dataset.bound) {
+                chatInput.addEventListener('keydown', function(evt) {
+                    if (evt.key === 'Enter' && !evt.shiftKey) {
+                        evt.preventDefault();
+                        sendChatMessage();
+                    }
+                });
+                chatInput.dataset.bound = 'true';
+            }
+
+            if (startChatBtn && !startChatBtn.dataset.bound) {
+                startChatBtn.addEventListener('click', () => startChatWithHandle());
+                startChatBtn.dataset.bound = 'true';
+            }
+
+            if (contactInput && !contactInput.dataset.bound) {
+                contactInput.addEventListener('keydown', (evt) => {
+                    if (evt.key === 'Enter') {
+                        evt.preventDefault();
+                        startChatWithHandle();
+                    }
+                });
+                contactInput.dataset.bound = 'true';
+            }
+
+            if (emojiToggleBtn && !emojiToggleBtn.dataset.bound) {
+                emojiToggleBtn.addEventListener('click', toggleEmojiPicker);
+                emojiToggleBtn.dataset.bound = 'true';
+            }
+
+            if (emojiPicker && !emojiPicker.dataset.rendered) {
+                renderEmojiPicker();
+                emojiPicker.dataset.rendered = 'true';
+            }
+
+            document.addEventListener('click', function(evt) {
+                const picker = document.getElementById('emojiPicker');
+                const toggle = document.getElementById('emojiToggleBtn');
+                if (!picker || !toggle) return;
+                if (!picker.contains(evt.target) && evt.target !== toggle) {
+                    picker.classList.remove('show');
+                }
+            });
+        }
+
+        async function loadChatThreads(highlightThreadId) {
+            try {
+                const threads = await fetchChatJson('/chat/threads');
+                chatState.threads = Array.isArray(threads) ? sortThreads(threads) : [];
+                if (highlightThreadId && highlightThreadId !== chatState.activeThreadId) {
+                    const target = chatState.threads.find(thread => thread.id === highlightThreadId);
+                    if (target) {
+                        target.unread = true;
+                    }
+                }
+                renderChatThreads();
+            } catch (error) {
+                console.error('Failed to load chat threads:', error);
+                updateChatStatus('Не вдалося оновити список діалогів', 'error');
+            }
+        }
+
+        function sortThreads(threads) {
+            return threads.slice().sort((a, b) => {
+                const dateA = a.updatedAt || a.createdAt || '';
+                const dateB = b.updatedAt || b.createdAt || '';
+                return dateB.localeCompare(dateA);
+            });
+        }
+
+        function renderChatThreads() {
+            const container = document.getElementById('chatThreads');
+            if (!container) return;
+
+            if (!chatState.threads.length) {
+                container.innerHTML = '<p style="padding:1rem; opacity:0.7;">Немає активних діалогів. Оберіть користувача вище, щоб розпочати.</p>';
+                return;
+            }
+
+            container.innerHTML = chatState.threads.map(thread => {
+                const other = getOtherParticipant(thread);
+                const isActive = thread.id === chatState.activeThreadId;
+                const classes = ['chat-thread'];
+                if (isActive) classes.push('active');
+                if (!isActive && thread.unread) classes.push('unread');
+                const preview = other ? `@${other.username}` : 'Невідомий';
+                return `
+                    <div class="${classes.join(' ')}" data-thread-id="${thread.id}">
+                        <span>${preview}</span>
+                    </div>
+                `;
+            }).join('');
+
+            Array.from(container.querySelectorAll('[data-thread-id]')).forEach(el => {
+                el.addEventListener('click', () => selectChatThread(Number(el.dataset.threadId)));
+            });
+        }
+
+        function selectChatThread(threadId) {
+            const thread = chatState.threads.find(t => t.id === threadId);
+            if (!thread) {
+                return;
+            }
+
+            chatState.activeThreadId = threadId;
+            const other = getOtherParticipant(thread);
+            chatState.activeRecipientId = other ? other.id : null;
+            chatState.messages = [];
+            chatState.messageIds = new Set();
+
+            if (other && other.username) {
+                setChatContactInput(other.username);
+            }
+
+            cleanupChatSubscription();
+            subscribeToThread(threadId);
+            loadChatMessages(threadId);
+            const displayName = other && other.username ? `@${other.username}` : 'Співрозмовник';
+            updateChatHeader(displayName, 'Діалог активний', 'info');
+            updateChatComposerState(true);
+            renderChatThreads();
+        }
+
+        function startChatWithHandle(options = {}) {
+            const { silent = false } = options;
+            const input = document.getElementById('chatContactInput');
+            if (!input) return null;
+
+            const rawValue = (input.value || '').trim();
+            if (!rawValue.startsWith('@')) {
+                if (!silent) {
+                    updateChatStatus('Почніть нік із символу @', 'info');
+                }
+                return null;
+            }
+
+            const handle = normalizeHandle(rawValue);
+            if (!handle) {
+                if (!silent) {
+                    updateChatStatus('Введіть нік у форматі @username', 'info');
+                }
+                return null;
+            }
+
+            if (chatState.currentUsername && chatState.currentUsername.toLowerCase() === handle) {
+                if (!silent) {
+                    updateChatStatus('Неможливо написати самому собі', 'error');
+                }
+                return null;
+            }
+
+            const contact = findChatContact(handle);
+            if (!contact) {
+                if (!silent) {
+                    updateChatStatus(`Користувача @${handle} не знайдено`, 'error');
+                }
+                return null;
+            }
+
+            setChatContactInput(contact.username);
+
+            const existingThread = chatState.threads.find(thread =>
+                thread.participants.some(participant => participant.id === contact.id)
+            );
+
+            if (existingThread) {
+                selectChatThread(existingThread.id);
+                return contact;
+            }
+
+            chatState.activeThreadId = null;
+            chatState.activeRecipientId = contact.id;
+            chatState.messages = [];
+            chatState.messageIds = new Set();
+            cleanupChatSubscription();
+            renderChatMessages([]);
+            if (!silent) {
+                updateChatHeader(`@${contact.username}`, 'Напишіть перше повідомлення', 'info');
+            } else {
+                const headerTitle = document.getElementById('chatActiveTitle');
+                if (headerTitle) {
+                    headerTitle.textContent = `@${contact.username}`;
+                }
+            }
+            updateChatComposerState(true);
+            return contact;
+        }
+
+        async function loadChatMessages(threadId) {
+            try {
+                const messages = await fetchChatJson(`/chat/threads/${threadId}/messages`);
+                const list = Array.isArray(messages) ? messages : [];
+                chatState.messages = [];
+                chatState.messageIds = new Set();
+                renderChatMessages(list);
+                markThreadAsRead(threadId);
+            } catch (error) {
+                console.error('Failed to load chat messages:', error);
+                updateChatStatus('Не вдалося завантажити повідомлення', 'error');
+            }
+        }
+
+        function renderChatMessages(messages) {
+            const history = document.getElementById('chatHistory');
+            if (!history) return;
+            if (!messages.length) {
+                history.innerHTML = '<p style="opacity:0.7;">Повідомлень поки що немає. Напишіть перше повідомлення.</p>';
+                return;
+            }
+            history.innerHTML = '';
+            messages.forEach(message => appendChatMessage(message, false));
+        }
+
+        function appendChatMessage(message, scrollToBottom = true) {
+            if (!message) {
+                return;
+            }
+            if (!message.type && message.messageType) {
+                message.type = message.messageType;
+            }
+            if (!message.senderId && message.sender && message.sender.id) {
+                message.senderId = message.sender.id;
+            }
+            if (!message.id) {
+                message.id = message._tempId || Date.now();
+            }
+            if (chatState.messageIds.has(message.id)) {
+                return;
+            }
+            chatState.messageIds.add(message.id);
+            chatState.messages.push(message);
+
+            const history = document.getElementById('chatHistory');
+            if (!history) return;
+            const isOwn = message.senderId === chatState.currentUserId;
+            const classes = ['chat-message', isOwn ? 'own' : 'received'];
+            if (message.type === 'TRANSFER') {
+                classes.push('transfer-message');
+                if (message.transfer?.status === 'SUCCESS') {
+                    classes.push('transfer-success');
+                } else if (message.transfer?.status === 'FAILED') {
+                    classes.push('transfer-failed');
+                }
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = classes.join(' ');
+            wrapper.dataset.messageId = message.id;
+
+            let displayContent = message.content || '';
+            if (message.type === 'TRANSFER') {
+                displayContent = formatTransferDisplay(message);
+            }
+
+            const textBlock = document.createElement('div');
+            textBlock.className = 'chat-text';
+            textBlock.textContent = displayContent;
+            wrapper.appendChild(textBlock);
+
+            if (message.type === 'TRANSFER' && message.transfer) {
+                const transferBox = document.createElement('div');
+                transferBox.className = 'transfer-details';
+                const amount = message.transfer.amount != null ? Number(message.transfer.amount) : null;
+                const amountText = amount != null && !Number.isNaN(amount)
+                    ? amount.toFixed(2)
+                    : (message.transfer.amount || '—');
+                transferBox.innerHTML = `
+                    <strong>${amountText} ${message.transfer.currency || ''}</strong>
+                    <span>Статус: ${formatTransferStatus(message.transfer.status)}</span>
+                `;
+                if (message.transfer.status === 'FAILED') {
+                    const failureReason = extractTransferFailureReason(message.content);
+                    transferBox.innerHTML += `<span style="color:#dc2626;">${failureReason || 'Недостатньо коштів або помилка переказу'}</span>`;
+                }
+                wrapper.appendChild(transferBox);
+            }
+
+            const meta = document.createElement('div');
+            meta.className = 'chat-meta';
+            meta.textContent = formatChatTimestamp(message.createdAt);
+            wrapper.appendChild(meta);
+
+            history.appendChild(wrapper);
+            if (scrollToBottom) {
+                history.scrollTop = history.scrollHeight;
+            }
+        }
+
+        function formatTransferStatus(status) {
+            switch (status) {
+                case 'SUCCESS':
+                    return 'Переказ виконано';
+                case 'FAILED':
+                    return 'Переказ не виконано';
+                case 'PENDING':
+                    return 'Очікує обробки';
+                default:
+                    return status || 'Невідомо';
+            }
+        }
+
+        function extractTransferFailureReason(content) {
+            if (!content) {
+                return '';
+            }
+            const parts = content.split('\n');
+            if (parts.length < 2) {
+                return '';
+            }
+            const reason = parts.slice(1).join('\n').trim();
+            return reason.replace(/^\(|\)$/g, '').trim();
+        }
+
+        function formatTransferDisplay(message) {
+            const amountRaw = message?.transfer?.amount;
+            const currency = message?.transfer?.currency;
+            let amountText = '';
+            if (amountRaw !== undefined && amountRaw !== null && amountRaw !== '') {
+                const numeric = Number(amountRaw);
+                amountText = Number.isFinite(numeric) ? numeric.toFixed(2) : String(amountRaw);
+            }
+
+            let core = '';
+            if (amountText && currency) {
+                core = `${amountText} ${currency}`;
+            } else if (message && typeof message.content === 'string') {
+                const match = message.content.match(/\$cash\s+([\d.,]+)\s+([A-Za-z]{3})\s*->/i);
+                core = match ? `${match[1]} ${match[2]}` : '';
+            }
+
+            core = (core || 'TRANSFER').trim();
+            if (core && !core.endsWith('->')) {
+                core = `${core} ->`;
+            }
+            return `TRANSFER ${core}`.toUpperCase();
+        }
+
+        function formatChatTimestamp(timestamp) {
+            if (!timestamp) return '';
+            try {
+                const date = new Date(timestamp);
+                return date.toLocaleString('uk-UA', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit'
+                });
+            } catch (_) {
+                return timestamp;
+            }
+        }
+
+        async function sendChatMessage() {
+            if (!chatState.profile) {
+                updateChatStatus('Спочатку увімкніть чат', 'info');
+                return;
+            }
+            const chatInput = document.getElementById('chatInput');
+            const chatSendBtn = document.getElementById('chatSendBtn');
+            if (!chatInput || !chatSendBtn) return;
+
+            const text = chatInput.value.trim();
+            if (!text) {
+                return;
+            }
+
+            if (!chatState.activeThreadId && !chatState.activeRecipientId) {
+                const input = document.getElementById('chatContactInput');
+                if (input && input.value) {
+                    startChatWithHandle({ silent: true });
+                }
+            }
+
+            if (!chatState.activeThreadId && !chatState.activeRecipientId) {
+                updateChatStatus('Оберіть співрозмовника, щоб надіслати повідомлення', 'info');
+                return;
+            }
+
+            chatSendBtn.disabled = true;
+            try {
+                const payload = {
+                    content: text
+                };
+                if (chatState.activeThreadId) {
+                    payload.threadId = chatState.activeThreadId;
+                }
+                if (!chatState.activeThreadId && chatState.activeRecipientId) {
+                    payload.recipientUserId = chatState.activeRecipientId;
+                }
+                if (!payload.threadId && !payload.recipientUserId) {
+                    throw new Error('Не вказано отримувача повідомлення');
+                }
+
+                const response = await fetchChatJson('/chat/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                chatInput.value = '';
+                if (!chatState.activeThreadId && response.threadId) {
+                    chatState.activeThreadId = response.threadId;
+                    subscribeToThread(response.threadId);
+                }
+
+                appendChatMessage(response);
+                updateChatStatus('Повідомлення надіслано', 'success');
+                loadChatThreads();
+            } catch (error) {
+                console.error('Failed to send message:', error);
+                updateChatStatus('Не вдалося надіслати повідомлення: ' + error.message, 'error');
+                showMessage('Не вдалося надіслати повідомлення: ' + error.message, 'error');
+            } finally {
+                chatSendBtn.disabled = false;
+                const history = document.getElementById('chatHistory');
+                if (history) {
+                    history.scrollTop = history.scrollHeight;
+                }
+                chatInput.focus();
+            }
+        }
+
+        function connectChatSocket() {
+            if (chatState.stompClient) {
+                return;
+            }
+            const socket = new SockJS('/ws');
+            const client = Stomp.over(socket);
+            client.debug = () => {};
+            const headers = {};
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+            client.connect(headers, () => {
+                chatState.stompClient = client;
+                if (chatState.activeThreadId) {
+                    subscribeToThread(chatState.activeThreadId);
+                } else if (chatState.pendingSubscriptionThreadId) {
+                    subscribeToThread(chatState.pendingSubscriptionThreadId);
+                }
+            }, (error) => {
+                console.error('WebSocket connection error:', error);
+                updateChatStatus('Немає з\'єднання з сервером чату', 'error');
+            });
+        }
+
+        function subscribeToThread(threadId) {
+            if (!threadId) {
+                return;
+            }
+            if (!chatState.stompClient || !chatState.stompClient.connected) {
+                chatState.pendingSubscriptionThreadId = threadId;
+                return;
+            }
+            if (chatState.currentSubscription) {
+                chatState.currentSubscription.unsubscribe();
+                chatState.currentSubscription = null;
+            }
+            chatState.currentSubscription = chatState.stompClient.subscribe(`/topic/chat/${threadId}`, (message) => {
+                try {
+                    const payload = JSON.parse(message.body);
+                    handleIncomingChatMessage(payload);
+                } catch (error) {
+                    console.error('Failed to parse chat message:', error);
+                }
+            });
+            chatState.pendingSubscriptionThreadId = null;
+        }
+
+        function cleanupChatSubscription() {
+            if (chatState.currentSubscription) {
+                chatState.currentSubscription.unsubscribe();
+                chatState.currentSubscription = null;
+            }
+        }
+
+        function handleIncomingChatMessage(message) {
+            if (!message || !message.threadId) {
+                return;
+            }
+            const isCurrentThread = message.threadId === chatState.activeThreadId;
+            if (isCurrentThread) {
+                appendChatMessage(message);
+                markThreadAsRead(message.threadId);
+            } else {
+                markThreadAsUnread(message.threadId);
+            }
+            loadChatThreads(isCurrentThread ? undefined : message.threadId);
+        }
+
+        function markThreadAsUnread(threadId) {
+            const thread = chatState.threads.find(t => t.id === threadId);
+            if (thread) {
+                thread.unread = true;
+            }
+        }
+
+        function markThreadAsRead(threadId) {
+            const thread = chatState.threads.find(t => t.id === threadId);
+            if (thread) {
+                thread.unread = false;
+            }
+        }
+
+        function getOtherParticipant(thread) {
+            if (!thread || !Array.isArray(thread.participants)) {
+                return null;
+            }
+            return thread.participants.find(p => p.id !== chatState.currentUserId) || thread.participants[0] || null;
+        }
+
+        function updateChatHeader(title, status, tone) {
+            const headerTitle = document.getElementById('chatActiveTitle');
+            if (headerTitle) {
+                headerTitle.textContent = title || 'Співрозмовник';
+            }
+            updateChatStatus(status || '', tone);
+        }
+
+        function updateChatStatus(message, tone = 'info') {
+            const statusEl = document.getElementById('chatActiveStatus');
+            if (!statusEl) return;
+            statusEl.textContent = message || '';
+            if (tone === 'error') {
+                statusEl.style.color = '#dc2626';
+            } else if (tone === 'success') {
+                statusEl.style.color = '#16a34a';
+            } else {
+                statusEl.style.color = '';
+            }
+        }
+
+        function updateChatComposerState(enabled) {
+            const chatInput = document.getElementById('chatInput');
+            const chatSendBtn = document.getElementById('chatSendBtn');
+            if (!chatInput || !chatSendBtn) return;
+            chatInput.disabled = !enabled;
+            chatSendBtn.disabled = !enabled;
+            if (enabled) {
+                chatInput.focus();
+            }
+        }
+
+        function renderEmojiPicker() {
+            const picker = document.getElementById('emojiPicker');
+            if (!picker) return;
+            picker.innerHTML = '';
+            CHAT_EMOJIS.forEach(emoji => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = emoji;
+                button.addEventListener('click', () => {
+                    const input = document.getElementById('chatInput');
+                    if (!input) return;
+                    const start = input.selectionStart || input.value.length;
+                    const end = input.selectionEnd || input.value.length;
+                    const value = input.value;
+                    input.value = value.substring(0, start) + emoji + value.substring(end);
+                    input.selectionStart = input.selectionEnd = start + emoji.length;
+                    input.focus();
+                });
+                picker.appendChild(button);
+            });
+        }
+
+        function toggleEmojiPicker(event) {
+            event.stopPropagation();
+            const picker = document.getElementById('emojiPicker');
+            if (!picker) return;
+            picker.classList.toggle('show');
+        }
+
+        async function fetchChatJson(path, init = {}) {
+            const token = localStorage.getItem('accessToken');
+            const headers = Object.assign({
+                'Authorization': token ? `Bearer ${token}` : ''
+            }, init.headers || {});
+            const response = await fetchWithTimeout(`${BASE_URL}${path}`, Object.assign({}, init, { headers }));
+            const data = await readResponseBodySafe(response);
+            if (!response.ok) {
+                let errorMessage;
+                if (typeof data === 'string') {
+                    errorMessage = data;
+                } else if (data && typeof data === 'object') {
+                    errorMessage = data.message || data.error || JSON.stringify(data);
+                } else {
+                    errorMessage = 'Помилка запиту';
+                }
+                const details = `[${response.status}] ${errorMessage}`;
+                console.error('fetchChatJson error', path, details, data);
+                throw new Error(details);
+            }
+            return data;
         }
 
         function openCreateAccountModal() {

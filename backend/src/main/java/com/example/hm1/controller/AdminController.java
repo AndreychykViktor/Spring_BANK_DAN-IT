@@ -77,7 +77,6 @@ public class AdminController {
         }
     }
 
-    // DTO для чистої JSON-відповіді
     public static class AdminUserDto {
         public Long id;
         public String username;
@@ -126,7 +125,6 @@ public class AdminController {
     public ResponseEntity<?> getAllUsers() {
         try {
             List<User> users = userRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
-            // Підтягуємо Customer якщо існує і мапимо у DTO
             List<AdminUserDto> dto = users.stream().map(u -> {
                 Customer customer = (u.getId() != null) ? customerRepo.findByUserId(u.getId()).orElse(null) : null;
                 AdminUserDto d = new AdminUserDto();

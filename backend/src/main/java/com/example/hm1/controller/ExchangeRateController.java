@@ -26,10 +26,6 @@ public class ExchangeRateController {
         this.exchangeRateService = exchangeRateService;
     }
 
-    /**
-     * Отримати курс обміну між двома валютами
-     * GET /api/exchange-rates?from=USD&to=EUR
-     */
     @GetMapping
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> getExchangeRate(
@@ -49,10 +45,6 @@ public class ExchangeRateController {
         }
     }
 
-    /**
-     * Конвертувати суму з однієї валюти в іншу
-     * GET /api/exchange-rates/convert?amount=100&from=USD&to=EUR
-     */
     @GetMapping("/convert")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> convertAmount(
@@ -73,31 +65,6 @@ public class ExchangeRateController {
                 .body("Error converting amount: " + e.getMessage());
         }
     }
-
-    /**
-     * Отримати всі курси відносно базової валюти
-     * GET /api/exchange-rates/all?base=UAH
-     */
-    @GetMapping("/all")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<?> getAllRates(@RequestParam(defaultValue = "UAH") Currency base) {
-        try {
-            Map<String, BigDecimal> rates = exchangeRateService.getAllRates(base);
-            return ResponseEntity.ok(Map.of(
-                "base", base.name(),
-                "rates", rates
-            ));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest()
-                .body("Error getting all rates: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Отримати історію курсів валют за період
-     * GET /api/exchange-rates/history?currencies=USD,EUR&period=7d
-     */
     @GetMapping("/history")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> getRateHistory(
@@ -123,10 +90,22 @@ public class ExchangeRateController {
         }
     }
 
-    /**
-     * Оновити курси валют (тільки для адміна)
-     * POST /api/exchange-rates/update
-     */
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> getAllRates(@RequestParam(defaultValue = "UAH") Currency base) {
+        try {
+            Map<String, BigDecimal> rates = exchangeRateService.getAllRates(base);
+            return ResponseEntity.ok(Map.of(
+                    "base", base.name(),
+                    "rates", rates
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body("Error getting all rates: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/update")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateRates() {

@@ -25,15 +25,8 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("DataInitializer: Loading data from database into memory...");
         
         try {
-            // Завантажуємо всіх користувачів з БД
             List<User> users = userRepo.findAll();
             System.out.println("DataInitializer: Found " + users.size() + " users in database");
-            
-            // Завантажуємо всіх клієнтів з БД (якщо використовується JPA, то через Query)
-            // Але оскільки CustomerRepo in-memory, потрібно завантажити Customer з БД через SQL або створити JPA репозиторій
-            // Поки що залишаємо як є, але додамо логування
-            
-            // Завантажуємо всіх роботодавців з БД в пам'ять
             List<Employer> employers = employerRepo.findAll();
             System.out.println("DataInitializer: Found " + employers.size() + " employers in database");
             

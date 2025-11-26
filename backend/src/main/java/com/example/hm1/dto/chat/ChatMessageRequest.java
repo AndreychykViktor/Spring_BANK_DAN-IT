@@ -1,17 +1,28 @@
 package com.example.hm1.dto.chat;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public class ChatMessageRequest {
 
     private Long threadId;
 
+    @NotNull(message = "Recipient user ID is required")
     private Long recipientUserId;
 
-    private Long senderUserId;
-
-    @NotBlank
+    @NotBlank(message = "Message content is required")
     private String content;
+
+    private Long senderUserId; // Will be set by the controller from authentication
+
+    public ChatMessageRequest() {
+    }
+
+    public ChatMessageRequest(Long threadId, Long recipientUserId, String content) {
+        this.threadId = threadId;
+        this.recipientUserId = recipientUserId;
+        this.content = content;
+    }
 
     public Long getThreadId() {
         return threadId;
@@ -29,20 +40,20 @@ public class ChatMessageRequest {
         this.recipientUserId = recipientUserId;
     }
 
-    public Long getSenderUserId() {
-        return senderUserId;
-    }
-
-    public void setSenderUserId(Long senderUserId) {
-        this.senderUserId = senderUserId;
-    }
-
     public String getContent() {
         return content;
     }
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public Long getSenderUserId() {
+        return senderUserId;
+    }
+
+    public void setSenderUserId(Long senderUserId) {
+        this.senderUserId = senderUserId;
     }
 }
 

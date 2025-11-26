@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Особистий кабінет - Banking App</title>
+    <title>Personal Dashboard - Banking App</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
@@ -603,6 +603,33 @@
 
         body.dark-mode .transaction-amount.negative {
             color: var(--dark-negative);
+        }
+
+        .category-select {
+            padding: 0.3rem;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-left: 0.5rem;
+            background: white;
+            color: #333;
+            font-size: 0.85rem;
+        }
+
+        body.dark-mode .category-select {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        body.dark-mode .category-select option {
+            background: var(--dark-card);
+            color: var(--dark-text);
+        }
+
+        body.dark-mode #expenseMonthSelector {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
         }
 
         .transaction-type {
@@ -1272,31 +1299,32 @@
     <div class="header">
         <h1>🏦 Banking App</h1>
         <div class="tabs header-tabs">
-            <div class="tab active" data-tab="accounts" onclick="showTab('accounts', event)">Мої акаунти</div>
-            <div class="tab" data-tab="transactions" onclick="showTab('transactions', event)">Історія транзакцій</div>
-            <div class="tab" data-tab="operations" onclick="showTab('operations', event)">Операції</div>
-            <div class="tab" data-tab="exchange-rates" onclick="showTab('exchange-rates', event)">Курси валют</div>
-            <div class="tab" data-tab="chat" onclick="showTab('chat', event)">Месенджер</div>
+            <div class="tab active" data-tab="accounts" onclick="if(typeof showTab==='function')showTab('accounts',event);else alert('showTab not ready')">My Accounts</div>
+            <div class="tab" data-tab="transactions" onclick="if(typeof showTab==='function')showTab('transactions',event);else alert('showTab not ready')">Transactions</div>
+            <div class="tab" data-tab="operations" onclick="if(typeof showTab==='function')showTab('operations',event);else alert('showTab not ready')">Operations</div>
+            <div class="tab" data-tab="exchange-rates" onclick="if(typeof showTab==='function')showTab('exchange-rates',event);else alert('showTab not ready')">Exchange</div>
+            <div class="tab" data-tab="chat" onclick="if(typeof showTab==='function')showTab('chat',event);else alert('showTab not ready')">Chat</div>
         </div>
         <div class="user-info">
-            <span id="userName">Користувач</span>
-            <button class="theme-toggle" id="themeToggleBtn" title="Перемкнути тему">🌙</button>
+            <span id="userName">User</span>
+            <button class="theme-toggle" id="languageToggleBtn" title="Switch language">🌐</button>
+            <button class="theme-toggle" id="themeToggleBtn" title="Toggle theme">🌙</button>
             <div class="profile-trigger">
-                <button class="profile-toggle" id="profileToggleBtn" title="Мій профіль">👤</button>
+                <button class="profile-toggle" id="profileToggleBtn" title="My Profile">👤</button>
                 <div class="profile-popup" id="profilePopup">
                     <div class="profile-popup-content">
                         <div id="profileSummary">
-                            <p>Завантаження...</p>
+                            <p>Loading...</p>
         </div>
                         <div class="profile-popup-actions">
-                            <button class="btn-link" id="profileExpandBtn">Розгорнути</button>
-                            <button class="btn-link" onclick="window.location.href='profile-setup.html'">Редагувати</button>
+                            <button class="btn-link" id="profileExpandBtn">Expand</button>
+                            <button class="btn-link" onclick="window.location.href='profile-setup.html'">Edit</button>
     </div>
         </div>
                     </div>
                 </div>
-            <button class="logout-btn" onclick="window.location.href='profile-setup.html'">Налаштування профілю</button>
-            <button class="logout-btn" onclick="logout()">Вийти</button>
+            <button class="logout-btn" onclick="window.location.href='profile-setup.html'">Profile Settings</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
             </div>
         </div>
 
@@ -1306,27 +1334,55 @@
         <!-- Мої акаунти -->
         <div id="accounts" class="tab-content active">
             <div class="card">
-                <h2>Мої акаунти</h2>
+                <h2 id="userAccountsTitle">My Accounts</h2>
                 <div id="accountsList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Завантаження акаунтів...</p>
+                        <p id="userAccountsLoadingText">Loading accounts...</p>
                     </div>
                 </div>
-                <button class="btn btn-success" onclick="openCreateAccountModal()">Створити новий акаунт</button>
+                <button class="btn btn-success" id="createNewAccountBtn" onclick="openCreateAccountModal()">Create New Account</button>
             </div>
         </div>
 
         <!-- Історія транзакцій -->
         <div id="transactions" class="tab-content">
             <div class="card">
-                <h2>Історія транзакцій</h2>
+                <h2 id="userTransactionsTitle">Transaction History</h2>
                 <div id="transactionsList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Завантаження транзакцій...</p>
+                        <p id="userTransactionsLoadingText">Loading transactions...</p>
                     </div>
                 </div>
+            </div>
+            <div class="card">
+                <h2 id="expenseStatsTitle">Expense Statistics</h2>
+                <div style="margin-bottom: 1rem;">
+                    <label id="expenseAccountLabel" style="display: block; margin-bottom: 0.5rem;">Select Account:</label>
+                    <select id="expenseAccountSelector" style="padding: 0.5rem; border-radius: 5px; border: 1px solid #ddd; width: 100%; max-width: 400px; margin-bottom: 1rem;">
+                        <option value="" id="allAccountsOption">All Accounts</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label id="expenseMonthLabel" style="display: block; margin-bottom: 0.5rem;">Select Month:</label>
+                    <input type="month" id="expenseMonthSelector" style="padding: 0.5rem; border-radius: 5px; border: 1px solid #ddd;">
+                </div>
+                <div style="position: relative; height: 400px;">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const monthSelector = document.getElementById('expenseMonthSelector');
+                        const accountSelector = document.getElementById('expenseAccountSelector');
+                        if (monthSelector) {
+                            monthSelector.addEventListener('change', loadExpenseStatistics);
+                        }
+                        if (accountSelector) {
+                            accountSelector.addEventListener('change', loadExpenseStatistics);
+                        }
+                    });
+                </script>
             </div>
         </div>
 
@@ -1334,79 +1390,79 @@
         <div id="operations" class="tab-content">
             <div class="dashboard-grid">
                 <div class="card">
-                    <h2>Поповнити акаунт</h2>
+                    <h2 id="userDepositTitle">Deposit to Account</h2>
                     <form id="depositForm">
                         <div class="form-group">
-                            <label>Акаунт:</label>
+                            <label id="userDepositAccountLabel">Account:</label>
                             <select id="depositAccount" required>
-                                <option value="">Оберіть акаунт</option>
+                                <option value="" id="userDepositSelectAccountOption">Select account</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Сума:</label>
+                            <label id="userDepositAmountLabel">Amount:</label>
                             <input type="number" id="depositAmount" step="0.01" min="0.01" required>
                         </div>
-                        <button type="submit" class="btn">Поповнити</button>
+                        <button type="submit" class="btn" id="userDepositBtn">Deposit</button>
                     </form>
                 </div>
 
                 <div class="card">
-                    <h2>Зняти кошти</h2>
+                    <h2 id="userWithdrawTitle">Withdraw Funds</h2>
                     <form id="withdrawForm">
                         <div class="form-group">
-                            <label>Акаунт:</label>
+                            <label id="userWithdrawAccountLabel">Account:</label>
                             <select id="withdrawAccount" required>
-                                <option value="">Оберіть акаунт</option>
+                                <option value="" id="userWithdrawSelectAccountOption">Select account</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Сума:</label>
+                            <label id="userWithdrawAmountLabel">Amount:</label>
                             <input type="number" id="withdrawAmount" step="0.01" min="0.01" required>
                         </div>
-                        <button type="submit" class="btn">Зняти</button>
+                        <button type="submit" class="btn" id="userWithdrawBtn">Withdraw</button>
                     </form>
                 </div>
 
                 <div class="card">
-                    <h2>Переказ між акаунтами</h2>
+                    <h2 id="userTransferTitle">Transfer Between Accounts</h2>
                     <form id="transferForm">
                         <div class="form-group">
-                            <label>З акаунту:</label>
+                            <label id="userTransferFromAccountLabel">From Account:</label>
                             <select id="fromAccount" required>
-                                <option value="">Оберіть акаунт</option>
+                                <option value="" id="userTransferSelectAccountOption">Select account</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>На акаунт:</label>
-                            <input type="text" id="toAccountNumber" placeholder="Номер акаунту" required>
+                            <label id="userTransferToAccountLabel">To Account:</label>
+                            <input type="text" id="toAccountNumber" placeholder="" required>
                         </div>
                         <div class="form-group">
-                            <label>Сума:</label>
+                            <label id="userTransferAmountLabel">Amount:</label>
                             <input type="number" id="transferAmount" step="0.01" min="0.01" required>
                         </div>
-                        <button type="submit" class="btn">Переказати</button>
+                        <button type="submit" class="btn" id="userTransferBtn">Transfer</button>
                     </form>
                 </div>
 
                 <div class="card">
-                    <h2>Швидка конвертація</h2>
+                    <h2 id="userQuickConvTitle">Quick Conversion</h2>
                     <div class="calculator-section" id="operationsQuickCalc" data-default-from="USD" data-default-to="UAH">
                         <div class="form-group-inline">
                             <div class="form-group" style="flex: 1;">
-                                <label>Сума:</label>
+                                <label id="userQuickConvAmountLabel">Amount:</label>
                                 <input type="number" data-role="amount" placeholder="100" min="0" step="0.01" value="100">
                             </div>
                             <div class="form-group" style="width: 140px;">
-                                <label>З валютy</label>
+                                <label id="userQuickConvFromLabel">From Currency</label>
                                 <select data-role="from"></select>
                             </div>
                             <div class="form-group" style="width: 140px;">
-                                <label>У валюту</label>
+                                <label id="userQuickConvToLabel">To Currency</label>
                                 <select data-role="to"></select>
                             </div>
                         </div>
                         <div class="result-box">
-                            <strong>Результат:</strong>
+                            <strong id="userQuickConvResultLabel">Result:</strong>
                             <span data-role="result">—</span>
                         </div>
                     </div>
@@ -1417,54 +1473,54 @@
         <!-- Курси валют -->
         <div id="exchange-rates" class="tab-content">
             <div class="card">
-                <h2>Актуальні курси валют</h2>
-                <p class="section-note">Показує скільки гривень (UAH) потрібно заплатити за 1 одиницю валюти</p>
+                <h2 id="userExchangeRatesTitle">Current Exchange Rates</h2>
+                <p class="section-note" id="exchangeRatesDescription">Shows how many hryvnias (UAH) you need to pay for 1 unit of currency</p>
                 <div class="calculator-section" id="exchangeRatesQuickCalc" data-default-from="UAH" data-default-to="USD">
-                    <h3>Швидка конвертація</h3>
+                    <h3 id="exchangeRatesQuickConvTitle">Quick Conversion</h3>
                     <div class="form-group-inline">
                         <div class="form-group" style="flex: 1;">
-                            <label>Сума:</label>
+                            <label id="exchangeRatesAmountLabel">Amount:</label>
                             <input type="number" data-role="amount" placeholder="100" min="0" step="0.01" value="100">
                         </div>
                         <div class="form-group" style="width: 140px;">
-                            <label>З валютy</label>
+                            <label id="exchangeRatesFromLabel">From Currency</label>
                             <select data-role="from"></select>
                         </div>
                         <div class="form-group" style="width: 140px;">
-                            <label>У валюту</label>
+                            <label id="exchangeRatesToLabel">To Currency</label>
                             <select data-role="to"></select>
                         </div>
                     </div>
                     <div class="result-box">
-                        <strong>Результат:</strong>
+                        <strong id="exchangeRatesResultLabel">Result:</strong>
                         <span data-role="result">—</span>
                     </div>
                 </div>
                 <div id="exchangeRatesList">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Завантаження курсів...</p>
+                        <p>Loading rates...</p>
                     </div>
                 </div>
             </div>
             
             <div class="card">
-                <h2>Графіки курсів валют</h2>
+                <h2 id="historyChartTitleStatic">Графіки курсів валют</h2>
                 <div class="history-controls">
-                    <label for="historyRange">Період:</label>
+                    <label for="historyRange" id="historyRangeLabel">Період:</label>
                     <select id="historyRange">
-                        <option value="7d">Останні 7 днів</option>
-                        <option value="14d">Останні 14 днів</option>
-                        <option value="1m">1 місяць</option>
-                        <option value="3m">3 місяці</option>
-                        <option value="6m">6 місяців</option>
-                        <option value="12m">1 рік</option>
+                        <option value="7d" id="history7dOption">Останні 7 днів</option>
+                        <option value="14d" id="history14dOption">Останні 14 днів</option>
+                        <option value="1m" id="history1mOption">1 місяць</option>
+                        <option value="3m" id="history3mOption">3 місяці</option>
+                        <option value="6m" id="history6mOption">6 місяців</option>
+                        <option value="12m" id="history12mOption">1 рік</option>
                     </select>
-                    <label for="historyCurrency">Валюта:</label>
+                    <label for="historyCurrency" id="historyCurrencyLabel">Валюта:</label>
                     <select id="historyCurrency"></select>
                     </div>
                 <div style="margin-top: 1rem;">
-                    <h3 id="historyChartTitle" style="text-align: center; margin-bottom: 1rem;">USD (Долар США)</h3>
+                    <h3 id="historyChartTitle" style="text-align: center; margin-bottom: 1rem;"></h3>
                     <canvas id="historyChart"></canvas>
                 </div>
             </div>
@@ -1475,37 +1531,37 @@
                 <div class="chat-layout">
                     <div class="chat-sidebar">
                         <div class="chat-search">
-                            <label for="chatContactInput">Новий діалог</label>
+                            <label for="chatContactInput">New Conversation</label>
                             <input id="chatContactInput" type="text" placeholder="@sasha" autocomplete="off" />
-                            <button class="chat-start-btn" id="startChatBtn" type="button">Почати чат</button>
+                            <button class="chat-start-btn" id="startChatBtn" type="button">Start Chat</button>
                         </div>
                         <div class="chat-threads" id="chatThreads">
                             <div class="loading">
                                 <div class="spinner"></div>
-                                <p>Завантаження діалогів...</p>
+                                <p>Loading conversations...</p>
                             </div>
                         </div>
                     </div>
                     <div class="chat-main">
                         <div class="chat-header" id="chatHeader">
                     <div>
-                                <strong id="chatActiveTitle">Оберіть діалог</strong>
+                                <strong id="chatActiveTitle"></strong>
                                 <div id="chatActiveStatus" style="font-size:0.85rem; opacity:0.75;">Переводи через $cash доступні після вибору співрозмовника</div>
                     </div>
                     <div>
-                                <small>Використовуйте команду <code>$cash 400 UAH -></code> для швидкого переказу</small>
+                                <small id="chatCashCommandHint">Використовуйте команду <code>$cash 400 UAH -></code> для швидкого переказу</small>
                     </div>
                 </div>
                         <div class="chat-history" id="chatHistory">
-                            <p style="opacity:0.7;">Почніть нову розмову або оберіть існуючий діалог.</p>
+                            <p style="opacity:0.7;"></p>
             </div>
                         <div class="chat-composer" id="chatComposer">
-                            <textarea id="chatInput" class="chat-textarea" placeholder="Напишіть повідомлення..." disabled></textarea>
+                            <textarea id="chatInput" class="chat-textarea" placeholder="" disabled></textarea>
                             <div class="chat-actions">
                                 <div class="chat-controls">
                                     <button type="button" id="emojiToggleBtn">😀</button>
                                 </div>
-                                <button class="chat-send-btn" type="button" id="chatSendBtn" disabled>Відправити</button>
+                                <button class="chat-send-btn" type="button" id="chatSendBtn" disabled></button>
                             </div>
                             <div class="emoji-picker" id="emojiPicker"></div>
                         </div>
@@ -1519,21 +1575,21 @@
     <div id="createAccountModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Створити новий акаунт</h2>
+                <h2>Create New Account</h2>
                 <span class="close" onclick="closeCreateAccountModal()">&times;</span>
             </div>
             <form id="createAccountForm">
                 <div class="form-group">
-                    <label>Валюта:</label>
+                    <label id="createAccountCurrencyLabel">Currency:</label>
                     <select id="accountCurrency" required>
-                        <option value="USD">USD - Долар США</option>
-                        <option value="EUR">EUR - Євро</option>
-                        <option value="UAH">UAH - Гривня</option>
-                        <option value="CHF">CHF - Швейцарський франк</option>
-                        <option value="GBP">GBP - Британський фунт</option>
+                        <option value="USD" id="currencyUSD">USD - US Dollar</option>
+                        <option value="EUR" id="currencyEUR">EUR - Euro</option>
+                        <option value="UAH" id="currencyUAH">UAH - Hryvnia</option>
+                        <option value="CHF" id="currencyCHF">CHF - Swiss Franc</option>
+                        <option value="GBP" id="currencyGBP">GBP - British Pound</option>
                     </select>
                 </div>
-                <button type="submit" class="btn">Створити акаунт</button>
+                <button type="submit" class="btn" id="createAccountSubmitBtn">Create Account</button>
             </form>
         </div>
     </div>
@@ -1541,22 +1597,56 @@
     <div id="profileOverlay" class="profile-overlay">
         <div class="profile-overlay-content">
             <div class="profile-overlay-header">
-                <h2>Мій профіль</h2>
+                <h2 id="profileOverlayTitle">My Profile</h2>
                 <span class="close" id="profileOverlayClose">&times;</span>
             </div>
             <div class="profile-overlay-body" id="profileOverlayBody">
-                <p>Завантаження...</p>
+                <p id="profileOverlayLoading">Loading...</p>
             </div>
             <div class="profile-overlay-actions">
-                <button class="btn" onclick="window.location.href='profile-setup.html'">Редагувати</button>
-                <button class="btn btn-secondary" id="profileOverlayCollapse">Закрити</button>
+                <button class="btn" id="profileOverlayEditBtn" onclick="window.location.href='profile-setup.html'">Edit</button>
+                <button class="btn btn-secondary" id="profileOverlayCollapse">Close</button>
             </div>
         </div>
     </div>
 
     <script>
+        // Immediate test to verify JavaScript is executing
+        (function() {
+            try {
+                console.log('=== USER DASHBOARD SCRIPT LOADING ===');
+                // Make sure basic functions work
+                if (typeof console === 'undefined') {
+                    alert('Console is not available!');
+                }
+            } catch (e) {
+                alert('JavaScript error at start: ' + e.message);
+            }
+        })();
+        
         const USER_THEME_STORAGE_KEY = 'userDashboardTheme';
         const LEGACY_THEME_STORAGE_KEY = 'theme';
+        
+        // Define minimal showTab function immediately so tabs can be clicked
+        window.showTab = function(tabName, evt) {
+            console.log('showTab called:', tabName);
+            try {
+                const tabs = document.querySelectorAll('.header-tabs .tab');
+                tabs.forEach(tab => tab.classList.remove('active'));
+                const targetTab = evt && evt.currentTarget ? evt.currentTarget : document.querySelector(`.header-tabs .tab[data-tab="${tabName}"]`);
+                if (targetTab) {
+                    targetTab.classList.add('active');
+                }
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                const targetContent = document.getElementById(tabName);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+                console.log('Tab switched to:', tabName);
+            } catch (error) {
+                console.error('Error in showTab:', error);
+            }
+        };
 
         (function() {
             try {
@@ -1699,10 +1789,644 @@
             applyTheme(nextTheme);
         }
 
+        // Language localization
+        const translations = {
+            uk: {
+                tabs: {
+                    accounts: 'Мої акаунти',
+                    transactions: 'Історія транзакцій',
+                    operations: 'Операції',
+                    exchangeRates: 'Курси валют',
+                    messenger: 'Месенджер'
+                },
+                header: {
+                    userName: 'Користувач',
+                    profileSettings: 'Налаштування профілю',
+                    logout: 'Вийти',
+                    myProfile: 'Мій профіль',
+                    toggleTheme: 'Перемкнути тему',
+                    switchLanguage: 'Перемкнути мову'
+                },
+                accounts: {
+                    title: 'Мої акаунти',
+                    loading: 'Завантаження акаунтів...',
+                    createNew: 'Створити новий акаунт',
+                    currency: 'Валюта',
+                    balance: 'Баланс',
+                    created: 'Створено',
+                    noAccounts: 'Акаунтів не знайдено'
+                },
+                transactions: {
+                    title: 'Історія транзакцій',
+                    loading: 'Завантаження транзакцій...',
+                    noTransactions: 'Транзакцій не знайдено',
+                    category: 'Категорія',
+                    selectCategory: 'Оберіть категорію'
+                },
+                expenseStats: {
+                    title: 'Статистика витрат',
+                    selectAccount: 'Виберіть акаунт:',
+                    selectMonth: 'Виберіть місяць:',
+                    allAccounts: 'Всі акаунти',
+                    noData: 'Немає даних для відображення'
+                },
+                operations: {
+                    deposit: {
+                        title: 'Поповнити акаунт',
+                        account: 'Акаунт:',
+                        selectAccount: 'Оберіть акаунт',
+                        amount: 'Сума:',
+                        button: 'Поповнити'
+                    },
+                    withdraw: {
+                        title: 'Зняти кошти',
+                        account: 'Акаунт:',
+                        selectAccount: 'Оберіть акаунт',
+                        amount: 'Сума:',
+                        button: 'Зняти'
+                    },
+                    transfer: {
+                        title: 'Переказ між акаунтами',
+                        fromAccount: 'З акаунту:',
+                        selectAccount: 'Оберіть акаунт',
+                        toAccount: 'На акаунт:',
+                        accountNumber: 'Номер акаунту',
+                        amount: 'Сума:',
+                        button: 'Переказати'
+                    },
+                    quickConversion: {
+                        title: 'Швидка конвертація',
+                        amount: 'Сума:',
+                        fromCurrency: 'З валютy',
+                        toCurrency: 'У валюту',
+                        result: 'Результат:',
+                        enterAmount: 'Введіть суму більше 0.'
+                    }
+                },
+                exchangeRates: {
+                    title: 'Актуальні курси валют',
+                    description: 'Показує скільки гривень (UAH) потрібно заплатити за 1 одиницю валюти',
+                    quickConversion: 'Швидка конвертація',
+                    amount: 'Сума:',
+                    fromCurrency: 'З валютy',
+                    toCurrency: 'У валюту',
+                    result: 'Результат:',
+                    loading: 'Завантаження курсів...',
+                    selectCurrency: 'Оберіть валюти.',
+                    historyChart: 'Графіки курсів валют',
+                    period: {
+                        label: 'Період:',
+                        options: {
+                            '7d': '7 днів',
+                            '14d': '14 днів',
+                            '1m': '1 місяць',
+                            '3m': '3 місяці',
+                            '6m': '6 місяців',
+                            '12m': '1 рік'
+                        }
+                    }
+                },
+                chat: {
+                    newConversation: 'Новий діалог',
+                    startChat: 'Почати чат',
+                    loadingConversations: 'Завантаження діалогів...',
+                    selectDialog: 'Оберіть діалог',
+                    selectDialogOrCreate: 'Оберіть діалог або створіть новий',
+                    failedToLoad: 'Не вдалося завантажити чат. Спробуйте пізніше.',
+                    failedToUpdateList: 'Не вдалося оновити список діалогів',
+                    noActiveDialogs: 'Немає активних діалогів. Оберіть користувача вище, щоб розпочати.',
+                    failedToLoadMessages: 'Не вдалося завантажити повідомлення',
+                    selectRecipient: 'Оберіть співрозмовника, щоб надіслати повідомлення',
+                    failedToSend: 'Не вдалося надіслати повідомлення:',
+                    typeMessage: 'Введіть повідомлення...',
+                    insufficientFunds: 'Недостатньо коштів або помилка переказу',
+                    loadingData: 'Завантаження даних...',
+                    enterNickname: 'Введіть нік у форматі @username',
+                    cannotMessageSelf: 'Неможливо написати самому собі',
+                    userNotFound: 'Користувача @{handle} не знайдено',
+                    firstMessage: 'Напишіть перше повідомлення',
+                    noMessagesYet: 'Повідомлень поки що немає. Напишіть перше повідомлення.',
+                    messageSent: 'Повідомлення надіслано',
+                    noConnection: 'Немає з\'єднання з сервером чату',
+                    cashCommandAvailable: 'Переводи через $cash доступні після вибору співрозмовника',
+                    cashCommandHint: 'Використовуйте команду $cash 400 UAH -> для швидкого переказу'
+                },
+                profile: {
+                    title: 'Мій профіль',
+                    loading: 'Завантаження...',
+                    expand: 'Розгорнути',
+                    edit: 'Редагувати',
+                    close: 'Закрити',
+                    name: 'Ім\'я:',
+                    email: 'Email:',
+                    age: 'Вік:',
+                    employers: 'Роботодавці:',
+                    notSpecified: 'Не вказано',
+                    viewProfile: 'Переглянути профіль'
+                },
+                modals: {
+                    createAccount: {
+                        title: 'Створити новий акаунт',
+                        currency: 'Валюта:',
+                        button: 'Створити акаунт'
+                    }
+                },
+                messages: {
+                    loading: 'Завантаження...',
+                    connectionError: 'Помилка з\'єднання:',
+                    checkServer: 'Перевірте, чи запущений сервер.',
+                    errorLoadingUser: 'Помилка завантаження даних користувача',
+                    errorLoadingAccounts: 'Помилка завантаження акаунтів:',
+                    errorLoadingTransactions: 'Помилка завантаження транзакцій:',
+                    errorUpdatingCategory: 'Помилка оновлення категорії:',
+                    errorLoadingMessenger: 'Помилка завантаження месенджера:',
+                    requestError: 'Помилка запиту',
+                    fillFieldsCorrectly: 'Помилка: заповніть всі поля коректно',
+                    tokenInvalid: 'Токен недійсний або застарів. Будь ласка, увійдіть знову.',
+                    profileNotFilled: 'Профіль не заповнено. Будь ласка, заповніть ваш профіль.',
+                    profileNotFound: 'Профіль не знайдено. Заповніть форму нижче для створення профілю.',
+                    success: 'Успішно!',
+                    depositSuccess: 'Акаунт успішно поповнено!',
+                    withdrawSuccess: 'Кошти успішно знято!',
+                    transferSuccess: 'Переказ успішно виконано!',
+                    accountCreated: 'Акаунт успішно створено!',
+                    insufficientFunds: 'Недостатньо коштів на рахунку',
+                    totalAccounts: 'Всього акаунтів:',
+                    nameLabel: 'Ім\'я:',
+                    depositError: 'Помилка поповнення акаунту: ',
+                    withdrawError: 'Помилка зняття коштів: ',
+                    transferError: 'Помилка переказу: ',
+                    userDataNotLoaded: 'Помилка: дані користувача не завантажені. Будь ласка, оновіть сторінку.',
+                    accountCreateError: 'Помилка створення акаунту: ',
+                    unknownError: 'Невідома помилка',
+                    send: 'Відправити',
+                    noAccountsMessage: 'У вас поки немає акаунтів. Створіть перший акаунт!',
+                    noTransactionsMessage: 'У вас поки немає транзакцій.',
+                    startNicknameWithAt: 'Почніть нік із символу @',
+                    initializeChatFirst: 'Спочатку увімкніть чат'
+                },
+                categories: {
+                    none: 'Без категорії',
+                    FOOD: '🍕 Їжа',
+                    TRANSPORT: '🚗 Транспорт',
+                    SHOPPING: '🛍️ Покупки',
+                    ENTERTAINMENT: '🎬 Розваги',
+                    BILLS: '💡 Комунальні послуги',
+                    HEALTHCARE: '🏥 Здоров\'я',
+                    EDUCATION: '📚 Освіта',
+                    OTHER: '📦 Інше'
+                }
+            },
+            en: {
+                tabs: {
+                    accounts: 'My Accounts',
+                    transactions: 'Transaction History',
+                    operations: 'Operations',
+                    exchangeRates: 'Exchange Rates',
+                    messenger: 'Messenger'
+                },
+                header: {
+                    userName: 'User',
+                    profileSettings: 'Profile Settings',
+                    logout: 'Logout',
+                    myProfile: 'My Profile',
+                    toggleTheme: 'Toggle theme',
+                    switchLanguage: 'Switch language'
+                },
+                accounts: {
+                    title: 'My Accounts',
+                    loading: 'Loading accounts...',
+                    createNew: 'Create New Account',
+                    currency: 'Currency',
+                    balance: 'Balance',
+                    created: 'Created',
+                    noAccounts: 'No accounts found'
+                },
+                transactions: {
+                    title: 'Transaction History',
+                    loading: 'Loading transactions...',
+                    noTransactions: 'No transactions found',
+                    category: 'Category',
+                    selectCategory: 'Select category'
+                },
+                expenseStats: {
+                    title: 'Expense Statistics',
+                    selectAccount: 'Select Account:',
+                    selectMonth: 'Select Month:',
+                    allAccounts: 'All Accounts',
+                    noData: 'No data to display'
+                },
+                operations: {
+                    deposit: {
+                        title: 'Deposit to Account',
+                        account: 'Account:',
+                        selectAccount: 'Select account',
+                        amount: 'Amount:',
+                        button: 'Deposit'
+                    },
+                    withdraw: {
+                        title: 'Withdraw Funds',
+                        account: 'Account:',
+                        selectAccount: 'Select account',
+                        amount: 'Amount:',
+                        button: 'Withdraw'
+                    },
+                    transfer: {
+                        title: 'Transfer Between Accounts',
+                        fromAccount: 'From Account:',
+                        selectAccount: 'Select account',
+                        toAccount: 'To Account:',
+                        accountNumber: 'Account number',
+                        amount: 'Amount:',
+                        button: 'Transfer'
+                    },
+                    quickConversion: {
+                        title: 'Quick Conversion',
+                        amount: 'Amount:',
+                        fromCurrency: 'From Currency',
+                        toCurrency: 'To Currency',
+                        result: 'Result:',
+                        enterAmount: 'Enter amount greater than 0.'
+                    }
+                },
+                exchangeRates: {
+                    title: 'Current Exchange Rates',
+                    description: 'Shows how many hryvnias (UAH) you need to pay for 1 unit of currency',
+                    quickConversion: 'Quick Conversion',
+                    amount: 'Amount:',
+                    fromCurrency: 'From Currency',
+                    toCurrency: 'To Currency',
+                    result: 'Result:',
+                    loading: 'Loading rates...',
+                    selectCurrency: 'Select currencies.',
+                    historyChart: 'Exchange Rate Charts',
+                    period: {
+                        label: 'Period:',
+                        options: {
+                            '7d': '7 days',
+                            '14d': '14 days',
+                            '1m': '1 month',
+                            '3m': '3 months',
+                            '6m': '6 months',
+                            '12m': '1 year'
+                        }
+                    }
+                },
+                chat: {
+                    newConversation: 'New Conversation',
+                    startChat: 'Start Chat',
+                    loadingConversations: 'Loading conversations...',
+                    selectDialog: 'Select dialog',
+                    selectDialogOrCreate: 'Select a dialog or create a new one',
+                    failedToLoad: 'Failed to load chat. Please try again later.',
+                    failedToUpdateList: 'Failed to update dialog list',
+                    noActiveDialogs: 'No active dialogs. Select a user above to start.',
+                    failedToLoadMessages: 'Failed to load messages',
+                    selectRecipient: 'Select a recipient to send a message',
+                    failedToSend: 'Failed to send message:',
+                    typeMessage: 'Type a message...',
+                    insufficientFunds: 'Insufficient funds or transfer error',
+                    loadingData: 'Loading data...',
+                    enterNickname: 'Enter nickname in format @username',
+                    cannotMessageSelf: 'Cannot message yourself',
+                    userNotFound: 'User @{handle} not found',
+                    firstMessage: 'Write the first message',
+                    noMessagesYet: 'No messages yet. Write the first message.',
+                    messageSent: 'Message sent',
+                    noConnection: 'No connection to chat server',
+                    cashCommandAvailable: '$cash transfers available after selecting a contact',
+                    cashCommandHint: 'Use the command $cash 400 UAH -> for a quick transfer'
+                },
+                profile: {
+                    title: 'My Profile',
+                    loading: 'Loading...',
+                    expand: 'Expand',
+                    edit: 'Edit',
+                    close: 'Close',
+                    name: 'Name:',
+                    email: 'Email:',
+                    age: 'Age:',
+                    employers: 'Employers:',
+                    notSpecified: 'Not specified',
+                    viewProfile: 'View profile'
+                },
+                modals: {
+                    createAccount: {
+                        title: 'Create New Account',
+                        currency: 'Currency:',
+                        button: 'Create Account'
+                    }
+                },
+                messages: {
+                    loading: 'Loading...',
+                    connectionError: 'Connection error:',
+                    checkServer: 'Please check if the server is running.',
+                    errorLoadingUser: 'Error loading user data',
+                    errorLoadingAccounts: 'Error loading accounts:',
+                    errorLoadingTransactions: 'Error loading transactions:',
+                    errorUpdatingCategory: 'Error updating category:',
+                    errorLoadingMessenger: 'Error loading messenger:',
+                    requestError: 'Request error',
+                    fillFieldsCorrectly: 'Error: please fill all fields correctly',
+                    tokenInvalid: 'Token is invalid or expired. Please log in again.',
+                    profileNotFilled: 'Profile not filled. Please fill in your profile.',
+                    profileNotFound: 'Profile not found. Fill in the form below to create a profile.',
+                    success: 'Success!',
+                    depositSuccess: 'Account successfully topped up!',
+                    withdrawSuccess: 'Funds successfully withdrawn!',
+                    transferSuccess: 'Transfer completed successfully!',
+                    accountCreated: 'Account successfully created!',
+                    insufficientFunds: 'Insufficient funds on account',
+                    totalAccounts: 'Total Accounts:',
+                    nameLabel: 'Name:',
+                    depositError: 'Error topping up account: ',
+                    withdrawError: 'Error withdrawing funds: ',
+                    transferError: 'Error transferring: ',
+                    userDataNotLoaded: 'Error: user data not loaded. Please refresh the page.',
+                    accountCreateError: 'Error creating account: ',
+                    unknownError: 'Unknown error',
+                    send: 'Send',
+                    noAccountsMessage: 'You don\'t have any accounts yet. Create your first account!',
+                    noTransactionsMessage: 'You don\'t have any transactions yet.',
+                    startNicknameWithAt: 'Start nickname with @ symbol',
+                    initializeChatFirst: 'Initialize chat first'
+                },
+                categories: {
+                    none: 'No category',
+                    FOOD: '🍕 Food',
+                    TRANSPORT: '🚗 Transport',
+                    SHOPPING: '🛍️ Shopping',
+                    ENTERTAINMENT: '🎬 Entertainment',
+                    BILLS: '💡 Utilities',
+                    HEALTHCARE: '🏥 Healthcare',
+                    EDUCATION: '📚 Education',
+                    OTHER: '📦 Other'
+                }
+            }
+        };
+
+        const LANGUAGE_STORAGE_KEY = 'user_language';
+        let currentLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'uk';
+
+        function getText(key) {
+            const keys = key.split('.');
+            let value = translations[currentLanguage];
+            for (const k of keys) {
+                value = value?.[k];
+            }
+            return value || key;
+        }
+
+        function switchLanguage() {
+            currentLanguage = currentLanguage === 'uk' ? 'en' : 'uk';
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, currentLanguage);
+            applyLanguage();
+            // Re-render all tables and lists to update translations and date formats
+            if (accounts && accounts.length > 0) {
+                displayAccounts(accounts);
+                // Update account selects to refresh placeholder text
+                updateAccountSelects();
+            }
+            if (currentCustomer) {
+                loadTransactions();
+                loadExpenseStatistics();
+            }
+        }
+
+        function applyLanguage() {
+            console.log('applyLanguage called, current language:', currentLanguage);
+            try {
+                // Update HTML lang attribute for calendar localization
+                const htmlElement = document.documentElement;
+                if (htmlElement) {
+                    htmlElement.lang = currentLanguage === 'uk' ? 'uk' : 'en';
+                }
+                
+                // Update lang attribute on all date and month input elements for calendar localization
+                const calendarLocale = currentLanguage === 'uk' ? 'uk' : 'en';
+                const dateInputs = document.querySelectorAll('input[type="date"]');
+                dateInputs.forEach(input => {
+                    input.lang = calendarLocale;
+                });
+                const monthInputs = document.querySelectorAll('input[type="month"]');
+                monthInputs.forEach(input => {
+                    input.lang = calendarLocale;
+                });
+                
+                // Update tabs
+                const tabs = {
+                    'accounts': getText('tabs.accounts'),
+                    'transactions': getText('tabs.transactions'),
+                    'operations': getText('tabs.operations'),
+                    'exchange-rates': getText('tabs.exchangeRates'),
+                    'chat': getText('tabs.messenger')
+                };
+                console.log('Tabs translations:', tabs);
+                Object.keys(tabs).forEach(tab => {
+                    const el = document.querySelector(`[data-tab="${tab}"]`);
+                    if (el) {
+                        console.log(`Updating tab ${tab}:`, el.textContent, '->', tabs[tab]);
+                        el.textContent = tabs[tab];
+                    } else {
+                        console.warn(`Tab element not found for: ${tab}`);
+                    }
+                });
+            } catch (error) {
+                console.error('Error updating tabs:', error);
+            }
+
+            // Update header
+            const userNameEl = document.getElementById('userName');
+            if (userNameEl && !userNameEl.dataset.original) {
+                userNameEl.dataset.original = userNameEl.textContent;
+            }
+            const profileSettingsBtn = document.querySelector('.logout-btn[onclick*="profile-setup"]');
+            if (profileSettingsBtn) profileSettingsBtn.textContent = getText('header.profileSettings');
+            const logoutBtn = document.querySelector('.logout-btn[onclick="logout()"]');
+            if (logoutBtn) logoutBtn.textContent = getText('header.logout');
+            const languageBtn = document.getElementById('languageToggleBtn');
+            if (languageBtn) languageBtn.title = getText('header.switchLanguage');
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) themeBtn.title = getText('header.toggleTheme');
+
+            // Update accounts section
+            const accountsTitle = document.getElementById('userAccountsTitle');
+            if (accountsTitle) accountsTitle.textContent = getText('accounts.title');
+            const accountsLoading = document.getElementById('userAccountsLoadingText');
+            if (accountsLoading) accountsLoading.textContent = getText('accounts.loading');
+            const createAccountBtn = document.getElementById('createNewAccountBtn');
+            if (createAccountBtn) createAccountBtn.textContent = getText('accounts.createNew');
+
+            // Update transactions section
+            const transactionsTitle = document.querySelector('#transactions h2, #userTransactionsTitle');
+            if (transactionsTitle) transactionsTitle.textContent = getText('transactions.title');
+            const transactionsLoading = document.getElementById('userTransactionsLoadingText');
+            if (transactionsLoading) transactionsLoading.textContent = getText('transactions.loading');
+            const expenseStatsTitle = document.getElementById('expenseStatsTitle');
+            if (expenseStatsTitle) expenseStatsTitle.textContent = getText('expenseStats.title');
+            const expenseAccountLabel = document.getElementById('expenseAccountLabel');
+            if (expenseAccountLabel) expenseAccountLabel.textContent = getText('expenseStats.selectAccount') + ':';
+            const allAccountsOption = document.getElementById('allAccountsOption');
+            if (allAccountsOption) allAccountsOption.textContent = getText('expenseStats.allAccounts');
+            const expenseMonthLabel = document.getElementById('expenseMonthLabel');
+            if (expenseMonthLabel) expenseMonthLabel.textContent = getText('expenseStats.selectMonth') + ':';
+
+            // Update operations section
+            const depositTitle = document.getElementById('userDepositTitle');
+            if (depositTitle) depositTitle.textContent = getText('operations.deposit.title');
+            const depositAccountLabel = document.getElementById('userDepositAccountLabel');
+            if (depositAccountLabel) depositAccountLabel.textContent = getText('operations.deposit.account');
+            const depositSelectAccountOption = document.getElementById('userDepositSelectAccountOption');
+            if (depositSelectAccountOption) depositSelectAccountOption.textContent = getText('operations.deposit.selectAccount');
+            const depositAmountLabel = document.getElementById('userDepositAmountLabel');
+            if (depositAmountLabel) depositAmountLabel.textContent = getText('operations.deposit.amount');
+            const depositButton = document.getElementById('userDepositBtn');
+            if (depositButton) depositButton.textContent = getText('operations.deposit.button');
+
+            const withdrawTitle = document.getElementById('userWithdrawTitle');
+            if (withdrawTitle) withdrawTitle.textContent = getText('operations.withdraw.title');
+            const withdrawAccountLabel = document.getElementById('userWithdrawAccountLabel');
+            if (withdrawAccountLabel) withdrawAccountLabel.textContent = getText('operations.withdraw.account');
+            const withdrawSelectAccountOption = document.getElementById('userWithdrawSelectAccountOption');
+            if (withdrawSelectAccountOption) withdrawSelectAccountOption.textContent = getText('operations.withdraw.selectAccount');
+            const withdrawAmountLabel = document.getElementById('userWithdrawAmountLabel');
+            if (withdrawAmountLabel) withdrawAmountLabel.textContent = getText('operations.withdraw.amount');
+            const withdrawButton = document.getElementById('userWithdrawBtn');
+            if (withdrawButton) withdrawButton.textContent = getText('operations.withdraw.button');
+
+            const transferTitle = document.getElementById('userTransferTitle');
+            if (transferTitle) transferTitle.textContent = getText('operations.transfer.title');
+            const fromAccountLabel = document.getElementById('userTransferFromAccountLabel');
+            if (fromAccountLabel) fromAccountLabel.textContent = getText('operations.transfer.fromAccount');
+            const transferSelectAccountOption = document.getElementById('userTransferSelectAccountOption');
+            if (transferSelectAccountOption) transferSelectAccountOption.textContent = getText('operations.transfer.selectAccount');
+            const toAccountLabel = document.getElementById('userTransferToAccountLabel');
+            if (toAccountLabel) toAccountLabel.textContent = getText('operations.transfer.toAccount');
+            const toAccountInput = document.getElementById('toAccountNumber');
+            if (toAccountInput) toAccountInput.placeholder = getText('operations.transfer.accountNumber');
+            const transferAmountLabel = document.getElementById('userTransferAmountLabel');
+            if (transferAmountLabel) transferAmountLabel.textContent = getText('operations.transfer.amount');
+            const transferButton = document.getElementById('userTransferBtn');
+            if (transferButton) transferButton.textContent = getText('operations.transfer.button');
+
+            const quickConvTitle = document.getElementById('userQuickConvTitle');
+            if (quickConvTitle) quickConvTitle.textContent = getText('operations.quickConversion.title');
+            const quickConvAmountLabel = document.getElementById('userQuickConvAmountLabel');
+            if (quickConvAmountLabel) quickConvAmountLabel.textContent = getText('operations.quickConversion.amount');
+            const quickConvFromLabel = document.getElementById('userQuickConvFromLabel');
+            if (quickConvFromLabel) quickConvFromLabel.textContent = getText('operations.quickConversion.fromCurrency');
+            const quickConvToLabel = document.getElementById('userQuickConvToLabel');
+            if (quickConvToLabel) quickConvToLabel.textContent = getText('operations.quickConversion.toCurrency');
+            const quickConvResultLabel = document.getElementById('userQuickConvResultLabel');
+            if (quickConvResultLabel) quickConvResultLabel.textContent = getText('operations.quickConversion.result') + ':';
+
+            // Update exchange rates
+            const exchangeTitle = document.getElementById('userExchangeRatesTitle');
+            if (exchangeTitle) exchangeTitle.textContent = getText('exchangeRates.title');
+            const exchangeDesc = document.getElementById('exchangeRatesDescription');
+            if (exchangeDesc) exchangeDesc.textContent = getText('exchangeRates.description');
+            const exchangeQuickConvTitle = document.getElementById('exchangeRatesQuickConvTitle');
+            if (exchangeQuickConvTitle) exchangeQuickConvTitle.textContent = getText('exchangeRates.quickConversion');
+            const exchangeRatesAmountLabel = document.getElementById('exchangeRatesAmountLabel');
+            if (exchangeRatesAmountLabel) exchangeRatesAmountLabel.textContent = getText('exchangeRates.amount');
+            const exchangeRatesFromLabel = document.getElementById('exchangeRatesFromLabel');
+            if (exchangeRatesFromLabel) exchangeRatesFromLabel.textContent = getText('exchangeRates.fromCurrency');
+            const exchangeRatesToLabel = document.getElementById('exchangeRatesToLabel');
+            if (exchangeRatesToLabel) exchangeRatesToLabel.textContent = getText('exchangeRates.toCurrency');
+            const exchangeRatesResultLabel = document.getElementById('exchangeRatesResultLabel');
+            if (exchangeRatesResultLabel) exchangeRatesResultLabel.textContent = getText('exchangeRates.result') + ':';
+            const exchangeLoading = document.querySelector('#exchangeRatesList .loading p');
+            if (exchangeLoading) exchangeLoading.textContent = getText('exchangeRates.loading');
+            
+            // Update exchange rates history section
+            const historyChartTitleStatic = document.getElementById('historyChartTitleStatic');
+            if (historyChartTitleStatic) historyChartTitleStatic.textContent = getText('exchangeRates.historyChart');
+            const historyRangeLabel = document.getElementById('historyRangeLabel');
+            if (historyRangeLabel) historyRangeLabel.textContent = getText('exchangeRates.period.label');
+            const historyCurrencyLabel = document.getElementById('historyCurrencyLabel');
+            if (historyCurrencyLabel) historyCurrencyLabel.textContent = getText('accounts.currency') + ':';
+            const history7dOption = document.getElementById('history7dOption');
+            if (history7dOption) history7dOption.textContent = getText('exchangeRates.period.options.7d');
+            const history14dOption = document.getElementById('history14dOption');
+            if (history14dOption) history14dOption.textContent = getText('exchangeRates.period.options.14d');
+            const history1mOption = document.getElementById('history1mOption');
+            if (history1mOption) history1mOption.textContent = getText('exchangeRates.period.options.1m');
+            const history3mOption = document.getElementById('history3mOption');
+            if (history3mOption) history3mOption.textContent = getText('exchangeRates.period.options.3m');
+            const history6mOption = document.getElementById('history6mOption');
+            if (history6mOption) history6mOption.textContent = getText('exchangeRates.period.options.6m');
+            const history12mOption = document.getElementById('history12mOption');
+            if (history12mOption) history12mOption.textContent = getText('exchangeRates.period.options.12m');
+
+            // Update chat
+            const chatContactLabel = document.querySelector('label[for="chatContactInput"]');
+            if (chatContactLabel) chatContactLabel.textContent = getText('chat.newConversation');
+            const startChatBtn = document.getElementById('startChatBtn');
+            if (startChatBtn) startChatBtn.textContent = getText('chat.startChat');
+            const chatLoading = document.querySelector('#chatThreads .loading p');
+            if (chatLoading) chatLoading.textContent = getText('chat.loadingConversations');
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) chatInput.placeholder = getText('chat.typeMessage');
+            const chatSendBtn = document.getElementById('chatSendBtn');
+            if (chatSendBtn) chatSendBtn.textContent = getText('messages.send');
+            const chatActiveTitle = document.getElementById('chatActiveTitle');
+            if (chatActiveTitle && chatActiveTitle.textContent && !chatActiveTitle.textContent.includes('@')) {
+                chatActiveTitle.textContent = getText('chat.selectDialog');
+            }
+            const chatStatusEl = document.getElementById('chatStatus');
+            if (chatStatusEl && (chatStatusEl.textContent === getText('chat.selectDialogOrCreate') || chatStatusEl?.textContent === 'Select a dialog or create a new one' || chatStatusEl?.textContent === 'Оберіть діалог або створіть новий')) {
+                chatStatusEl.textContent = getText('chat.selectDialogOrCreate');
+            }
+            const chatActiveStatus = document.getElementById('chatActiveStatus');
+            if (chatActiveStatus) {
+                const currentText = chatActiveStatus.textContent.trim();
+                if (currentText === 'Переводи через $cash доступні після вибору співрозмовника' || 
+                    currentText === '$cash transfers available after selecting a contact' ||
+                    currentText === getText('chat.cashCommandAvailable')) {
+                    chatActiveStatus.textContent = getText('chat.cashCommandAvailable');
+                } else if (currentText === 'Оберіть діалог або створіть новий' ||
+                           currentText === 'Select a dialog or create a new one') {
+                    chatActiveStatus.textContent = getText('chat.selectDialogOrCreate');
+                }
+            }
+            const chatHistoryPlaceholder = document.querySelector('#chatHistory > p');
+            if (chatHistoryPlaceholder) {
+                chatHistoryPlaceholder.textContent = getText('chat.selectRecipient');
+            }
+            const chatCashCommandHint = document.getElementById('chatCashCommandHint');
+            if (chatCashCommandHint) {
+                const hintText = getText('chat.cashCommandHint');
+                // Replace $cash command with code tag if present
+                chatCashCommandHint.innerHTML = hintText.replace(/\$cash 400 UAH ->/g, '<code>$cash 400 UAH -></code>');
+            }
+
+            // Update profile
+            const profileTitle = document.getElementById('profileOverlayTitle');
+            if (profileTitle) profileTitle.textContent = getText('profile.title');
+            const profileExpandBtn = document.getElementById('profileExpandBtn');
+            if (profileExpandBtn) profileExpandBtn.textContent = getText('profile.expand');
+            const profileEditBtn = document.querySelector('.profile-popup-actions .btn-link[onclick*="profile-setup"]');
+            if (profileEditBtn) profileEditBtn.textContent = getText('profile.edit');
+            const profileCloseBtn = document.getElementById('profileOverlayClose');
+            if (profileCloseBtn) profileCloseBtn.textContent = getText('profile.close');
+
+            // Update modal
+            const createAccountTitle = document.querySelector('#createAccountModal h2');
+            if (createAccountTitle) createAccountTitle.textContent = getText('modals.createAccount.title');
+            const createAccountCurrencyLabel = document.getElementById('createAccountCurrencyLabel');
+            if (createAccountCurrencyLabel) createAccountCurrencyLabel.textContent = getText('modals.createAccount.currency');
+            const createAccountSubmitBtn = document.getElementById('createAccountSubmitBtn');
+            if (createAccountSubmitBtn) createAccountSubmitBtn.textContent = getText('modals.createAccount.button');
+        }
+
         // Перевіряємо авторизацію
+        console.log('=== SETTING UP LOAD EVENT LISTENER ===');
         window.addEventListener('load', function() {
+            console.log('=== LOAD EVENT FIRED ===');
             const token = localStorage.getItem('accessToken');
+            console.log('Token exists:', !!token);
             if (!token) {
+                console.log('No token, redirecting to login...');
                 window.location.href = 'login.html';
                 return;
             }
@@ -1713,7 +2437,21 @@
                 return;
             }
 
-            document.getElementById('userName').textContent = localStorage.getItem('username') || 'Користувач';
+            // Initialize language
+            console.log('Initializing language...');
+            try {
+                applyLanguage();
+                console.log('Language initialized successfully');
+            } catch (error) {
+                console.error('Error applying language:', error);
+            }
+            const languageToggleBtn = document.getElementById('languageToggleBtn');
+            if (languageToggleBtn && !languageToggleBtn.dataset.bound) {
+                languageToggleBtn.addEventListener('click', switchLanguage);
+                languageToggleBtn.dataset.bound = 'true';
+            }
+
+            document.getElementById('userName').textContent = localStorage.getItem('username') || getText('header.userName');
             const initialTheme = localStorage.getItem(USER_THEME_STORAGE_KEY)
                 || localStorage.getItem(LEGACY_THEME_STORAGE_KEY)
                 || (document.body.classList.contains('dark-mode') ? 'dark' : 'light');
@@ -1782,11 +2520,11 @@
                     
                     if (typeof data === 'string') {
                         console.error('Received string instead of object:', data);
-                        showMessage('Дані користувача некоректні (отримано текст замість об\'єкта): ' + data.substring(0, 100), 'error');
+                        showMessage(getText('messages.errorLoadingUser') + ' (received text instead of object): ' + data.substring(0, 100), 'error');
                         currentCustomer = null;
                     } else if (!data || typeof data !== 'object') {
                         console.error('Invalid data type:', typeof data, data);
-                        showMessage('Дані користувача некоректні (невірний формат).', 'error');
+                        showMessage(getText('messages.errorLoadingUser') + ' (invalid format).', 'error');
                         currentCustomer = null;
                     } else {
                         currentCustomer = data;
@@ -1818,13 +2556,13 @@
                     console.warn('Customer not found (404)');
                     const currentPage = window.location.pathname;
                     if (!currentPage.includes('profile-setup.html')) {
-                        showMessage('Профіль не заповнено. Будь ласка, заповніть ваш профіль.', 'error');
+                            showMessage(getText('messages.profileNotFilled'), 'error');
                         setTimeout(() => {
                             window.location.href = 'profile-setup.html';
                         }, 3000); // Збільшено до 3 секунд, щоб користувач міг побачити повідомлення
                     } else {
                         // Якщо вже на сторінці профілю, просто показуємо помилку
-                        showMessage('Профіль не знайдено. Заповніть форму нижче для створення профілю.', 'error');
+                        showMessage(getText('messages.profileNotFound'), 'error');
                     }
                 } else if (response.status === 401 || response.status === 403) {
                     const errorText = await response.text().catch(() => '');
@@ -1867,11 +2605,11 @@
                 } else {
                     const errorText = await response.text().catch(() => '');
                     console.error('Other error:', response.status, errorText);
-                    showMessage('Помилка завантаження даних користувача (статус: ' + response.status + '): ' + (errorText || response.statusText || 'Невідома помилка'), 'error');
+                    showMessage('Error loading user data (status: ' + response.status + '): ' + (errorText || response.statusText || 'Unknown error'), 'error');
                 }
             } catch (error) {
                 console.error('Connection error:', error);
-                showMessage('Помилка з\'єднання: ' + error.message + '. Перевірте, чи запущений сервер.', 'error');
+                showMessage(getText('messages.connectionError') + ' ' + error.message + '. ' + getText('messages.checkServer'), 'error');
             } finally {
                 isLoading = false;
             }
@@ -1899,14 +2637,16 @@
                     console.log('loadAccounts: Accounts set to:', accounts.length, 'items');
                     displayAccounts(accounts);
                     updateAccountSelects();
+                    // Re-apply language after loading accounts to ensure translations are correct
+                    applyLanguage();
                 } else {
                     console.error('loadAccounts: Failed with status:', response.status);
                     const errorText = await readResponseBodySafe(response);
-                    showMessage('Помилка завантаження акаунтів: ' + (errorText || response.statusText), 'error');
+                    showMessage(getText('messages.errorLoadingAccounts') + ' ' + (errorText || response.statusText), 'error');
                 }
             } catch (error) {
                 console.error('loadAccounts: Error:', error);
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getText('messages.connectionError') + ' ' + error.message, 'error');
             }
         }
 
@@ -1933,14 +2673,16 @@
                     const transactions = (typeof data === 'string') ? [] : (Array.isArray(data) ? data : []);
                     console.log('loadTransactions: Parsed transactions:', transactions.length);
                     displayTransactions(transactions);
+                    // Re-apply language after loading transactions to update category selects
+                    applyLanguage();
                 } else {
                     const errorText = await readResponseBodySafe(response);
                     console.error('loadTransactions: Error response:', errorText);
-                    showMessage('Помилка завантаження транзакцій: ' + (errorText || response.statusText), 'error');
+                    showMessage(getText('messages.errorLoadingTransactions') + ' ' + (errorText || response.statusText), 'error');
                 }
             } catch (error) {
                 console.error('loadTransactions: Exception:', error);
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getText('messages.connectionError') + ' ' + error.message, 'error');
             }
         }
 
@@ -1969,21 +2711,21 @@
 
             const employers = Array.isArray(customer.employers) && customer.employers.length > 0
                 ? customer.employers.join(', ') 
-                : 'Н/Д';
+                : 'N/A';
 
             summary.innerHTML = `
-                <p><strong>Ім'я:</strong> ${customer.name || 'Не вказано'}</p>
-                <p><strong>Email:</strong> ${customer.email || 'Не вказано'}</p>
-                <p><strong>Вік:</strong> ${customer.age || 'Не вказано'}</p>
-                <p><strong>Акаунтів:</strong> <span id="profileAccountsCount">${Array.isArray(accounts) ? accounts.length : '—'}</span></p>
+                <p><strong>${getText('messages.nameLabel')}</strong> ${customer.name || getText('profile.notSpecified')}</p>
+                <p><strong>${getText('profile.email')}</strong> ${customer.email || getText('profile.notSpecified')}</p>
+                <p><strong>${getText('profile.age')}</strong> ${customer.age || getText('profile.notSpecified')}</p>
+                <p><strong>${getText('messages.totalAccounts')}</strong> <span id="profileAccountsCount">${Array.isArray(accounts) ? accounts.length : '—'}</span></p>
             `;
 
             overlayBody.innerHTML = `
-                <p><strong>Ім'я:</strong> ${customer.name || 'Не вказано'}</p>
-                <p><strong>Email:</strong> ${customer.email || 'Не вказано'}</p>
-                <p><strong>Вік:</strong> ${customer.age || 'Не вказано'}</p>
-                <p><strong>Роботодавці:</strong> ${employers}</p>
-                <p><strong>Всього акаунтів:</strong> <span id="profileOverlayAccountsCount">${Array.isArray(accounts) ? accounts.length : '—'}</span></p>
+                <p><strong>${getText('messages.nameLabel')}</strong> ${customer.name || getText('profile.notSpecified')}</p>
+                <p><strong>${getText('profile.email')}</strong> ${customer.email || getText('profile.notSpecified')}</p>
+                <p><strong>${getText('profile.age')}</strong> ${customer.age || getText('profile.notSpecified')}</p>
+                <p><strong>${getText('profile.employers')}</strong> ${employers}</p>
+                <p><strong>${getText('messages.totalAccounts')}</strong> <span id="profileOverlayAccountsCount">${Array.isArray(accounts) ? accounts.length : '—'}</span></p>
             `;
 
             updateProfileAccountCount();
@@ -2071,23 +2813,24 @@
             const container = document.getElementById('accountsList');
             
             if (accounts.length === 0) {
-                container.innerHTML = '<p>У вас поки немає акаунтів. Створіть перший акаунт!</p>';
+                container.innerHTML = `<p>${getText('messages.noAccountsMessage')}</p>`;
                 updateProfileAccountCount();
                 return;
             }
 
+            const locale = currentLanguage === 'uk' ? 'uk-UA' : 'en-US';
             container.innerHTML = accounts.map(account => {
                 const numericBalance = Number(account.balance ?? 0);
                 const isValid = Number.isFinite(numericBalance);
                 const displayBalance = isValid ? numericBalance.toFixed(2) : (account.balance ?? '0.00');
-                const createdOn = account.createdDate ? new Date(account.createdDate).toLocaleDateString('uk-UA') : '—';
+                const createdOn = account.createdDate ? new Date(account.createdDate).toLocaleDateString(locale) : '—';
 
                 return `
                 <div class="account-item">
                     <div class="account-info">
                         <h3>${account.number}</h3>
-                        <p>Валюта: ${account.currency} | Баланс: ${displayBalance}</p>
-                        <p>Створено: ${createdOn}</p>
+                        <p>${getText('accounts.currency')}: ${account.currency} | ${getText('accounts.balance')}: ${displayBalance}</p>
+                        <p>${getText('accounts.created')}: ${createdOn}</p>
                     </div>
                         <div class="account-balance account-balance-large">${displayBalance} ${account.currency}</div>
                 </div>
@@ -2102,40 +2845,254 @@
             
             if (!transactions || transactions.length === 0) {
                 console.log('displayTransactions: No transactions to display');
-                container.innerHTML = '<p>У вас поки немає транзакцій.</p>';
+                container.innerHTML = `<p>${getText('messages.noTransactionsMessage')}</p>`;
                 return;
             }
 
+            const locale = currentLanguage === 'uk' ? 'uk-UA' : 'en-US';
             console.log('displayTransactions: Rendering', transactions.length, 'transactions');
-            container.innerHTML = transactions.map(transaction => `
+            container.innerHTML = transactions.map(transaction => {
+                const canEditCategory = transaction.type === 'WITHDRAWAL' || transaction.type === 'PAYMENT';
+                return `
                 <div class="transaction-item">
                     <div class="transaction-info">
                         <h4>${transaction.description}</h4>
-                        <p>${new Date(transaction.timestamp).toLocaleString('uk-UA')}</p>
+                        <p>${new Date(transaction.timestamp).toLocaleString(locale)}</p>
                         <span class="transaction-type type-${transaction.type.toLowerCase()}">${transaction.type}</span>
+                        ${canEditCategory ? `
+                        <div style="margin-top: 0.5rem;">
+                            <label style="font-size: 0.85rem; color: #666;">${getText('transactions.category')}:</label>
+                            <select class="category-select" data-transaction-id="${transaction.id}" 
+                                    style="padding: 0.3rem; border-radius: 5px; border: 1px solid #ddd; margin-left: 0.5rem;">
+                                <option value="">${getText('categories.none')}</option>
+                                <option value="FOOD" ${transaction.category === 'FOOD' ? 'selected' : ''}>${getText('categories.FOOD')}</option>
+                                <option value="TRANSPORT" ${transaction.category === 'TRANSPORT' ? 'selected' : ''}>${getText('categories.TRANSPORT')}</option>
+                                <option value="SHOPPING" ${transaction.category === 'SHOPPING' ? 'selected' : ''}>${getText('categories.SHOPPING')}</option>
+                                <option value="ENTERTAINMENT" ${transaction.category === 'ENTERTAINMENT' ? 'selected' : ''}>${getText('categories.ENTERTAINMENT')}</option>
+                                <option value="BILLS" ${transaction.category === 'BILLS' ? 'selected' : ''}>${getText('categories.BILLS')}</option>
+                                <option value="HEALTHCARE" ${transaction.category === 'HEALTHCARE' ? 'selected' : ''}>${getText('categories.HEALTHCARE')}</option>
+                                <option value="EDUCATION" ${transaction.category === 'EDUCATION' ? 'selected' : ''}>${getText('categories.EDUCATION')}</option>
+                                <option value="OTHER" ${transaction.category === 'OTHER' ? 'selected' : ''}>${getText('categories.OTHER')}</option>
+                            </select>
+                        </div>
+                        ` : ''}
                     </div>
                     <div class="transaction-amount ${transaction.type === 'DEPOSIT' ? 'positive' : 'negative'}">
                         ${transaction.type === 'DEPOSIT' ? '+' : '-'}${transaction.amount}
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
+            
+            // Add event listeners for category selectors
+            container.querySelectorAll('.category-select').forEach(select => {
+                select.addEventListener('change', async (e) => {
+                    const transactionId = e.target.dataset.transactionId;
+                    const categoryValue = e.target.value;
+                    const category = categoryValue && categoryValue.trim() !== '' ? categoryValue : null;
+                    await updateTransactionCategory(transactionId, category);
+                });
+            });
+        }
+
+        let expenseChart = null;
+
+        async function updateTransactionCategory(transactionId, category) {
+            try {
+                const response = await fetchWithTimeout(`${BASE_URL}/transactions/${transactionId}/category`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ category: category })
+                });
+
+                if (response.ok) {
+                    // Reload transactions to reflect the updated category
+                    loadTransactions();
+                    // Reload expense statistics if they are visible
+                    const monthSelector = document.getElementById('expenseMonthSelector');
+                    if (monthSelector && monthSelector.value) {
+                        loadExpenseStatistics();
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error('Failed to update category:', errorText);
+                    showMessage('Error updating category: ' + errorText, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating category:', error);
+                showMessage(getText('messages.connectionError') + ' ' + error.message, 'error');
+            }
+        }
+
+        async function loadExpenseStatistics() {
+            if (!currentCustomer) {
+                return;
+            }
+
+            const monthSelector = document.getElementById('expenseMonthSelector');
+            const accountSelector = document.getElementById('expenseAccountSelector');
+            
+            if (!monthSelector || !monthSelector.value) {
+                // Set default to current month
+                const now = new Date();
+                monthSelector.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
+
+            const [year, month] = monthSelector.value.split('-').map(Number);
+            const accountId = accountSelector && accountSelector.value ? accountSelector.value : null;
+
+            try {
+                let url;
+                if (accountId) {
+                    url = `${BASE_URL}/transactions/account/${accountId}/expense-statistics?year=${year}&month=${month}`;
+                } else {
+                    url = `${BASE_URL}/transactions/customer/${currentCustomer.id}/expense-statistics?year=${year}&month=${month}`;
+                }
+
+                const response = await fetchWithTimeout(url, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const statistics = await response.json();
+                    renderExpenseChart(statistics);
+                } else {
+                    console.error('Failed to load expense statistics');
+                    if (expenseChart) {
+                        expenseChart.destroy();
+                        expenseChart = null;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading expense statistics:', error);
+                if (expenseChart) {
+                    expenseChart.destroy();
+                    expenseChart = null;
+                }
+            }
+        }
+
+        function renderExpenseChart(statistics) {
+            const ctx = document.getElementById('expenseChart');
+            if (!ctx) return;
+
+            const categoryLabels = {
+                'FOOD': getText('categories.FOOD'),
+                'TRANSPORT': getText('categories.TRANSPORT'),
+                'SHOPPING': getText('categories.SHOPPING'),
+                'ENTERTAINMENT': getText('categories.ENTERTAINMENT'),
+                'BILLS': getText('categories.BILLS'),
+                'HEALTHCARE': getText('categories.HEALTHCARE'),
+                'EDUCATION': getText('categories.EDUCATION'),
+                'OTHER': getText('categories.OTHER')
+            };
+
+            const labels = [];
+            const data = [];
+            const colors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+            ];
+
+            if (statistics.percentagesByCategory && Object.keys(statistics.percentagesByCategory).length > 0) {
+                Object.entries(statistics.percentagesByCategory).forEach(([category, percentage], index) => {
+                    labels.push(`${categoryLabels[category] || category}: ${percentage.toFixed(1)}%`);
+                    data.push(percentage);
+                });
+            }
+
+            if (expenseChart) {
+                expenseChart.destroy();
+            }
+
+            if (data.length === 0) {
+                if (expenseChart) {
+                    expenseChart.destroy();
+                    expenseChart = null;
+                }
+                const ctx2d = ctx.getContext('2d');
+                ctx2d.clearRect(0, 0, ctx.width, ctx.height);
+                ctx2d.fillStyle = document.body.classList.contains('dark-mode') ? '#94a3b8' : '#666';
+                ctx2d.font = '16px Arial';
+                ctx2d.textAlign = 'center';
+                ctx2d.fillText(getText('expenseStats.noData'), ctx.width / 2, ctx.height / 2);
+                return;
+            }
+
+            expenseChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, data.length),
+                        borderWidth: 2,
+                        borderColor: document.body.classList.contains('dark-mode') ? '#172035' : '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: document.body.classList.contains('dark-mode') ? '#e2e8f0' : '#333',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = statistics.totalExpenses || 0;
+                                    const categoryAmount = (total * value / 100).toFixed(2);
+                                    return `${label} (${categoryAmount} грн)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         function updateAccountSelects() {
             console.log('updateAccountSelects: Updating selects with', accounts.length, 'accounts');
-            const selects = ['depositAccount', 'withdrawAccount', 'fromAccount'];
+            const selects = ['depositAccount', 'withdrawAccount', 'fromAccount', 'expenseAccountSelector'];
             selects.forEach(selectId => {
                 const select = document.getElementById(selectId);
                 if (!select) {
                     console.warn('updateAccountSelects: Select element not found:', selectId);
                     return;
                 }
-                select.innerHTML = '<option value="">Оберіть акаунт</option>';
+                const isExpenseSelector = selectId === 'expenseAccountSelector';
+                
+                // Determine the correct placeholder text based on select type
+                let placeholderText = '';
+                if (isExpenseSelector) {
+                    placeholderText = getText('expenseStats.allAccounts');
+                } else if (selectId === 'depositAccount') {
+                    placeholderText = getText('operations.deposit.selectAccount');
+                } else if (selectId === 'withdrawAccount') {
+                    placeholderText = getText('operations.withdraw.selectAccount');
+                } else if (selectId === 'fromAccount') {
+                    placeholderText = getText('operations.transfer.selectAccount');
+                }
+                
+                select.innerHTML = `<option value="">${placeholderText}</option>`;
                 accounts.forEach(account => {
                     const option = document.createElement('option');
                     const numericBalance = Number(account.balance ?? 0);
                     const formattedBalance = Number.isFinite(numericBalance) ? numericBalance.toFixed(2) : (account.balance ?? '0.00');
-                    option.value = account.number;
+                    option.value = isExpenseSelector ? account.id : account.number;
                     option.textContent = `${account.number} (${account.currency}) - ${formattedBalance}`;
                     select.appendChild(option);
                 });
@@ -2143,7 +3100,8 @@
             });
         }
 
-        function showTab(tabName, evt) {
+        // Full showTab implementation - replaces the minimal one above
+        window.showTab = function(tabName, evt) {
             const tabs = document.querySelectorAll('.header-tabs .tab');
             tabs.forEach(tab => tab.classList.remove('active'));
             const targetTab = evt && evt.currentTarget ? evt.currentTarget : document.querySelector(`.header-tabs .tab[data-tab="${tabName}"]`);
@@ -2163,14 +3121,17 @@
             }
             
             if (tabName === 'exchange-rates') {
-                loadExchangeRates();
+                if (typeof loadExchangeRates === 'function') loadExchangeRates();
             } else if (tabName === 'operations') {
-                setupQuickCalculators();
-                if (Object.keys(latestRatesUAH).length <= 1) {
-                    loadExchangeRates();
+                if (typeof setupQuickCalculators === 'function') setupQuickCalculators();
+                if (typeof latestRatesUAH !== 'undefined' && Object.keys(latestRatesUAH).length <= 1) {
+                    if (typeof loadExchangeRates === 'function') loadExchangeRates();
                 } else {
-                    updateAllQuickCalculators();
+                    if (typeof updateAllQuickCalculators === 'function') updateAllQuickCalculators();
                 }
+            } else if (tabName === 'transactions') {
+                loadTransactions();
+                loadExpenseStatistics();
             } else if (tabName === 'chat' && !chatState.initialized) {
                 initializeChat();
             }
@@ -2188,7 +3149,7 @@
                 return;
             }
             chatState.initialized = true;
-            updateChatStatus('Завантаження даних...', 'info');
+            updateChatStatus(getText('chat.loadingData'), 'info');
             try {
                 const [profile, contacts, threads] = await Promise.all([
                     fetchChatJson('/chat/me'),
@@ -2205,11 +3166,13 @@
                 renderChatThreads();
                 bindChatControls();
                 connectChatSocket();
-                updateChatStatus('Оберіть діалог або створіть новий', 'info');
+                updateChatStatus(getText('chat.selectDialogOrCreate'), 'info');
+                const chatTitle = document.getElementById('chatActiveTitle');
+                if (chatTitle) chatTitle.textContent = getText('chat.selectDialog');
             } catch (error) {
                 console.error('Chat initialization failed:', error);
-                updateChatStatus('Не вдалося завантажити чат. Спробуйте пізніше.', 'error');
-                showMessage('Помилка завантаження месенджера: ' + (error.message || error), 'error');
+                updateChatStatus(getText('chat.failedToLoad'), 'error');
+                showMessage(getText('messages.errorLoadingMessenger') + ': ' + (error.message || error), 'error');
             }
         }
 
@@ -2284,7 +3247,7 @@
                 renderChatThreads();
             } catch (error) {
                 console.error('Failed to load chat threads:', error);
-                updateChatStatus('Не вдалося оновити список діалогів', 'error');
+                updateChatStatus(getText('chat.failedToUpdateList'), 'error');
             }
         }
 
@@ -2301,7 +3264,7 @@
             if (!container) return;
 
             if (!chatState.threads.length) {
-                container.innerHTML = '<p style="padding:1rem; opacity:0.7;">Немає активних діалогів. Оберіть користувача вище, щоб розпочати.</p>';
+                container.innerHTML = `<p style="padding:1rem; opacity:0.7;">${getText('chat.noActiveDialogs')}</p>`;
                 return;
             }
 
@@ -2357,7 +3320,7 @@
             const rawValue = (input.value || '').trim();
             if (!rawValue.startsWith('@')) {
                 if (!silent) {
-                    updateChatStatus('Почніть нік із символу @', 'info');
+                    updateChatStatus(getText('messages.startNicknameWithAt'), 'info');
                 }
                 return null;
             }
@@ -2365,14 +3328,14 @@
             const handle = normalizeHandle(rawValue);
             if (!handle) {
                 if (!silent) {
-                    updateChatStatus('Введіть нік у форматі @username', 'info');
+                    updateChatStatus(getText('chat.enterNickname'), 'info');
                 }
                 return null;
             }
 
             if (chatState.currentUsername && chatState.currentUsername.toLowerCase() === handle) {
                 if (!silent) {
-                    updateChatStatus('Неможливо написати самому собі', 'error');
+                    updateChatStatus(getText('chat.cannotMessageSelf'), 'error');
                 }
                 return null;
             }
@@ -2380,7 +3343,7 @@
             const contact = findChatContact(handle);
             if (!contact) {
                 if (!silent) {
-                    updateChatStatus(`Користувача @${handle} не знайдено`, 'error');
+                    updateChatStatus(getText('chat.userNotFound').replace('{handle}', handle), 'error');
                 }
                 return null;
             }
@@ -2403,7 +3366,7 @@
             cleanupChatSubscription();
             renderChatMessages([]);
             if (!silent) {
-                updateChatHeader(`@${contact.username}`, 'Напишіть перше повідомлення', 'info');
+                updateChatHeader(`@${contact.username}`, getText('chat.firstMessage'), 'info');
             } else {
                 const headerTitle = document.getElementById('chatActiveTitle');
                 if (headerTitle) {
@@ -2424,7 +3387,7 @@
                 markThreadAsRead(threadId);
             } catch (error) {
                 console.error('Failed to load chat messages:', error);
-                updateChatStatus('Не вдалося завантажити повідомлення', 'error');
+                updateChatStatus(getText('chat.failedToLoadMessages'), 'error');
             }
         }
 
@@ -2432,7 +3395,7 @@
             const history = document.getElementById('chatHistory');
             if (!history) return;
             if (!messages.length) {
-                history.innerHTML = '<p style="opacity:0.7;">Повідомлень поки що немає. Напишіть перше повідомлення.</p>';
+                history.innerHTML = `<p style="opacity:0.7;">${getText('chat.noMessagesYet')}</p>`;
                 return;
             }
             history.innerHTML = '';
@@ -2498,7 +3461,7 @@
                 `;
                 if (message.transfer.status === 'FAILED') {
                     const failureReason = extractTransferFailureReason(message.content);
-                    transferBox.innerHTML += `<span style="color:#dc2626;">${failureReason || 'Недостатньо коштів або помилка переказу'}</span>`;
+                    transferBox.innerHTML += `<span style="color:#dc2626;">${failureReason || 'Insufficient funds or transfer error'}</span>`;
                 }
                 wrapper.appendChild(transferBox);
             }
@@ -2580,7 +3543,7 @@
 
         async function sendChatMessage() {
             if (!chatState.profile) {
-                updateChatStatus('Спочатку увімкніть чат', 'info');
+                updateChatStatus(getText('messages.initializeChatFirst'), 'info');
                 return;
             }
             const chatInput = document.getElementById('chatInput');
@@ -2600,7 +3563,7 @@
             }
 
             if (!chatState.activeThreadId && !chatState.activeRecipientId) {
-                updateChatStatus('Оберіть співрозмовника, щоб надіслати повідомлення', 'info');
+                updateChatStatus(getText('chat.selectRecipient'), 'info');
                 return;
             }
 
@@ -2634,12 +3597,12 @@
                 }
 
                 appendChatMessage(response);
-                updateChatStatus('Повідомлення надіслано', 'success');
+                updateChatStatus(getText('chat.messageSent'), 'success');
                 loadChatThreads();
             } catch (error) {
                 console.error('Failed to send message:', error);
-                updateChatStatus('Не вдалося надіслати повідомлення: ' + error.message, 'error');
-                showMessage('Не вдалося надіслати повідомлення: ' + error.message, 'error');
+                updateChatStatus(getText('chat.failedToSend') + ' ' + error.message, 'error');
+                showMessage(getText('chat.failedToSend') + ' ' + error.message, 'error');
             } finally {
                 chatSendBtn.disabled = false;
                 const history = document.getElementById('chatHistory');
@@ -2671,7 +3634,7 @@
                 }
             }, (error) => {
                 console.error('WebSocket connection error:', error);
-                updateChatStatus('Немає з\'єднання з сервером чату', 'error');
+                updateChatStatus(getText('chat.noConnection'), 'error');
             });
         }
 
@@ -2815,7 +3778,7 @@
                 } else if (data && typeof data === 'object') {
                     errorMessage = data.message || data.error || JSON.stringify(data);
                 } else {
-                    errorMessage = 'Помилка запиту';
+                    errorMessage = getText('messages.requestError');
                 }
                 const details = `[${response.status}] ${errorMessage}`;
                 console.error('fetchChatJson error', path, details, data);
@@ -2833,17 +3796,26 @@
         }
 
         // Графіки курсів валют
-        const CURRENCY_NAMES = {
+        const CURRENCY_NAMES_UK = {
             'USD': 'Долар США',
             'EUR': 'Євро',
             'GBP': 'Британський фунт',
             'CHF': 'Швейцарський франк'
         };
+        const CURRENCY_NAMES_EN = {
+            'USD': 'US Dollar',
+            'EUR': 'Euro',
+            'GBP': 'British Pound',
+            'CHF': 'Swiss Franc'
+        };
         const SUPPORTED_CURRENCIES = ['UAH', 'USD', 'EUR', 'GBP', 'CHF'];
-        const AVAILABLE_HISTORY_CURRENCIES = Object.keys(CURRENCY_NAMES);
-        const HISTORY_CURRENCY_LABELS = Object.fromEntries(
-            Object.entries(CURRENCY_NAMES).map(([code, name]) => [code, `${code} (${name})`])
-        );
+        const AVAILABLE_HISTORY_CURRENCIES = Object.keys(CURRENCY_NAMES_UK);
+        function getHistoryCurrencyLabels() {
+            const names = currentLanguage === 'uk' ? CURRENCY_NAMES_UK : CURRENCY_NAMES_EN;
+            return Object.fromEntries(
+                Object.entries(names).map(([code, name]) => [code, `${code} (${name})`])
+            );
+        }
         const HISTORY_CHART_COLORS = {
             'USD': { border: 'rgb(54, 162, 235)', background: 'rgba(54, 162, 235, 0.2)' },
             'EUR': { border: 'rgb(255, 99, 132)', background: 'rgba(255, 99, 132, 0.2)' },
@@ -2895,6 +3867,8 @@
                     setupQuickCalculators();
                     await loadExchangeRateHistory(currentHistoryPeriod);
                     updateAllQuickCalculators();
+                    // Re-apply language after loading exchange rates to ensure translations are correct
+                    applyLanguage();
                 } else {
                     console.error('No exchange rates loaded');
                 }
@@ -2905,12 +3879,13 @@
 
         function displayExchangeRates(rates) {
             const container = document.getElementById('exchangeRatesList');
+            const currencyNames = currentLanguage === 'uk' ? CURRENCY_NAMES_UK : CURRENCY_NAMES_EN;
             
             container.innerHTML = Object.entries(rates).map(([currency, rate]) => `
                 <div class="account-item">
                     <div class="account-info">
                         <h3>1 ${currency}</h3>
-                        <p>${CURRENCY_NAMES[currency] || currency}</p>
+                        <p>${currencyNames[currency] || currency}</p>
                     </div>
                     <div class="account-balance account-balance-large">${rate.toFixed(2)} UAH</div>
                 </div>
@@ -2967,7 +3942,8 @@
                 AVAILABLE_HISTORY_CURRENCIES.forEach(code => {
                     const option = document.createElement('option');
                     option.value = code;
-                    option.textContent = HISTORY_CURRENCY_LABELS[code] || code;
+                    const labels = getHistoryCurrencyLabels();
+                    option.textContent = labels[code] || code;
                     currencySelect.appendChild(option);
                 });
             }
@@ -2987,7 +3963,8 @@
         function updateHistoryChartTitle() {
             const titleEl = document.getElementById('historyChartTitle');
             if (titleEl) {
-                titleEl.textContent = HISTORY_CURRENCY_LABELS[currentHistoryCurrency] || currentHistoryCurrency;
+                const labels = getHistoryCurrencyLabels();
+                titleEl.textContent = labels[currentHistoryCurrency] || currentHistoryCurrency;
             }
         }
 
@@ -3014,7 +3991,9 @@
                 SUPPORTED_CURRENCIES.forEach(code => {
                     const option = document.createElement('option');
                     option.value = code;
-                    option.textContent = code === 'UAH' ? 'UAH (Гривня)' : (HISTORY_CURRENCY_LABELS[code] || code);
+                    const labels = getHistoryCurrencyLabels();
+                    const uahName = currentLanguage === 'uk' ? 'Гривня' : 'Hryvnia';
+                    option.textContent = code === 'UAH' ? `UAH (${uahName})` : (labels[code] || code);
                     fromSelect.appendChild(option.cloneNode(true));
                     toSelect.appendChild(option);
                 });
@@ -3061,12 +4040,12 @@
             const toCurrency = toSelect.value;
 
             if (!fromCurrency || !toCurrency) {
-                resultEl.textContent = 'Оберіть валюти.';
+                resultEl.textContent = getText('exchangeRates.selectCurrency');
                 return;
             }
 
             if (!Number.isFinite(amount) || amount <= 0) {
-                resultEl.textContent = 'Введіть суму більше 0.';
+                resultEl.textContent = getText('operations.quickConversion.enterAmount');
                 return;
             }
 
@@ -3222,18 +4201,18 @@
                 if (response.ok) {
                     const result = await response.text();
                     console.log('Deposit result:', result);
-                    showMessage('Акаунт успішно поповнено!', 'success');
+                    showMessage(getText('messages.depositSuccess'), 'success');
                     loadAccounts();
                     loadTransactions();
                     document.getElementById('depositForm').reset();
                 } else {
                     const errorData = await response.text();
                     console.error('Deposit error:', errorData);
-                    showMessage('Помилка поповнення акаунту: ' + errorData, 'error');
+                    showMessage(getText('messages.depositError') + errorData, 'error');
                 }
             } catch (error) {
                 console.error('Deposit connection error:', error);
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getText('messages.connectionError') + ' ' + error.message, 'error');
             }
         });
 
@@ -3265,18 +4244,24 @@
                 if (response.ok) {
                     const result = await response.text();
                     console.log('Withdraw result:', result);
-                    showMessage('Кошти успішно знято!', 'success');
+                    showMessage(getText('messages.withdrawSuccess'), 'success');
                     loadAccounts();
                     loadTransactions();
                     document.getElementById('withdrawForm').reset();
                 } else {
                     const errorData = await response.text();
                     console.error('Withdraw error:', errorData);
-                    showMessage('Помилка зняття коштів: ' + errorData, 'error');
+                    // Якщо помилка вже містить повний опис (наприклад, "Недостатньо коштів"), 
+                    // показуємо її без додавання "Помилка зняття коштів: "
+                    if (errorData && errorData.trim().startsWith('Недостатньо коштів')) {
+                        showMessage(errorData, 'error');
+                    } else {
+                        showMessage(getText('messages.withdrawError') + (errorData || getText('messages.unknownError')), 'error');
+                    }
                 }
             } catch (error) {
                 console.error('Withdraw connection error:', error);
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getText('messages.connectionError') + ' ' + error.message, 'error');
             }
         });
 
@@ -3309,18 +4294,24 @@
                 if (response.ok) {
                     const result = await response.text();
                     console.log('Transfer result:', result);
-                    showMessage('Переказ успішно виконано!', 'success');
+                    showMessage(getText('messages.transferSuccess'), 'success');
                     loadAccounts();
                     loadTransactions();
                     document.getElementById('transferForm').reset();
                 } else {
                     const errorData = await response.text();
                     console.error('Transfer error:', errorData);
-                    showMessage('Помилка переказу: ' + errorData, 'error');
+                    // Якщо помилка вже містить повний опис (наприклад, "Недостатньо коштів"), 
+                    // показуємо її без додавання "Помилка переказу: "
+                    if (errorData && errorData.trim().startsWith('Недостатньо коштів')) {
+                        showMessage(errorData, 'error');
+                    } else {
+                        showMessage(getText('messages.transferError') + (errorData || getText('messages.unknownError')), 'error');
+                    }
                 }
             } catch (error) {
                 console.error('Transfer connection error:', error);
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getText('messages.connectionError') + ' ' + error.message, 'error');
             }
         });
 
@@ -3328,7 +4319,7 @@
             e.preventDefault();
             
             if (!currentCustomer || !currentCustomer.id) {
-                showMessage('Помилка: дані користувача не завантажені. Будь ласка, оновіть сторінку.', 'error');
+                showMessage(getText('messages.userDataNotLoaded'), 'error');
                 return;
             }
             
@@ -3345,16 +4336,16 @@
                 });
 
                 if (response.ok) {
-                    showMessage('Акаунт успішно створено!', 'success');
+                    showMessage(getText('messages.accountCreated'), 'success');
                     loadAccounts();
                     closeCreateAccountModal();
                     document.getElementById('createAccountForm').reset();
                 } else {
                     const errorData = await response.text();
-                    showMessage('Помилка створення акаунту: ' + errorData, 'error');
+                    showMessage(getText('messages.accountCreateError') + errorData, 'error');
                 }
             } catch (error) {
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getText('messages.connectionError') + ' ' + error.message, 'error');
             }
         });
 
@@ -3367,11 +4358,22 @@
         }
 
         function logout() {
+            console.log('=== LOGOUT CALLED ===');
+            try {
             localStorage.removeItem('accessToken');
             localStorage.removeItem('userRole');
             localStorage.removeItem('username');
+                console.log('Cleared localStorage, redirecting...');
             window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error in logout:', error);
+            }
         }
+        
+        // Перевіряємо, чи функція logout доступна глобально
+        console.log('logout function defined:', typeof logout);
+        window.logout = logout;
+        console.log('Logout function assigned to window:', typeof window.logout);
 
         // Закриваємо модальне вікно при кліку поза ним
         window.onclick = function(event) {

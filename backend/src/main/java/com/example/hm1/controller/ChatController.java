@@ -7,6 +7,11 @@ import com.example.hm1.dto.chat.ChatMessageResponse;
 import com.example.hm1.dto.chat.ChatThreadResponse;
 import com.example.hm1.entity.User;
 import com.example.hm1.service.chat.ChatService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -20,6 +25,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/chat")
 @CrossOrigin(origins = "*")
+@Tag(name = "Chat", description = "API для месенджера та обміну повідомленнями між користувачами")
 public class ChatController {
 
     private final ChatService chatService;
@@ -49,7 +55,14 @@ public class ChatController {
     }
 
     @PostMapping("/messages")
-    public ResponseEntity<ChatMessageResponse> sendMessage(@Valid @RequestBody ChatMessageRequest request) {
+    @Operation(summary = "Надіслати повідомлення", description = "Надсилає повідомлення в чат. Підтримує команду $cash для переказу коштів між користувачами")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Повідомлення успішно надіслано"),
+            @ApiResponse(responseCode = "400", description = "Невалідні дані повідомлення")
+    })
+    public ResponseEntity<ChatMessageResponse> sendMessage(
+            @Parameter(description = "Дані повідомлення: threadId (опціонально), recipientUserId, content", required = true)
+            @Valid @RequestBody ChatMessageRequest request) {
         User currentUser = resolveCurrentUser();
         request.setSenderUserId(currentUser.getId());
         ChatMessageResponse response = chatService.sendMessage(request);

@@ -1,6 +1,7 @@
 package com.example.hm1.service;
 
 import com.example.hm1.dao.TransactionRepository;
+import com.example.hm1.dto.ExpenseStatisticsDTO;
 import com.example.hm1.entity.Account;
 import com.example.hm1.entity.Customer;
 import com.example.hm1.entity.Transaction;
@@ -10,8 +11,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -102,5 +107,128 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public void deleteTransaction(Long id) {
         transactionRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public Transaction updateTransactionCategory(Long transactionId, Transaction.ExpenseCategory category) {
+        Transaction transaction = getTransactionById(transactionId);
+        transaction.setCategory(category);
+        return transactionRepository.save(transaction);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ExpenseStatisticsDTO getExpenseStatisticsByMonth(Long customerId, int year, int month) {
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.plusMonths(1);
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atStartOfDay();
+
+        List<Object[]> results = transactionRepository.getExpenseStatisticsByMonth(
+                customerId, startDateTime, endDateTime);
+
+        Map<Transaction.ExpenseCategory, BigDecimal> expensesByCategory = new HashMap<>();
+        BigDecimal totalExpenses = BigDecimal.ZERO;
+
+        for (Object[] result : results) {
+            Transaction.ExpenseCategory category = (Transaction.ExpenseCategory) result[0];
+            BigDecimal amount = (BigDecimal) result[1];
+            expensesByCategory.put(category, amount);
+            totalExpenses = totalExpenses.add(amount);
+        }
+
+        Map<Transaction.ExpenseCategory, Double> percentagesByCategory = new HashMap<>();
+        if (totalExpenses.compareTo(BigDecimal.ZERO) > 0) {
+            for (Map.Entry<Transaction.ExpenseCategory, BigDecimal> entry : expensesByCategory.entrySet()) {
+                BigDecimal percentage = entry.getValue()
+                        .divide(totalExpenses, 4, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100));
+                percentagesByCategory.put(entry.getKey(), percentage.doubleValue());
+            }
+        }
+
+        return new ExpenseStatisticsDTO(expensesByCategory, totalExpenses, percentagesByCategory);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ExpenseStatisticsDTO getExpenseStatisticsByAccountAndMonth(Long accountId, int year, int month) {
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.plusMonths(1);
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atStartOfDay();
+
+        List<Object[]> results = transactionRepository.getExpenseStatisticsByAccountAndMonth(
+                accountId, startDateTime, endDateTime);
+
+        Map<Transaction.ExpenseCategory, BigDecimal> expensesByCategory = new HashMap<>();
+        BigDecimal totalExpenses = BigDecimal.ZERO;
+
+        for (Object[] result : results) {
+            Transaction.ExpenseCategory category = (Transaction.ExpenseCategory) result[0];
+            BigDecimal amount = (BigDecimal) result[1];
+            expensesByCategory.put(category, amount);
+            totalExpenses = totalExpenses.add(amount);
+        }
+
+        Map<Transaction.ExpenseCategory, Double> percentagesByCategory = new HashMap<>();
+        if (totalExpenses.compareTo(BigDecimal.ZERO) > 0) {
+            for (Map.Entry<Transaction.ExpenseCategory, BigDecimal> entry : expensesByCategory.entrySet()) {
+                BigDecimal percentage = entry.getValue()
+                        .divide(totalExpenses, 4, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100));
+                percentagesByCategory.put(entry.getKey(), percentage.doubleValue());
+            }
+        }
+
+        return new ExpenseStatisticsDTO(expensesByCategory, totalExpenses, percentagesByCategory);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, ExpenseStatisticsDTO> getExpenseStatisticsForAllUsersByMonth(int year, int month) {
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.plusMonths(1);
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atStartOfDay();
+
+        List<Object[]> results = transactionRepository.getExpenseStatisticsForAllUsersByMonth(
+                startDateTime, endDateTime);
+
+        Map<Long, Map<Transaction.ExpenseCategory, BigDecimal>> userExpensesMap = new HashMap<>();
+
+        for (Object[] result : results) {
+            Long customerId = ((Number) result[0]).longValue();
+            Transaction.ExpenseCategory category = (Transaction.ExpenseCategory) result[1];
+            BigDecimal amount = (BigDecimal) result[2];
+
+            userExpensesMap.computeIfAbsent(customerId, k -> new HashMap<>())
+                    .put(category, amount);
+        }
+
+        Map<Long, ExpenseStatisticsDTO> statisticsByUser = new HashMap<>();
+
+        for (Map.Entry<Long, Map<Transaction.ExpenseCategory, BigDecimal>> entry : userExpensesMap.entrySet()) {
+            Long customerId = entry.getKey();
+            Map<Transaction.ExpenseCategory, BigDecimal> expensesByCategory = entry.getValue();
+            BigDecimal totalExpenses = expensesByCategory.values().stream()
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            Map<Transaction.ExpenseCategory, Double> percentagesByCategory = new HashMap<>();
+            if (totalExpenses.compareTo(BigDecimal.ZERO) > 0) {
+                for (Map.Entry<Transaction.ExpenseCategory, BigDecimal> catEntry : expensesByCategory.entrySet()) {
+                    BigDecimal percentage = catEntry.getValue()
+                            .divide(totalExpenses, 4, RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100));
+                    percentagesByCategory.put(catEntry.getKey(), percentage.doubleValue());
+                }
+            }
+
+            statisticsByUser.put(customerId, new ExpenseStatisticsDTO(
+                    expensesByCategory, totalExpenses, percentagesByCategory));
+        }
+
+        return statisticsByUser;
     }
 }

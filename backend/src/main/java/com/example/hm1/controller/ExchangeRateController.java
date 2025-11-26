@@ -3,6 +3,9 @@ package com.example.hm1.controller;
 import com.example.hm1.dto.ExchangeRateHistoryPoint;
 import com.example.hm1.entity.Currency;
 import com.example.hm1.service.ExchangeRateService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/exchange-rates")
 @CrossOrigin(origins = "*")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Exchange Rates", description = "API для роботи з курсами валют та конвертацією")
 public class ExchangeRateController {
 
     private final ExchangeRateService exchangeRateService;
@@ -28,8 +32,12 @@ public class ExchangeRateController {
 
     @GetMapping
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    @Operation(summary = "Отримати курс обміну валют", description = "Повертає поточний курс обміну між двома валютами")
+    @ApiResponse(responseCode = "200", description = "Успішно отримано курс обміну")
     public ResponseEntity<?> getExchangeRate(
+            @Parameter(description = "Вихідна валюта", required = true)
             @RequestParam Currency from,
+            @Parameter(description = "Цільова валюта", required = true)
             @RequestParam Currency to) {
         try {
             BigDecimal rate = exchangeRateService.getExchangeRate(from, to);
@@ -47,9 +55,14 @@ public class ExchangeRateController {
 
     @GetMapping("/convert")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    @Operation(summary = "Конвертувати суму", description = "Конвертує вказану суму з однієї валюти в іншу за поточним курсом")
+    @ApiResponse(responseCode = "200", description = "Конвертацію виконано успішно")
     public ResponseEntity<?> convertAmount(
+            @Parameter(description = "Сума для конвертації", required = true)
             @RequestParam BigDecimal amount,
+            @Parameter(description = "Вихідна валюта", required = true)
             @RequestParam Currency from,
+            @Parameter(description = "Цільова валюта", required = true)
             @RequestParam Currency to) {
         try {
             BigDecimal converted = exchangeRateService.convertAmount(amount, from, to);

@@ -1,65 +1,73 @@
 package com.example.hm1.dto.chat;
 
 import com.example.hm1.entity.ChatThread;
-import com.example.hm1.entity.User;
 
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class ChatThreadResponse {
 
     private Long id;
-    private Set<Participant> participants;
+    private List<ChatContactResponse> participants;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static ChatThreadResponse from(ChatThread thread) {
-        ChatThreadResponse response = new ChatThreadResponse();
-        response.id = thread.getId();
-        response.participants = thread.getParticipants()
-                .stream()
-                .map(Participant::from)
-                .collect(Collectors.toSet());
-        response.createdAt = thread.getCreatedAt();
-        response.updatedAt = thread.getUpdatedAt();
-        return response;
+    public ChatThreadResponse() {
     }
 
+    public ChatThreadResponse(Long id, List<ChatContactResponse> participants,
+                             LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.id = id;
+        this.participants = participants;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    public static ChatThreadResponse from(ChatThread thread) {
+        List<ChatContactResponse> participants = thread.getParticipants().stream()
+                .map(user -> new ChatContactResponse(user.getId(), user.getUsername(), user.getUsername() + "@example.com"))
+                .collect(Collectors.toList());
+
+        return new ChatThreadResponse(
+                thread.getId(),
+                participants,
+                thread.getCreatedAt(),
+                thread.getUpdatedAt()
+        );
+    }
+
+    // Getters and setters
     public Long getId() {
         return id;
     }
 
-    public Set<Participant> getParticipants() {
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public List<ChatContactResponse> getParticipants() {
         return participants;
+    }
+
+    public void setParticipants(List<ChatContactResponse> participants) {
+        this.participants = participants;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
-    public static class Participant {
-        private Long id;
-        private String username;
-
-        public static Participant from(User user) {
-            Participant participant = new Participant();
-            participant.id = user.getId();
-            participant.username = user.getUsername();
-            return participant;
-        }
-
-        public Long getId() {
-            return id;
-        }
-
-        public String getUsername() {
-            return username;
-        }
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
 

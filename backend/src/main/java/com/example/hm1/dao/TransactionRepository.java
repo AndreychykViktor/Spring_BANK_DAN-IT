@@ -40,4 +40,32 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByTypeOrderByTimestampDesc(Transaction.TransactionType type);
     
     List<Transaction> findByStatusOrderByTimestampDesc(Transaction.TransactionStatus status);
+
+    @Query("SELECT t.category, SUM(t.amount) FROM Transaction t " +
+           "WHERE t.customer.id = :customerId " +
+           "AND t.type IN ('WITHDRAWAL', 'PAYMENT') " +
+           "AND t.category IS NOT NULL " +
+           "AND t.timestamp >= :startDate AND t.timestamp < :endDate " +
+           "GROUP BY t.category")
+    List<Object[]> getExpenseStatisticsByMonth(@Param("customerId") Long customerId,
+                                                @Param("startDate") LocalDateTime startDate,
+                                                @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT t.category, SUM(t.amount) FROM Transaction t " +
+           "WHERE (t.fromAccount.id = :accountId OR t.toAccount.id = :accountId) " +
+           "AND t.type IN ('WITHDRAWAL', 'PAYMENT') " +
+           "AND t.category IS NOT NULL " +
+           "AND t.timestamp >= :startDate AND t.timestamp < :endDate " +
+           "GROUP BY t.category")
+    List<Object[]> getExpenseStatisticsByAccountAndMonth(@Param("accountId") Long accountId,
+                                                          @Param("startDate") LocalDateTime startDate,
+                                                          @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT t.customer.id, t.category, SUM(t.amount) FROM Transaction t " +
+           "WHERE t.type IN ('WITHDRAWAL', 'PAYMENT') " +
+           "AND t.category IS NOT NULL " +
+           "AND t.timestamp >= :startDate AND t.timestamp < :endDate " +
+           "GROUP BY t.customer.id, t.category")
+    List<Object[]> getExpenseStatisticsForAllUsersByMonth(@Param("startDate") LocalDateTime startDate,
+                                                           @Param("endDate") LocalDateTime endDate);
 }

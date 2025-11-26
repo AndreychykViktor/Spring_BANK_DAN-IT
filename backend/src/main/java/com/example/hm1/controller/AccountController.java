@@ -7,6 +7,11 @@ import com.example.hm1.dto.AccountResponseDTO;
 import com.example.hm1.dto.TransferDTO;
 import com.example.hm1.entity.Account;
 import com.example.hm1.service.AccountService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +25,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/accounts")
 @CrossOrigin(origins = "*")
+@Tag(name = "Accounts", description = "API для управління банківськими рахунками та операціями з ними")
 public class AccountController {
 
     private final AccountRepo accountRepo;
@@ -32,6 +38,8 @@ public class AccountController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Отримати всі рахунки", description = "Повертає список всіх банківських рахунків (тільки для адміністраторів)")
+    @ApiResponse(responseCode = "200", description = "Успішно отримано список рахунків")
     public ResponseEntity<List<AccountResponseDTO>> getAllAccounts() {
         List<Account> accounts = accountRepo.findAll();
         accounts.sort(Comparator.comparing(Account::getId).reversed());
@@ -54,7 +62,17 @@ public class AccountController {
 
     @PostMapping("/{accountNumber}/deposit")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<?> deposit(@PathVariable String accountNumber, @Valid @RequestBody AccountOperationDTO dto) {
+    @Operation(summary = "Поповнити рахунок", description = "Додає вказану суму до балансу рахунку")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Рахунок успішно поповнено"),
+            @ApiResponse(responseCode = "400", description = "Помилка: невалідні дані або рахунок не знайдено"),
+            @ApiResponse(responseCode = "404", description = "Рахунок з вказаним номером не знайдено")
+    })
+    public ResponseEntity<?> deposit(
+            @Parameter(description = "Номер рахунку", required = true)
+            @PathVariable String accountNumber,
+            @Parameter(description = "Дані операції: amount (сума для поповнення)", required = true)
+            @Valid @RequestBody AccountOperationDTO dto) {
         try {
             Double amount = dto.getAmount().doubleValue();
             System.out.println("AccountController.deposit: accountNumber=" + accountNumber + ", amount=" + amount);
@@ -75,7 +93,17 @@ public class AccountController {
 
     @PostMapping("/{accountNumber}/withdraw")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<?> withdraw(@PathVariable String accountNumber, @Valid @RequestBody AccountOperationDTO dto) {
+    @Operation(summary = "Зняти кошти з рахунку", description = "Знімає вказану суму з балансу рахунку (з перевіркою достатності коштів)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Кошти успішно знято з рахунку"),
+            @ApiResponse(responseCode = "400", description = "Помилка: недостатньо коштів на рахунку або невалідні дані"),
+            @ApiResponse(responseCode = "404", description = "Рахунок з вказаним номером не знайдено")
+    })
+    public ResponseEntity<?> withdraw(
+            @Parameter(description = "Номер рахунку", required = true)
+            @PathVariable String accountNumber,
+            @Parameter(description = "Дані операції: amount (сума для зняття)", required = true)
+            @Valid @RequestBody AccountOperationDTO dto) {
         try {
             Double amount = dto.getAmount().doubleValue();
             System.out.println("AccountController.withdraw: accountNumber=" + accountNumber + ", amount=" + amount);
@@ -85,7 +113,22 @@ public class AccountController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
             }
             
-            accountService.withdraw(accountNumber, amount);
+            // Перевірка балансу перед зняттям
+            if (account.getBalance() < amount) {
+                String balanceFormatted = String.format("%.2f", account.getBalance());
+                String amountFormatted = String.format("%.2f", amount);
+                String currency = account.getCurrency().name();
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Недостатньо коштів на рахунку. Доступний баланс: " + balanceFormatted + " " + currency + 
+                          ", потрібно: " + amountFormatted + " " + currency);
+            }
+            
+            boolean success = accountService.withdraw(accountNumber, amount);
+            if (!success) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Помилка виконання операції зняття коштів.");
+            }
+            
             return ResponseEntity.ok("Withdrawal successful");
         } catch (Exception e) {
             System.err.println("AccountController.withdraw: Error: " + e.getMessage());
@@ -96,7 +139,17 @@ public class AccountController {
 
     @PostMapping("/{fromAccountNumber}/transfer")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<?> transfer(@PathVariable String fromAccountNumber, @Valid @RequestBody TransferDTO dto) {
+    @Operation(summary = "Переказ коштів між рахунками", description = "Переводить вказану суму з одного рахунку на інший з автоматичним конвертуванням валют при необхідності")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Переказ виконано успішно"),
+            @ApiResponse(responseCode = "400", description = "Помилка: недостатньо коштів на рахунку відправника або невалідні дані"),
+            @ApiResponse(responseCode = "404", description = "Вихідний або цільовий рахунок не знайдено")
+    })
+    public ResponseEntity<?> transfer(
+            @Parameter(description = "Номер рахунку відправника", required = true)
+            @PathVariable String fromAccountNumber,
+            @Parameter(description = "Дані переказу: toAccountNumber (номер рахунку отримувача), amount (сума)", required = true)
+            @Valid @RequestBody TransferDTO dto) {
         try {
             String toAccountNumber = dto.getToAccountNumber();
             Double amount = dto.getAmount().doubleValue();
@@ -112,7 +165,22 @@ public class AccountController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Destination account not found");
             }
             
-            accountService.transfer(fromAccountNumber, toAccountNumber, amount);
+            // Перевірка балансу перед переказом
+            if (fromAccount.getBalance() < amount) {
+                String balanceFormatted = String.format("%.2f", fromAccount.getBalance());
+                String amountFormatted = String.format("%.2f", amount);
+                String currency = fromAccount.getCurrency().name();
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Недостатньо коштів на рахунку. Доступний баланс: " + balanceFormatted + " " + currency + 
+                          ", потрібно: " + amountFormatted + " " + currency);
+            }
+            
+            boolean success = accountService.transfer(fromAccountNumber, toAccountNumber, amount);
+            if (!success) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Помилка виконання переказу. Перевірте баланс та правильність даних.");
+            }
+            
             return ResponseEntity.ok("Transfer successful");
         } catch (Exception e) {
             System.err.println("AccountController.transfer: Error: " + e.getMessage());

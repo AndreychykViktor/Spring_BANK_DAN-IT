@@ -11,6 +11,9 @@ import com.example.hm1.entity.Account;
 import com.example.hm1.entity.Employer;
 import com.example.hm1.service.TransactionService;
 import com.example.hm1.entity.Transaction;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')")
+@Tag(name = "Admin", description = "API для адміністративних операцій (тільки для адміністраторів)")
 public class AdminController {
 
     private final UserRepository userRepository;
@@ -122,6 +126,8 @@ public class AdminController {
     }
 
     @GetMapping("/users")
+    @Operation(summary = "Отримати всіх користувачів", description = "Повертає список всіх користувачів системи з їх ролями та інформацією про клієнтів")
+    @ApiResponse(responseCode = "200", description = "Успішно отримано список користувачів")
     public ResponseEntity<?> getAllUsers() {
         try {
             List<User> users = userRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));

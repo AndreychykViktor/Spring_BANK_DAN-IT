@@ -7,6 +7,11 @@ import com.example.hm1.dto.AccountResponseDTO;
 import com.example.hm1.dto.CustomerRequestDTO;
 import com.example.hm1.entity.User;
 import com.example.hm1.entity.Employer;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,11 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/customers")
 @CrossOrigin(origins = "*")
+@Tag(name = "Customers", description = "API для управління клієнтами банку")
 public class CustomerController {
 
     public static class CustomerDTO {
@@ -67,12 +72,20 @@ public class CustomerController {
     }
 
     @GetMapping
+    @Operation(summary = "Отримати всіх клієнтів", description = "Повертає список всіх клієнтів банку")
+    @ApiResponse(responseCode = "200", description = "Успішно отримано список клієнтів")
     public ResponseEntity<List<Customer>> getAllCustomers() {
         List<Customer> customers = customerService.getAllCustomers();
         return ResponseEntity.ok(customers);
     }
 
     @GetMapping("/me")
+    @Operation(summary = "Отримати поточного клієнта", description = "Повертає інформацію про поточного авторизованого клієнта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успішно отримано інформацію про клієнта"),
+            @ApiResponse(responseCode = "401", description = "Користувач не авторизований"),
+            @ApiResponse(responseCode = "404", description = "Клієнт не знайдений для поточного користувача")
+    })
     public ResponseEntity<?> getCurrentCustomer() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -139,7 +152,14 @@ public class CustomerController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) {
+    @Operation(summary = "Отримати клієнта за ID", description = "Повертає інформацію про клієнта за його унікальним ідентифікатором")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Клієнт знайдено"),
+            @ApiResponse(responseCode = "404", description = "Клієнт з вказаним ID не знайдено")
+    })
+    public ResponseEntity<Customer> getCustomerById(
+            @Parameter(description = "ID клієнта", required = true)
+            @PathVariable Long id) {
         Customer customer = customerService.getCustomerById(id);
         if (customer == null) {
             return ResponseEntity.notFound().build();
@@ -161,7 +181,15 @@ public class CustomerController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<?> updateCurrentCustomer(@Valid @RequestBody CustomerRequestDTO customerDTO) {
+    @Operation(summary = "Оновити дані поточного клієнта", description = "Оновлює інформацію про поточного авторизованого клієнта (ім'я, email, вік, роботодавець)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Дані клієнта успішно оновлено"),
+            @ApiResponse(responseCode = "400", description = "Невалідні дані для оновлення"),
+            @ApiResponse(responseCode = "401", description = "Користувач не авторизований")
+    })
+    public ResponseEntity<?> updateCurrentCustomer(
+            @Parameter(description = "Оновлені дані клієнта", required = true)
+            @Valid @RequestBody CustomerRequestDTO customerDTO) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = authentication.getName();
@@ -301,7 +329,15 @@ public class CustomerController {
     }
 
     @GetMapping("/{customerId}/accounts")
-    public ResponseEntity<List<AccountResponseDTO>> getCustomerAccounts(@PathVariable Long customerId) {
+    @Operation(summary = "Отримати рахунки клієнта", description = "Повертає список всіх рахунків вказаного клієнта, відсортовані за ID (нові спочатку)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успішно отримано список рахунків"),
+            @ApiResponse(responseCode = "404", description = "Клієнт не знайдено"),
+            @ApiResponse(responseCode = "500", description = "Внутрішня помилка сервера")
+    })
+    public ResponseEntity<List<AccountResponseDTO>> getCustomerAccounts(
+            @Parameter(description = "ID клієнта", required = true)
+            @PathVariable Long customerId) {
         try {
             Customer customer = customerService.getCustomerById(customerId);
             if (customer == null) {
@@ -321,8 +357,17 @@ public class CustomerController {
     }
 
     @PostMapping("/{customerId}/accounts")
+    @Operation(summary = "Створити рахунок для клієнта", description = "Створює новий банківський рахунок для вказаного клієнта з вказаною валютою")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Рахунок успішно створено"),
+            @ApiResponse(responseCode = "400", description = "Невалідні дані (невірна валюта, відсутня валюта)"),
+            @ApiResponse(responseCode = "404", description = "Клієнт не знайдено"),
+            @ApiResponse(responseCode = "500", description = "Внутрішня помилка сервера")
+    })
     public ResponseEntity<AccountResponseDTO> createAccountForCustomer(
+            @Parameter(description = "ID клієнта", required = true)
             @PathVariable Long customerId,
+            @Parameter(description = "Дані рахунку: currency (обов'язково), email, password (опціонально)", required = true)
             @RequestBody Map<String, String> requestBody) {
         try {
             System.out.println("CustomerController.createAccountForCustomer: Request received for customerId=" + customerId);

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" id="adminHtmlElement">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Адмін панель - Banking App</title>
+    <title>Admin Panel - Banking App</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
@@ -1473,6 +1473,34 @@
             border: 1px solid rgba(34, 197, 94, 0.25);
         }
 
+        .category-select {
+            padding: 0.3rem;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 0.85rem;
+            background: white;
+            color: #333;
+        }
+
+        body.dark-mode .category-select {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        body.dark-mode .category-select option {
+            background: var(--dark-card);
+            color: var(--dark-text);
+        }
+
+        body.dark-mode #detailedStatsMonthSelector,
+        body.dark-mode [id^="userDetailsMonthSelector_"],
+        body.dark-mode [id^="userDetailsAccountSelect_"] {
+            background: var(--dark-card-alt);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -1494,34 +1522,35 @@
 </head>
 <body>
     <div class="header">
-        <h1>🏦 Banking App - Адмін панель</h1>
+        <h1>🏦 Banking App - Admin Panel</h1>
         <div class="tabs header-tabs">
-            <div class="tab active" data-tab="users" onclick="showTab('users', event)">Користувачі</div>
-            <div class="tab" data-tab="transactions" onclick="showTab('transactions', event)">Транзакції</div>
-            <div class="tab" data-tab="accounts" onclick="showTab('accounts', event)">Акаунти</div>
-            <div class="tab" data-tab="exchange" onclick="showTab('exchange', event)">Курси валют</div>
-            <div class="tab" data-tab="roles" onclick="showTab('roles', event)">Управління ролями</div>
-            <div class="tab" data-tab="my-profile" onclick="showTab('my-profile', event)">Мій профіль</div>
-            <div class="tab" data-tab="chat" onclick="showTab('chat', event)">Месенджер</div>
+            <div class="tab active" data-tab="users" onclick="if(typeof showTab==='function')showTab('users',event);else alert('showTab not ready')">Users</div>
+            <div class="tab" data-tab="transactions" onclick="if(typeof showTab==='function')showTab('transactions',event);else alert('showTab not ready')">Transactions</div>
+            <div class="tab" data-tab="accounts" onclick="if(typeof showTab==='function')showTab('accounts',event);else alert('showTab not ready')">Accounts</div>
+            <div class="tab" data-tab="exchange" onclick="if(typeof showTab==='function')showTab('exchange',event);else alert('showTab not ready')">Exchange</div>
+            <div class="tab" data-tab="roles" onclick="if(typeof showTab==='function')showTab('roles',event);else alert('showTab not ready')">Roles</div>
+            <div class="tab" data-tab="my-profile" onclick="if(typeof showTab==='function')showTab('my-profile',event);else alert('showTab not ready')">Profile</div>
+            <div class="tab" data-tab="chat" onclick="if(typeof showTab==='function')showTab('chat',event);else alert('showTab not ready')">Chat</div>
         </div>
         <div class="user-info">
-            <span id="userName">Адміністратор</span>
-            <button class="theme-toggle" id="adminThemeToggleBtn" title="Перемкнути тему">🌙</button>
+            <span id="userName">Administrator</span>
+            <button class="theme-toggle" id="adminLanguageToggleBtn" title="Switch language">🌐</button>
+            <button class="theme-toggle" id="adminThemeToggleBtn" title="Toggle theme">🌙</button>
             <div class="profile-trigger">
-                <button class="profile-toggle" id="adminProfileToggle" title="Мій профіль">👤</button>
+                <button class="profile-toggle" id="adminProfileToggle" title="My Profile">👤</button>
                 <div class="profile-popup" id="adminProfilePopup">
                     <div class="profile-popup-content">
                         <div id="adminProfileSummary">
-                            <p>Завантаження...</p>
+                            <p>Loading...</p>
         </div>
                         <div class="profile-popup-actions">
-                            <button class="btn-link" id="adminProfileExpand">Розгорнути</button>
-                            <button class="btn-link" onclick="window.location.href='profile-setup.html'">Редагувати</button>
+                            <button class="btn-link" id="adminProfileExpand">Expand</button>
+                            <button class="btn-link" onclick="window.location.href='profile-setup.html'">Edit</button>
     </div>
             </div>
             </div>
             </div>
-            <button class="logout-btn" onclick="logout()">Вийти</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
             </div>
         </div>
 
@@ -1532,20 +1561,20 @@
         <div id="users" class="tab-content active">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2>Всі користувачі</h2>
+                <h2 id="usersSectionTitle">All Users</h2>
                     <div style="display: flex; align-items: center; gap: 1rem;">
-                        <span class="stat-label">Всього користувачів:</span>
+                        <span class="stat-label" id="adminTotalUsersLabel">Total Users:</span>
                         <span class="number stat-number" id="totalUsers">-</span>
                     </div>
                 </div>
                 <div class="search-bar">
-                    <input type="text" id="userSearch" placeholder="Пошук користувачів...">
-                    <button class="btn" onclick="searchUsers()">Пошук</button>
+                    <input type="text" id="userSearch" placeholder="">
+                    <button class="btn" id="userSearchBtn" onclick="searchUsers()">Search</button>
                 </div>
                 <div id="usersList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Завантаження користувачів...</p>
+                        <p id="usersLoadingText">Loading users...</p>
                     </div>
                 </div>
             </div>
@@ -1555,29 +1584,38 @@
         <div id="transactions" class="tab-content">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2>Всі транзакції</h2>
+                <h2 id="transactionsSectionTitle">All Transactions</h2>
                     <div style="display: flex; align-items: center; gap: 1rem;">
-                        <span class="stat-label">Всього транзакцій:</span>
+                        <span class="stat-label" id="adminTotalTransactionsLabel">Total Transactions:</span>
                         <span class="number stat-number" id="totalTransactions">-</span>
                     </div>
                 </div>
                 <div class="search-bar">
-                    <input type="date" id="startDate" placeholder="Дата початку">
-                    <input type="date" id="endDate" placeholder="Дата кінця">
+                    <input type="date" id="startDate" lang="uk" placeholder="">
+                    <input type="date" id="endDate" lang="uk" placeholder="">
                     <select id="transactionType">
-                        <option value="">Всі типи</option>
-                        <option value="DEPOSIT">Депозит</option>
-                        <option value="WITHDRAWAL">Зняття</option>
-                        <option value="TRANSFER">Переказ</option>
+                        <option value="" id="allTypesOption">All Types</option>
+                        <option value="DEPOSIT" id="depositOption">Deposit</option>
+                        <option value="WITHDRAWAL" id="withdrawalOption">Withdrawal</option>
+                        <option value="TRANSFER" id="transferOption">Transfer</option>
                     </select>
-                    <button class="btn" onclick="filterTransactions()">Фільтр</button>
+                    <button class="btn" id="filterTransactionsBtn" onclick="filterTransactions()">Filter</button>
                 </div>
                 <div id="transactionsList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Завантаження транзакцій...</p>
+                        <p>Loading transactions...</p>
                     </div>
                 </div>
+            </div>
+            <div class="card">
+                <h2 id="detailedStatsTitle">Detailed User Expense Statistics</h2>
+                <div style="margin-bottom: 1rem;">
+                    <label id="detailedStatsMonthLabel" style="display: block; margin-bottom: 0.5rem;">Select month for detailed statistics:</label>
+                    <input type="month" id="detailedStatsMonthSelector" lang="uk" style="padding: 0.5rem; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 1rem;">
+                </div>
+                <button class="btn" id="loadDetailedStatsBtn" onclick="loadDetailedUserExpenseStatistics()" style="margin-bottom: 1rem;">Load Detailed Statistics</button>
+                <div id="detailedUserStatsContainer"></div>
             </div>
         </div>
 
@@ -1585,14 +1623,14 @@
         <div id="accounts" class="tab-content">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
-                <h2>Всі акаунти</h2>
+                <h2 id="accountsSectionTitle">All Accounts</h2>
                     <div style="display: flex; align-items: center; gap: 2rem;">
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="stat-label">Всього акаунтів:</span>
+                            <span class="stat-label" id="adminTotalAccountsLabel">Total Accounts:</span>
                             <span class="number stat-number" id="totalAccounts">-</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="stat-label">Загальний баланс:</span>
+                            <span class="stat-label" id="adminTotalBalanceLabel">Total Balance:</span>
                             <span class="number stat-number" id="totalBalance">-</span>
                         </div>
                     </div>
@@ -1600,7 +1638,7 @@
                 <div id="accountsList">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Завантаження акаунтів...</p>
+                        <p id="accountsLoadingText">Loading accounts...</p>
                     </div>
                 </div>
             </div>
@@ -1609,49 +1647,49 @@
 
         <div id="exchange" class="tab-content">
             <div class="card">
-                <h2>Курси валют</h2>
-                <p class="stat-label" style="margin-bottom: 1rem;">Поточні курси (UAH за 1 одиницю) та швидка конвертація.</p>
+                <h2 id="exchangeSectionTitle">Exchange Rates</h2>
+                <p class="stat-label" id="exchangeDescription" style="margin-bottom: 1rem;">Current rates (UAH per 1 unit) and quick conversion.</p>
                 <div class="calculator-section" id="adminExchangeCalc" data-default-from="UAH" data-default-to="USD">
                     <div class="form-group-inline">
                         <div class="form-group" style="flex: 1;">
-                            <label>Сума:</label>
+                            <label id="adminExchangeAmountLabel">Amount:</label>
                             <input type="number" data-role="amount" placeholder="100" min="0" step="0.01" value="100">
                 </div>
                         <div class="form-group" style="width: 140px;">
-                            <label>З валютy</label>
+                            <label id="adminExchangeFromLabel">From Currency</label>
                             <select data-role="from"></select>
                 </div>
                         <div class="form-group" style="width: 140px;">
-                            <label>У валюту</label>
+                            <label id="adminExchangeToLabel">To Currency</label>
                             <select data-role="to"></select>
                         </div>
                     </div>
                     <div class="result-box">
-                        <strong>Результат:</strong>
+                        <strong id="adminExchangeResultLabel">Result:</strong>
                         <span data-role="result">—</span>
                     </div>
                 </div>
                 <div id="adminExchangeRatesList">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Завантаження курсів...</p>
+                        <p id="exchangeRatesLoadingText">Loading rates...</p>
                     </div>
             </div>
         </div>
 
             <div class="card">
-                <h2>Графік курсів</h2>
+                <h2 id="historyChartTitle">Exchange Rate Chart</h2>
                 <div class="history-controls">
-                    <label for="adminHistoryRange">Період:</label>
+                    <label for="adminHistoryRange" id="adminHistoryRangeLabel">Period:</label>
                     <select id="adminHistoryRange">
-                        <option value="7d">Останні 7 днів</option>
-                        <option value="14d">Останні 14 днів</option>
-                        <option value="1m">1 місяць</option>
-                        <option value="3m">3 місяці</option>
-                        <option value="6m">6 місяців</option>
-                        <option value="12m">1 рік</option>
+                        <option value="7d" id="history7dOption">Last 7 days</option>
+                        <option value="14d" id="history14dOption">Last 14 days</option>
+                        <option value="1m" id="history1mOption">1 month</option>
+                        <option value="3m" id="history3mOption">3 months</option>
+                        <option value="6m" id="history6mOption">6 months</option>
+                        <option value="12m" id="history12mOption">1 year</option>
                     </select>
-                    <label for="adminHistoryCurrency">Валюта:</label>
+                    <label for="adminHistoryCurrency" id="adminHistoryCurrencyLabel">Currency:</label>
                     <select id="adminHistoryCurrency"></select>
                 </div>
                 <canvas id="adminHistoryChart"></canvas>
@@ -1661,90 +1699,90 @@
         <div id="my-profile" class="tab-content">
             <div class="card">
                 <div class="card-header-actions">
-                <h2>Мої рахунки</h2>
-                    <button class="btn" id="adminOpenCreateAccountBtn">Створити рахунок</button>
+                <h2 id="myAccountsTitle">My Accounts</h2>
+                    <button class="btn" id="adminOpenCreateAccountBtn">Create Account</button>
                 </div>
                 <div id="adminAccountsList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Завантаження власних рахунків...</p>
+                        <p id="ownAccountsLoadingText">Loading own accounts...</p>
                     </div>
                 </div>
             </div>
 
             <div class="card">
-                <h2>Операції з моїми рахунками</h2>
+                <h2 id="operationsWithAccountsTitle">Operations with My Accounts</h2>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
                     <div>
-                        <h3>Поповнення</h3>
+                        <h3 id="depositTitle">Deposit</h3>
                         <form id="adminDepositForm">
                             <div class="form-group">
-                                <label>Рахунок:</label>
+                                <label id="depositAccountLabel">Account:</label>
                                 <select id="adminDepositAccount" required>
-                                    <option value="">Оберіть рахунок</option>
+                                    <option value="" id="depositSelectAccountOption">Select account</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Сума:</label>
+                                <label id="depositAmountLabel">Amount:</label>
                                 <input type="number" id="adminDepositAmount" step="0.01" min="0.01" required>
                             </div>
-                            <button type="submit" class="btn">Поповнити</button>
+                            <button type="submit" class="btn" id="depositSubmitBtn">Deposit</button>
                         </form>
                     </div>
 
                     <div>
-                        <h3>Зняття</h3>
+                        <h3 id="withdrawTitle">Withdrawal</h3>
                         <form id="adminWithdrawForm">
                             <div class="form-group">
-                                <label>Рахунок:</label>
+                                <label id="withdrawAccountLabel">Account:</label>
                                 <select id="adminWithdrawAccount" required>
-                                    <option value="">Оберіть рахунок</option>
+                                    <option value="" id="withdrawSelectAccountOption">Select account</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Сума:</label>
+                                <label id="withdrawAmountLabel">Amount:</label>
                                 <input type="number" id="adminWithdrawAmount" step="0.01" min="0.01" required>
                             </div>
-                            <button type="submit" class="btn">Зняти</button>
+                            <button type="submit" class="btn" id="withdrawSubmitBtn">Withdraw</button>
                         </form>
                     </div>
 
                     <div>
-                        <h3>Переказ</h3>
+                        <h3 id="transferTitle">Transfer</h3>
                         <form id="adminTransferForm">
                             <div class="form-group">
-                                <label>З рахунку:</label>
+                                <label id="transferFromAccountLabel">From Account:</label>
                                 <select id="adminFromAccount" required>
-                                    <option value="">Оберіть рахунок</option>
+                                    <option value="" id="transferSelectAccountOption">Select account</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>На рахунок (номер):</label>
+                                <label id="transferToAccountLabel">To Account (number):</label>
                                 <input type="text" id="adminToAccountNumber" placeholder="ACC-0001" required>
                             </div>
                             <div class="form-group">
-                                <label>Сума:</label>
+                                <label id="transferAmountLabel">Amount:</label>
                                 <input type="number" id="adminTransferAmount" step="0.01" min="0.01" required>
                             </div>
-                            <button type="submit" class="btn">Переказати</button>
+                            <button type="submit" class="btn" id="transferSubmitBtn">Transfer</button>
                         </form>
                         <div class="calculator-section" id="adminTransferCalc" data-default-from="USD" data-default-to="UAH">
                             <div class="form-group-inline">
                                 <div class="form-group" style="flex: 1;">
-                                    <label>Швидкий розрахунок суми:</label>
+                                    <label id="adminTransferCalcLabel">Quick amount calculation:</label>
                                     <input type="number" placeholder="100" min="0" step="0.01" data-role="amount" value="100">
                     </div>
                                 <div class="form-group" style="width: 140px;">
-                                    <label>З валютy</label>
+                                    <label id="adminTransferCalcFromLabel">From Currency</label>
                                     <select data-role="from"></select>
                                 </div>
                                 <div class="form-group" style="width: 140px;">
-                                    <label>У валюту</label>
+                                    <label id="adminTransferCalcToLabel">To Currency</label>
                                     <select data-role="to"></select>
                                 </div>
                             </div>
                             <div class="result-box">
-                                <strong>Результат:</strong>
+                                <strong id="adminTransferCalcResultLabel">Result:</strong>
                                 <span data-role="result">—</span>
                             </div>
                         </div>
@@ -1753,11 +1791,11 @@
             </div>
 
             <div class="card">
-                <h2>Мої транзакції</h2>
+                <h2 id="myTransactionsTitle">My Transactions</h2>
                 <div id="adminTransactionsList" class="scroll-section">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Завантаження транзакцій...</p>
+                        <p id="myTransactionsLoadingText">Loading transactions...</p>
                 </div>
             </div>
         </div>
@@ -1766,22 +1804,22 @@
         <!-- Управління ролями -->
         <div id="roles" class="tab-content">
             <div class="card">
-                <h2>Управління ролями</h2>
+                <h2 id="rolesSectionTitle">Role Management</h2>
                 <div class="form-group">
-                    <label>Користувач:</label>
+                    <label id="roleUserLabel">User:</label>
                     <select id="roleUserSelect">
-                        <option value="">Оберіть користувача</option>
+                        <option value="" id="selectUserOption">Select user</option>
                     </select>
             </div>
                 <div class="form-group">
-                    <label>Роль:</label>
+                    <label id="roleRoleLabel">Role:</label>
                     <select id="roleSelect">
-                        <option value="ROLE_USER">Користувач</option>
-                        <option value="ROLE_ADMIN">Адміністратор</option>
+                        <option value="ROLE_USER" id="roleUserOption">User</option>
+                        <option value="ROLE_ADMIN" id="roleAdminOption">Administrator</option>
                     </select>
                 </div>
-                <button class="btn btn-success" onclick="assignRole()">Призначити роль</button>
-                <button class="btn btn-warning" onclick="removeRole()">Видалити роль</button>
+                <button class="btn btn-success" id="assignRoleBtn" onclick="assignRole()">Assign Role</button>
+                <button class="btn btn-warning" id="removeRoleBtn" onclick="removeRole()">Remove Role</button>
         </div>
         </div>
 
@@ -1790,37 +1828,37 @@
                 <div class="chat-layout">
                     <div class="chat-sidebar">
                         <div class="chat-search">
-                            <label for="adminChatContactInput">Новий діалог</label>
+                            <label for="adminChatContactInput" id="adminChatNewConversationLabel">New Conversation</label>
                             <input id="adminChatContactInput" type="text" placeholder="@sasha" autocomplete="off" />
-                            <button class="chat-start-btn" id="adminStartChatBtn" type="button">Почати чат</button>
+                            <button class="chat-start-btn" id="adminStartChatBtn" type="button">Start Chat</button>
                         </div>
                         <div class="chat-threads" id="adminChatThreads">
                             <div class="loading">
                                 <div class="spinner"></div>
-                                <p>Завантаження діалогів...</p>
+                                <p>Loading conversations...</p>
                             </div>
                         </div>
                     </div>
                     <div class="chat-main">
                         <div class="chat-header" id="adminChatHeader">
                             <div>
-                                <strong id="adminChatActiveTitle">Оберіть діалог</strong>
+                                <strong id="adminChatActiveTitle"></strong>
                                 <div id="adminChatActiveStatus" style="font-size:0.85rem; opacity:0.75;">Команда $cash доступна після вибору співрозмовника</div>
                             </div>
                             <div>
-                                <small>Використовуйте формат <code>$cash 400 EUR -></code> щоб переказати кошти</small>
+                                <small id="adminChatCashCommandHint">Використовуйте формат <code>$cash 400 EUR -></code> щоб переказати кошти</small>
                             </div>
                         </div>
                         <div class="chat-history" id="adminChatHistory">
-                            <p style="opacity:0.7;">Виберіть співрозмовника або створіть новий діалог.</p>
+                            <p style="opacity:0.7;"></p>
                         </div>
                         <div class="chat-composer" id="adminChatComposer">
-                            <textarea id="adminChatInput" class="chat-textarea" placeholder="Напишіть повідомлення..." disabled></textarea>
+                            <textarea id="adminChatInput" class="chat-textarea" placeholder="" disabled></textarea>
                             <div class="chat-actions">
                                 <div class="chat-controls">
                                     <button type="button" id="adminEmojiToggleBtn">😀</button>
                                 </div>
-                                <button class="chat-send-btn" type="button" id="adminChatSendBtn" disabled>Відправити</button>
+                                <button class="chat-send-btn" type="button" id="adminChatSendBtn" disabled></button>
                             </div>
                             <div class="emoji-picker" id="adminEmojiPicker"></div>
                         </div>
@@ -1835,13 +1873,13 @@
     <div id="userDetailsModal" class="modal">
         <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
-                <h2>Деталі користувача</h2>
+                <h2>User Details</h2>
                 <span class="close" onclick="closeUserDetailsModal()">&times;</span>
             </div>
             <div id="userDetailsContent">
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p>Завантаження...</p>
+                    <p>Loading...</p>
                 </div>
             </div>
         </div>
@@ -1851,21 +1889,21 @@
     <div id="adminCreateAccountModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Створити новий рахунок</h2>
+                <h2>Create New Account</h2>
                 <span class="close" id="adminCreateAccountClose">&times;</span>
             </div>
             <form id="adminCreateAccountForm">
                 <div class="form-group">
-                    <label>Валюта:</label>
+                    <label>Currency:</label>
                     <select id="adminAccountCurrency" required>
-                        <option value="USD">USD - Долар США</option>
-                        <option value="EUR">EUR - Євро</option>
-                        <option value="UAH">UAH - Гривня</option>
-                        <option value="CHF">CHF - Швейцарський франк</option>
-                        <option value="GBP">GBP - Британський фунт</option>
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="UAH">UAH - Ukrainian Hryvnia</option>
+                        <option value="CHF">CHF - Swiss Franc</option>
+                        <option value="GBP">GBP - British Pound</option>
                     </select>
                 </div>
-                <button type="submit" class="btn">Створити рахунок</button>
+                <button type="submit" class="btn">Create Account</button>
             </form>
         </div>
     </div>
@@ -1873,22 +1911,56 @@
     <div id="adminProfileOverlay" class="profile-overlay">
         <div class="profile-overlay-content">
             <div class="profile-overlay-header">
-                <h2>Мій профіль</h2>
+                <h2></h2>
                 <span class="close" id="adminProfileOverlayClose">&times;</span>
             </div>
             <div class="profile-overlay-body" id="adminProfileOverlayBody">
-                    <p>Завантаження...</p>
+                    <p id="adminProfileOverlayLoadingText">Loading...</p>
                 </div>
             <div class="profile-overlay-actions">
-                <button class="btn" onclick="window.location.href='profile-setup.html'">Редагувати</button>
-                <button class="btn btn-secondary" id="adminProfileOverlayCollapse">Закрити</button>
+                <button class="btn" id="adminProfileOverlayEditBtn" onclick="window.location.href='profile-setup.html'">Edit</button>
+                <button class="btn btn-secondary" id="adminProfileOverlayCollapse">Close</button>
             </div>
         </div>
     </div>
 
     <script>
+        // Immediate test to verify JavaScript is executing
+        (function() {
+            try {
+                console.log('=== ADMIN DASHBOARD SCRIPT LOADING ===');
+                // Make sure basic functions work
+                if (typeof console === 'undefined') {
+                    alert('Console is not available!');
+                }
+            } catch (e) {
+                alert('JavaScript error at start: ' + e.message);
+            }
+        })();
+        
         const ADMIN_THEME_STORAGE_KEY = 'adminDashboardTheme';
         const LEGACY_THEME_STORAGE_KEY = 'theme';
+        
+        // Define minimal showTab function immediately so tabs can be clicked
+        window.showTab = function(tabName, evt) {
+            console.log('showTab called:', tabName);
+            try {
+                const tabs = document.querySelectorAll('.header-tabs .tab');
+                tabs.forEach(tab => tab.classList.remove('active'));
+                const targetTab = evt && evt.currentTarget ? evt.currentTarget : document.querySelector(`.header-tabs .tab[data-tab="${tabName}"]`);
+                if (targetTab) {
+                    targetTab.classList.add('active');
+                }
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                const targetContent = document.getElementById(tabName);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+                console.log('Tab switched to:', tabName);
+            } catch (error) {
+                console.error('Error in showTab:', error);
+            }
+        };
 
         (function() {
             try {
@@ -1913,13 +1985,26 @@
         let transactionsPage = 1;
         const TRANSACTIONS_PER_PAGE = 20;
         const ADMIN_SUPPORTED_CURRENCIES = ['UAH', 'USD', 'EUR', 'GBP', 'CHF'];
-        const ADMIN_CURRENCY_LABELS = {
-            'USD': 'USD (Долар США)',
-            'EUR': 'EUR (Євро)',
-            'GBP': 'GBP (Британський фунт)',
-            'CHF': 'CHF (Швейцарський франк)',
-            'UAH': 'UAH (Гривня)'
+        const ADMIN_CURRENCY_NAMES_UK = {
+            'USD': 'Долар США',
+            'EUR': 'Євро',
+            'GBP': 'Британський фунт',
+            'CHF': 'Швейцарський франк',
+            'UAH': 'Гривня'
         };
+        const ADMIN_CURRENCY_NAMES_EN = {
+            'USD': 'US Dollar',
+            'EUR': 'Euro',
+            'GBP': 'British Pound',
+            'CHF': 'Swiss Franc',
+            'UAH': 'Hryvnia'
+        };
+        function getAdminCurrencyLabels() {
+            const names = adminCurrentLanguage === 'uk' ? ADMIN_CURRENCY_NAMES_UK : ADMIN_CURRENCY_NAMES_EN;
+            return Object.fromEntries(
+                Object.entries(names).map(([code, name]) => [code, `${code} (${name})`])
+            );
+        }
         const ADMIN_CALCULATOR_IDS = ['adminExchangeCalc', 'adminTransferCalc'];
         const ADMIN_HISTORY_COLORS = {
             'USD': { border: 'rgb(54, 162, 235)', background: 'rgba(54, 162, 235, 0.2)' },
@@ -2042,10 +2127,886 @@
             }
         }
 
+        // Language localization for admin
+        const adminTranslations = {
+            uk: {
+                tabs: {
+                    users: 'Користувачі',
+                    transactions: 'Транзакції',
+                    accounts: 'Акаунти',
+                    exchange: 'Курси валют',
+                    roles: 'Управління ролями',
+                    myProfile: 'Мій профіль',
+                    messenger: 'Месенджер'
+                },
+                header: {
+                    userName: 'Адміністратор',
+                    myProfile: 'Мій профіль',
+                    toggleTheme: 'Перемкнути тему',
+                    switchLanguage: 'Перемкнути мову',
+                    profileSettings: 'Налаштування профілю',
+                    logout: 'Вийти'
+                },
+                users: {
+                    title: 'Всі користувачі',
+                    total: 'Всього користувачів',
+                    search: 'Пошук користувачів...',
+                    searchButton: 'Пошук',
+                    loading: 'Завантаження користувачів...',
+                    notFound: 'Користувачів не знайдено.',
+                    details: 'Деталі',
+                    detailsTitle: 'Деталі користувача',
+                    userInfo: 'Інформація про користувача',
+                    name: 'Ім\'я:',
+                    age: 'Вік:',
+                    employers: 'Роботодавці:',
+                    noAccounts: 'Рахунків не знайдено',
+                    noTransactions: 'Транзакцій не знайдено',
+                    expenseStats: 'Статистика витрат',
+                    selectAccount: 'Виберіть акаунт:',
+                    allAccounts: 'Всі акаунти',
+                    selectMonth: 'Виберіть місяць:',
+                    noData: 'Немає даних для відображення',
+                    tableUsername: 'Ім\'я користувача',
+                    tableEmail: 'Email',
+                    tableRoles: 'Ролі',
+                    tableActive: 'Активний',
+                    tableActions: 'Дії',
+                    tableId: 'ID',
+                    tableEmail: 'Email',
+                    active: 'Активний',
+                    roles: 'Ролі',
+                    personalData: 'Особисті дані',
+                    accounts: 'Рахунки',
+                    number: 'Номер',
+                    balance: 'Баланс',
+                    currency: 'Валюта',
+                    fromAccount: 'З рахунку',
+                    toAccount: 'На рахунок',
+                    yes: 'Так',
+                    no: 'Ні',
+                    details: 'Деталі'
+                },
+                transactions: {
+                    title: 'Всі транзакції',
+                    total: 'Всього транзакцій',
+                    startDate: 'Дата початку',
+                    endDate: 'Дата кінця',
+                    allTypes: 'Всі типи',
+                    deposit: 'Депозит',
+                    withdrawal: 'Зняття',
+                    transfer: 'Переказ',
+                    payment: 'Платіж',
+                    filter: 'Фільтр',
+                    loading: 'Завантаження транзакцій...',
+                    category: 'Категорія',
+                    detailedStats: 'Детальна статистика витрат користувачів',
+                    selectMonth: 'Виберіть місяць для детальної статистики:',
+                    loadStats: 'Завантажити детальну статистику',
+                    tableId: 'ID',
+                    tableType: 'Тип',
+                    tableAmount: 'Сума',
+                    tableDescription: 'Опис',
+                    tableClient: 'Клієнт',
+                    tableDate: 'Дата',
+                    tableStatus: 'Статус',
+                    tableFromAccount: 'З акаунта',
+                    tableToAccount: 'На акаунт'
+                },
+                accounts: {
+                    title: 'Всі акаунти',
+                    total: 'Всього акаунтів',
+                    totalBalance: 'Загальний баланс',
+                    loading: 'Завантаження акаунтів...',
+                    clientN: 'Клієнт Н/Д',
+                    tableId: 'ID',
+                    tableNumber: 'Номер',
+                    tableCurrency: 'Валюта:',
+                    tableBalance: 'Баланс:',
+                    tableClient: 'Клієнт',
+                    tableCreatedDate: 'Дата створення',
+                    noAccountsFound: 'Акаунтів не знайдено.'
+                },
+                exchange: {
+                    title: 'Курси валют',
+                    description: 'Поточні курси (UAH за 1 одиницю) та швидка конвертація.',
+                    amount: 'Сума',
+                    fromCurrency: 'З валюти',
+                    toCurrency: 'У валюту',
+                    result: 'Результат',
+                    loading: 'Завантаження курсів...',
+                    currencyLabel: 'Валюта',
+                    historyChart: 'Графік курсів',
+                    historyPeriod: 'Період',
+                    history7d: 'Останні 7 днів',
+                    history14d: 'Останні 14 днів',
+                    history1m: '1 місяць',
+                    history3m: '3 місяці',
+                    history6m: '6 місяців',
+                    history12m: '1 рік',
+                    rateUnavailable: 'Курс недоступний.',
+                    selectCurrency: 'Оберіть валюту',
+                    enterAmount: 'Введіть суму'
+                },
+                roles: {
+                    title: 'Управління ролями',
+                    user: 'Користувач:',
+                    selectUser: 'Оберіть користувача',
+                    role: 'Роль:',
+                    userRole: 'Користувач',
+                    adminRole: 'Адміністратор',
+                    assign: 'Призначити роль',
+                    remove: 'Видалити роль'
+                },
+                profile: {
+                    title: 'Мій профіль',
+                    loading: 'Loading...',
+                    expand: 'Розгорнути',
+                    edit: 'Редагувати',
+                    close: 'Закрити',
+                    myAccounts: 'Мої рахунки',
+                    createAccount: 'Створити рахунок',
+                    loadingOwnAccounts: 'Завантаження власних рахунків...',
+                    createAccountTitle: 'Створити новий рахунок',
+                    currency: 'Валюта:',
+                    usd: 'USD - Долар США',
+                    eur: 'EUR - Євро',
+                    uah: 'UAH - Гривня',
+                    chf: 'CHF - Швейцарський франк',
+                    gbp: 'GBP - Британський фунт',
+                    notSpecified: 'Не вказано',
+                    email: 'Email:',
+                    operationsWithAccounts: 'Операції з моїми рахунками',
+                    myTransactions: 'Мої транзакції'
+                },
+                chat: {
+                    newConversation: 'Новий діалог',
+                    startChat: 'Почати чат',
+                    loadingConversations: 'Завантаження діалогів...',
+                    selectDialog: 'Оберіть діалог',
+                    selectDialogOrCreate: 'Оберіть діалог або створіть новий',
+                    typeMessage: 'Напишіть повідомлення...',
+                    noActiveDialogs: 'Немає активних діалогів. Оберіть користувача вище, щоб розпочати.',
+                    errorLoading: 'Помилка завантаження месенджера:',
+                    enterNickname: 'Введіть нік у форматі @username',
+                    cannotMessageSelf: 'Неможливо написати самому собі',
+                    userNotFound: 'Користувача @{handle} не знайдено',
+                    firstMessage: 'Напишіть перше повідомлення',
+                    noMessagesYet: 'Повідомлень поки що немає. Напишіть перше повідомлення.',
+                    selectContactToSend: 'Оберіть співрозмовника, щоб надіслати повідомлення',
+                    noConnection: 'Немає з\'єднання з сервером чату',
+                    loadingData: 'Завантаження даних...',
+                    cashCommandAvailable: 'Команда $cash доступна після вибору співрозмовника',
+                    cashCommandHint: 'Використовуйте формат $cash 400 EUR -> щоб переказати кошти'
+                },
+                operations: {
+                    selectAccount: 'Оберіть рахунок',
+                    amount: 'Сума:',
+                    quickCalculation: 'Швидкий розрахунок суми:',
+                    fromCurrency: 'З валютy',
+                    toCurrency: 'У валюту',
+                    result: 'Результат:',
+                    deposit: 'Депозит',
+                    withdraw: 'Зняття',
+                    transfer: 'Переказ',
+                    account: 'Акаунт',
+                    fromAccount: 'З акаунту',
+                    toAccount: 'На акаунт'
+                },
+                roles: {
+                    title: 'Управління ролями',
+                    user: 'Користувач:',
+                    selectUser: 'Оберіть користувача',
+                    role: 'Роль:',
+                    userRole: 'Користувач',
+                    adminRole: 'Адміністратор',
+                    assign: 'Призначити роль',
+                    remove: 'Видалити роль',
+                    selectUserAndRole: 'Оберіть користувача та роль',
+                    errorAssigning: 'Помилка призначення ролі',
+                    errorRemoving: 'Помилка видалення ролі'
+                },
+                messages: {
+                    loading: 'Завантаження...',
+                    connectionError: 'Помилка з\'єднання:',
+                    errorLoading: 'Помилка завантаження дашборду:',
+                    noExpensesPeriod: 'Немає витрат за вибраний період',
+                    errorLoadingStats: 'Помилка завантаження статистики:',
+                    profileNotLoaded: 'Профіль не завантажено. Оновіть сторінку.',
+                    roleAssigned: 'Роль успішно призначено!',
+                    roleRemoved: 'Роль успішно видалено!',
+                    failedToLoadChat: 'Не вдалося завантажити чат. Спробуйте пізніше.',
+                    failedToUpdateList: 'Не вдалося оновити список діалогів',
+                    failedToLoadMessages: 'Не вдалося завантажити повідомлення',
+                    failedToSend: 'Не вдалося надіслати повідомлення:',
+                    failedToLoadData: 'Не вдалося завантажити дані',
+                    noData: 'Дані поки відсутні.',
+                    selectContact: 'Виберіть співрозмовника або створіть новий діалог.',
+                    send: 'Відправити',
+                    yes: 'Так',
+                    no: 'Ні',
+                    accountCreateError: 'Помилка створення рахунку: ',
+                    operationError: 'Помилка операції: ',
+                    currencyLabel: 'Валюта: ',
+                    balanceLabel: 'Баланс: ',
+                    messageSent: 'Повідомлення надіслано',
+                    profileNotFound: 'Профіль не знайдено',
+                    profileUnavailable: 'Профіль недоступний',
+                    viewProfile: 'Переглянути профіль',
+                    noOwnAccounts: 'Власних рахунків поки немає.',
+                    specifyAccountAmount: 'Вкажіть рахунок та суму для поповнення.',
+                    specifyAccountAmountWithdraw: 'Вкажіть рахунок та суму для зняття.',
+                    fillAllFieldsTransfer: 'Заповніть усі поля для переказу.'
+                },
+                categories: {
+                    none: 'Без категорії',
+                    FOOD: '🍕 Їжа',
+                    TRANSPORT: '🚗 Транспорт',
+                    SHOPPING: '🛍️ Покупки',
+                    ENTERTAINMENT: '🎬 Розваги',
+                    BILLS: '💡 Комунальні послуги',
+                    HEALTHCARE: '🏥 Здоров\'я',
+                    EDUCATION: '📚 Освіта',
+                    OTHER: '📦 Інше'
+                }
+            },
+            en: {
+                tabs: {
+                    users: 'Users',
+                    transactions: 'Transactions',
+                    accounts: 'Accounts',
+                    exchange: 'Exchange Rates',
+                    roles: 'Role Management',
+                    myProfile: 'My Profile',
+                    messenger: 'Messenger'
+                },
+                header: {
+                    userName: 'Administrator',
+                    myProfile: 'My Profile',
+                    toggleTheme: 'Toggle theme',
+                    switchLanguage: 'Switch language',
+                    profileSettings: 'Profile Settings',
+                    logout: 'Logout'
+                },
+                users: {
+                    title: 'All Users',
+                    total: 'Total Users',
+                    search: 'Search users...',
+                    searchButton: 'Search',
+                    loading: 'Loading users...',
+                    notFound: 'No users found.',
+                    details: 'Details',
+                    detailsTitle: 'User Details',
+                    userInfo: 'User Information',
+                    name: 'Name:',
+                    age: 'Age:',
+                    employers: 'Employers:',
+                    noAccounts: 'No accounts found',
+                    noTransactions: 'No transactions found',
+                    expenseStats: 'Expense Statistics',
+                    selectAccount: 'Select Account:',
+                    allAccounts: 'All Accounts',
+                    selectMonth: 'Select Month:',
+                    noData: 'No data to display',
+                    tableUsername: 'Username',
+                    tableEmail: 'Email',
+                    tableRoles: 'Roles',
+                    tableActive: 'Active',
+                    tableActions: 'Actions',
+                    tableId: 'ID',
+                    tableEmail: 'Email',
+                    active: 'Active',
+                    roles: 'Roles',
+                    personalData: 'Personal Data',
+                    accounts: 'Accounts',
+                    number: 'Number',
+                    balance: 'Balance',
+                    currency: 'Currency',
+                    fromAccount: 'From Account',
+                    toAccount: 'To Account',
+                    yes: 'Yes',
+                    no: 'No',
+                    details: 'Details'
+                },
+                transactions: {
+                    title: 'All Transactions',
+                    total: 'Total Transactions',
+                    startDate: 'Start Date',
+                    endDate: 'End Date',
+                    allTypes: 'All Types',
+                    deposit: 'Deposit',
+                    withdrawal: 'Withdrawal',
+                    transfer: 'Transfer',
+                    payment: 'Payment',
+                    filter: 'Filter',
+                    loading: 'Loading transactions...',
+                    category: 'Category',
+                    detailedStats: 'Detailed User Expense Statistics',
+                    selectMonth: 'Select month for detailed statistics:',
+                    loadStats: 'Load Detailed Statistics',
+                    tableId: 'ID',
+                    tableType: 'Type',
+                    tableAmount: 'Amount',
+                    tableDescription: 'Description',
+                    tableClient: 'Client',
+                    tableDate: 'Date',
+                    tableStatus: 'Status',
+                    tableFromAccount: 'From Account',
+                    tableToAccount: 'To Account'
+                },
+                accounts: {
+                    title: 'All Accounts',
+                    total: 'Total Accounts',
+                    totalBalance: 'Total Balance',
+                    loading: 'Loading accounts...',
+                    clientN: 'Client N/A',
+                    tableId: 'ID',
+                    tableNumber: 'Number',
+                    tableCurrency: 'Currency:',
+                    tableBalance: 'Balance:',
+                    tableClient: 'Client',
+                    tableCreatedDate: 'Created Date',
+                    noAccountsFound: 'No accounts found.'
+                },
+                exchange: {
+                    title: 'Exchange Rates',
+                    description: 'Current rates (UAH per 1 unit) and quick conversion.',
+                    amount: 'Amount',
+                    fromCurrency: 'From Currency',
+                    toCurrency: 'To Currency',
+                    result: 'Result',
+                    loading: 'Loading rates...',
+                    currencyLabel: 'Currency',
+                    historyChart: 'Exchange Rate Chart',
+                    historyPeriod: 'Period',
+                    history7d: 'Last 7 days',
+                    history14d: 'Last 14 days',
+                    history1m: '1 month',
+                    history3m: '3 months',
+                    history6m: '6 months',
+                    history12m: '1 year',
+                    rateUnavailable: 'Rate unavailable.',
+                    selectCurrency: 'Select currency',
+                    enterAmount: 'Enter amount'
+                },
+                roles: {
+                    title: 'Role Management',
+                    user: 'User:',
+                    selectUser: 'Select user',
+                    role: 'Role:',
+                    userRole: 'User',
+                    adminRole: 'Administrator',
+                    assign: 'Assign Role',
+                    remove: 'Remove Role',
+                    selectUserAndRole: 'Select user and role',
+                    errorAssigning: 'Error assigning role',
+                    errorRemoving: 'Error removing role'
+                },
+                profile: {
+                    title: 'My Profile',
+                    loading: 'Loading...',
+                    expand: 'Expand',
+                    edit: 'Edit',
+                    close: 'Close',
+                    myAccounts: 'My Accounts',
+                    createAccount: 'Create Account',
+                    loadingOwnAccounts: 'Loading own accounts...',
+                    createAccountTitle: 'Create New Account',
+                    currency: 'Currency:',
+                    usd: 'USD - US Dollar',
+                    eur: 'EUR - Euro',
+                    uah: 'UAH - Ukrainian Hryvnia',
+                    chf: 'CHF - Swiss Franc',
+                    gbp: 'GBP - British Pound',
+                    notSpecified: 'Not specified',
+                    email: 'Email:',
+                    operationsWithAccounts: 'Operations with My Accounts',
+                    myTransactions: 'My Transactions'
+                },
+                chat: {
+                    newConversation: 'New Conversation',
+                    startChat: 'Start Chat',
+                    loadingConversations: 'Loading conversations...',
+                    selectDialog: 'Select dialog',
+                    selectDialogOrCreate: 'Select a dialog or create a new one',
+                    typeMessage: 'Type a message...',
+                    noActiveDialogs: 'No active dialogs. Select a user above to start.',
+                    errorLoading: 'Error loading messenger:',
+                    enterNickname: 'Enter nickname in format @username',
+                    cannotMessageSelf: 'Cannot message yourself',
+                    userNotFound: 'User @{handle} not found',
+                    firstMessage: 'Type the first message',
+                    noMessagesYet: 'No messages yet. Type the first message.',
+                    selectContactToSend: 'Select a contact to send a message',
+                    noConnection: 'No connection to chat server',
+                    loadingData: 'Loading data...',
+                    initializeChat: 'Initialize chat first',
+                    cashCommandAvailable: '$cash command available after selecting a contact',
+                    cashCommandHint: 'Use format $cash 400 EUR -> to transfer funds'
+                },
+                operations: {
+                    selectAccount: 'Select account',
+                    amount: 'Amount:',
+                    quickCalculation: 'Quick amount calculation:',
+                    fromCurrency: 'From Currency',
+                    toCurrency: 'To Currency',
+                    result: 'Result:',
+                    deposit: 'Deposit',
+                    withdraw: 'Withdraw',
+                    transfer: 'Transfer',
+                    account: 'Account',
+                    fromAccount: 'From Account',
+                    toAccount: 'To Account'
+                },
+                messages: {
+                    loading: 'Loading...',
+                    connectionError: 'Connection error:',
+                    errorLoading: 'Error loading dashboard:',
+                    noExpensesPeriod: 'No expenses for selected period',
+                    errorLoadingStats: 'Error loading statistics:',
+                    profileNotLoaded: 'Profile not loaded. Refresh the page.',
+                    roleAssigned: 'Role successfully assigned!',
+                    roleRemoved: 'Role successfully removed!',
+                    failedToLoadChat: 'Failed to load chat. Please try again later.',
+                    failedToUpdateList: 'Failed to update dialog list',
+                    failedToLoadMessages: 'Failed to load messages',
+                    failedToSend: 'Failed to send message:',
+                    failedToLoadData: 'Failed to load data',
+                    noData: 'No data available yet.',
+                    selectContact: 'Select a contact or create a new dialog.',
+                    send: 'Send',
+                    yes: 'Yes',
+                    no: 'No',
+                    messageSent: 'Message sent',
+                    profileNotFound: 'Profile not found',
+                    profileUnavailable: 'Profile unavailable',
+                    viewProfile: 'View profile',
+                    noOwnAccounts: 'No own accounts yet.',
+                    specifyAccountAmount: 'Specify account and amount for deposit.',
+                    specifyAccountAmountWithdraw: 'Specify account and amount for withdrawal.',
+                    fillAllFieldsTransfer: 'Fill all fields for transfer.'
+                },
+                categories: {
+                    none: 'No category',
+                    FOOD: '🍕 Food',
+                    TRANSPORT: '🚗 Transport',
+                    SHOPPING: '🛍️ Shopping',
+                    ENTERTAINMENT: '🎬 Entertainment',
+                    BILLS: '💡 Utilities',
+                    HEALTHCARE: '🏥 Healthcare',
+                    EDUCATION: '📚 Education',
+                    OTHER: '📦 Other'
+                }
+            }
+        };
+
+        const ADMIN_LANGUAGE_STORAGE_KEY = 'admin_language';
+        let adminCurrentLanguage = localStorage.getItem(ADMIN_LANGUAGE_STORAGE_KEY) || 'uk';
+
+        function getAdminText(key) {
+            if (!adminTranslations || !adminCurrentLanguage) {
+                return key;
+            }
+            const keys = key.split('.');
+            let value = adminTranslations[adminCurrentLanguage];
+            if (!value) {
+                return key;
+            }
+            for (const k of keys) {
+                if (value && typeof value === 'object' && k in value) {
+                    value = value[k];
+                } else {
+                    return key;
+                }
+            }
+            return (value !== undefined && value !== null) ? value : key;
+        }
+
+        function formatAdminDate(dateString) {
+            if (!dateString) return '—';
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return dateString;
+                if (adminCurrentLanguage === 'uk') {
+                    // Ukrainian format: dd.mm.yyyy
+                    return date.toLocaleDateString('uk-UA', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+                } else {
+                    // English format: mm.dd.yyyy
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${month}.${day}.${year}`;
+                }
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        function formatAdminDateTime(dateString) {
+            if (!dateString) return '';
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return dateString;
+                if (adminCurrentLanguage === 'uk') {
+                    // Ukrainian format: dd.mm.yyyy, hh:mm
+                    return date.toLocaleString('uk-UA', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                } else {
+                    // English format: mm.dd.yyyy, hh:mm
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    return `${month}.${day}.${year}, ${hours}:${minutes}`;
+                }
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        function switchAdminLanguage() {
+            adminCurrentLanguage = adminCurrentLanguage === 'uk' ? 'en' : 'uk';
+            localStorage.setItem(ADMIN_LANGUAGE_STORAGE_KEY, adminCurrentLanguage);
+            applyAdminLanguage();
+            // Re-render all tables to update translations and date formats
+            if (typeof users !== 'undefined' && Array.isArray(users)) {
+                renderUsersPage();
+            }
+            if (typeof transactions !== 'undefined' && Array.isArray(transactions)) {
+                renderTransactionsPage();
+            }
+            if (typeof accounts !== 'undefined' && Array.isArray(accounts)) {
+                displayAccounts(accounts);
+            }
+            // Re-render accounts list to update currency and balance labels
+            if (typeof adminAccounts !== 'undefined' && Array.isArray(adminAccounts)) {
+                renderAdminAccountsList(adminAccounts);
+            }
+            // Re-render admin transactions list
+            if (typeof adminTransactions !== 'undefined' && Array.isArray(adminTransactions)) {
+                renderAdminTransactionsList(adminTransactions);
+            }
+        }
+
+        function applyAdminLanguage() {
+            try {
+                // Update HTML lang attribute for calendar localization
+                const htmlElement = document.getElementById('adminHtmlElement') || document.documentElement;
+                if (htmlElement) {
+                    htmlElement.lang = adminCurrentLanguage === 'uk' ? 'uk' : 'en';
+                }
+                
+                // Update lang attribute on all date and month input elements for calendar localization
+                const calendarLocale = adminCurrentLanguage === 'uk' ? 'uk' : 'en';
+                const dateInputs = document.querySelectorAll('input[type="date"]');
+                dateInputs.forEach(input => {
+                    input.lang = calendarLocale;
+                });
+                const monthInputs = document.querySelectorAll('input[type="month"]');
+                monthInputs.forEach(input => {
+                    input.lang = calendarLocale;
+                });
+                // Update tabs
+                const tabs = {
+                    'users': getAdminText('tabs.users'),
+                    'transactions': getAdminText('tabs.transactions'),
+                    'accounts': getAdminText('tabs.accounts'),
+                    'exchange': getAdminText('tabs.exchange'),
+                    'roles': getAdminText('tabs.roles'),
+                    'my-profile': getAdminText('tabs.myProfile'),
+                    'chat': getAdminText('tabs.messenger')
+                };
+                console.log('Admin tabs translations:', tabs);
+                Object.keys(tabs).forEach(tab => {
+                    const el = document.querySelector(`[data-tab="${tab}"]`);
+                    if (el) {
+                        console.log(`Updating admin tab ${tab}:`, el.textContent, '->', tabs[tab]);
+                        el.textContent = tabs[tab];
+                    } else {
+                        console.warn(`Admin tab element not found for: ${tab}`);
+                    }
+                });
+            } catch (error) {
+                console.error('Error updating admin tabs:', error);
+            }
+
+            // Update header
+            const userNameEl = document.getElementById('userName');
+            if (userNameEl && !userNameEl.dataset.original) {
+                userNameEl.dataset.original = userNameEl.textContent;
+            }
+            const languageBtn = document.getElementById('adminLanguageToggleBtn');
+            if (languageBtn) languageBtn.title = getAdminText('header.switchLanguage');
+            const themeBtn = document.getElementById('adminThemeToggleBtn');
+            if (themeBtn) themeBtn.title = getAdminText('header.toggleTheme');
+            const profileToggle = document.getElementById('adminProfileToggle');
+            if (profileToggle) profileToggle.title = getAdminText('header.myProfile');
+
+            // Update users section
+            const usersTitle = document.querySelector('#users h2');
+            if (usersTitle) usersTitle.textContent = getAdminText('users.title');
+
+            // Update transactions section
+            const transactionsTitle = document.querySelector('#transactions h2, #transactionsSectionTitle');
+            if (transactionsTitle) transactionsTitle.textContent = getAdminText('transactions.title');
+            const totalTransactionsLabel = document.getElementById('adminTotalTransactionsLabel');
+            if (totalTransactionsLabel) totalTransactionsLabel.textContent = getAdminText('transactions.total') + ':';
+            const startDateInput = document.getElementById('startDate');
+            if (startDateInput) startDateInput.placeholder = getAdminText('transactions.startDate');
+            const endDateInput = document.getElementById('endDate');
+            if (endDateInput) endDateInput.placeholder = getAdminText('transactions.endDate');
+            const allTypesOption = document.getElementById('allTypesOption');
+            if (allTypesOption) allTypesOption.textContent = getAdminText('transactions.allTypes');
+            const depositOption = document.getElementById('depositOption');
+            if (depositOption) depositOption.textContent = getAdminText('transactions.deposit');
+            const withdrawalOption = document.getElementById('withdrawalOption');
+            if (withdrawalOption) withdrawalOption.textContent = getAdminText('transactions.withdrawal');
+            const transferOption = document.getElementById('transferOption');
+            if (transferOption) transferOption.textContent = getAdminText('transactions.transfer');
+            const filterTransactionsBtn = document.getElementById('filterTransactionsBtn');
+            if (filterTransactionsBtn) filterTransactionsBtn.textContent = getAdminText('transactions.filter');
+            const transactionsLoadingText = document.getElementById('transactionsLoadingText');
+            if (transactionsLoadingText) transactionsLoadingText.textContent = getAdminText('transactions.loading');
+            const detailedStatsTitle = document.getElementById('detailedStatsTitle');
+            if (detailedStatsTitle) detailedStatsTitle.textContent = getAdminText('transactions.detailedStats');
+            const detailedStatsMonthLabel = document.getElementById('detailedStatsMonthLabel');
+            if (detailedStatsMonthLabel) detailedStatsMonthLabel.textContent = getAdminText('transactions.selectMonth');
+            const loadDetailedStatsBtn = document.getElementById('loadDetailedStatsBtn');
+            if (loadDetailedStatsBtn) loadDetailedStatsBtn.textContent = getAdminText('transactions.loadStats');
+
+            // Update accounts section
+            const accountsTitle = document.querySelector('#accounts h2, #accountsSectionTitle');
+            if (accountsTitle) accountsTitle.textContent = getAdminText('accounts.title');
+
+            // Update exchange rates section
+            const exchangeTitle = document.getElementById('exchangeSectionTitle');
+            if (exchangeTitle) {
+                const titleText = getAdminText('exchange.title');
+                exchangeTitle.textContent = titleText;
+            }
+            const exchangeDesc = document.getElementById('exchangeDescription');
+            if (exchangeDesc) {
+                const descText = getAdminText('exchange.description');
+                exchangeDesc.textContent = descText;
+            }
+            const adminExchangeAmountLabel = document.getElementById('adminExchangeAmountLabel');
+            if (adminExchangeAmountLabel) {
+                const amountText = getAdminText('exchange.amount');
+                adminExchangeAmountLabel.textContent = amountText + ':';
+            }
+            const adminExchangeFromLabel = document.getElementById('adminExchangeFromLabel');
+            if (adminExchangeFromLabel) {
+                const fromText = getAdminText('exchange.fromCurrency');
+                adminExchangeFromLabel.textContent = fromText;
+            }
+            const adminExchangeToLabel = document.getElementById('adminExchangeToLabel');
+            if (adminExchangeToLabel) {
+                const toText = getAdminText('exchange.toCurrency');
+                adminExchangeToLabel.textContent = toText;
+            }
+            const adminExchangeResultLabel = document.getElementById('adminExchangeResultLabel');
+            if (adminExchangeResultLabel) {
+                const resultText = getAdminText('exchange.result');
+                adminExchangeResultLabel.textContent = resultText + ':';
+            }
+            const exchangeRatesLoadingText = document.getElementById('exchangeRatesLoadingText');
+            if (exchangeRatesLoadingText) exchangeRatesLoadingText.textContent = getAdminText('exchange.loading');
+            const historyChartTitle = document.getElementById('historyChartTitle');
+            if (historyChartTitle) historyChartTitle.textContent = getAdminText('exchange.historyChart');
+            const adminHistoryRangeLabel = document.getElementById('adminHistoryRangeLabel');
+            if (adminHistoryRangeLabel) adminHistoryRangeLabel.textContent = getAdminText('exchange.historyPeriod') + ':';
+            const history7dOption = document.getElementById('history7dOption');
+            if (history7dOption) history7dOption.textContent = getAdminText('exchange.history7d');
+            const history14dOption = document.getElementById('history14dOption');
+            if (history14dOption) history14dOption.textContent = getAdminText('exchange.history14d');
+            const history1mOption = document.getElementById('history1mOption');
+            if (history1mOption) history1mOption.textContent = getAdminText('exchange.history1m');
+            const history3mOption = document.getElementById('history3mOption');
+            if (history3mOption) history3mOption.textContent = getAdminText('exchange.history3m');
+            const history6mOption = document.getElementById('history6mOption');
+            if (history6mOption) history6mOption.textContent = getAdminText('exchange.history6m');
+            const history12mOption = document.getElementById('history12mOption');
+            if (history12mOption) history12mOption.textContent = getAdminText('exchange.history12m');
+            const adminHistoryCurrencyLabel = document.getElementById('adminHistoryCurrencyLabel');
+            if (adminHistoryCurrencyLabel) adminHistoryCurrencyLabel.textContent = getAdminText('exchange.currencyLabel') + ':';
+            const adminTotalAccountsLabel = document.getElementById('adminTotalAccountsLabel');
+            if (adminTotalAccountsLabel) adminTotalAccountsLabel.textContent = getAdminText('accounts.total') + ':';
+            const adminTotalBalanceLabel = document.getElementById('adminTotalBalanceLabel');
+            if (adminTotalBalanceLabel) adminTotalBalanceLabel.textContent = getAdminText('accounts.totalBalance') + ':';
+
+            // Update roles section
+            const rolesTitle = document.getElementById('rolesSectionTitle');
+            if (rolesTitle) rolesTitle.textContent = getAdminText('roles.title');
+            const roleUserLabel = document.getElementById('roleUserLabel');
+            if (roleUserLabel) roleUserLabel.textContent = getAdminText('roles.user');
+            const selectUserOption = document.getElementById('selectUserOption');
+            if (selectUserOption) selectUserOption.textContent = getAdminText('roles.selectUser');
+            const roleRoleLabel = document.getElementById('roleRoleLabel');
+            if (roleRoleLabel) roleRoleLabel.textContent = getAdminText('roles.role');
+            const roleUserOption = document.getElementById('roleUserOption');
+            if (roleUserOption) roleUserOption.textContent = getAdminText('roles.userRole');
+            const roleAdminOption = document.getElementById('roleAdminOption');
+            if (roleAdminOption) roleAdminOption.textContent = getAdminText('roles.adminRole');
+            const assignRoleBtn = document.getElementById('assignRoleBtn');
+            if (assignRoleBtn) {
+                assignRoleBtn.textContent = getAdminText('roles.assign');
+            }
+            const removeRoleBtn = document.getElementById('removeRoleBtn');
+            if (removeRoleBtn) {
+                removeRoleBtn.textContent = getAdminText('roles.remove');
+            }
+
+            // Update profile section
+            const profileTitle = document.querySelector('#my-profile h2');
+            if (profileTitle) profileTitle.textContent = getAdminText('profile.title');
+            const myAccountsTitle = document.getElementById('myAccountsTitle');
+            if (myAccountsTitle) myAccountsTitle.textContent = getAdminText('profile.myAccounts');
+            const adminOpenCreateAccountBtn = document.getElementById('adminOpenCreateAccountBtn');
+            if (adminOpenCreateAccountBtn) adminOpenCreateAccountBtn.textContent = getAdminText('profile.createAccount');
+            const ownAccountsLoadingText = document.getElementById('ownAccountsLoadingText');
+            if (ownAccountsLoadingText) ownAccountsLoadingText.textContent = getAdminText('profile.loadingOwnAccounts');
+            const operationsWithAccountsTitle = document.getElementById('operationsWithAccountsTitle');
+            if (operationsWithAccountsTitle) operationsWithAccountsTitle.textContent = getAdminText('profile.operationsWithAccounts');
+            const depositTitle = document.getElementById('depositTitle');
+            if (depositTitle) depositTitle.textContent = getAdminText('operations.deposit');
+            const depositAccountLabel = document.getElementById('depositAccountLabel');
+            if (depositAccountLabel) depositAccountLabel.textContent = getAdminText('operations.account') + ':';
+            const depositSelectAccountOption = document.getElementById('depositSelectAccountOption');
+            if (depositSelectAccountOption) depositSelectAccountOption.textContent = getAdminText('operations.selectAccount');
+            const depositAmountLabel = document.getElementById('depositAmountLabel');
+            if (depositAmountLabel) depositAmountLabel.textContent = getAdminText('operations.amount');
+            const depositSubmitBtn = document.getElementById('depositSubmitBtn');
+            if (depositSubmitBtn) depositSubmitBtn.textContent = getAdminText('operations.deposit');
+            const withdrawTitle = document.getElementById('withdrawTitle');
+            if (withdrawTitle) withdrawTitle.textContent = getAdminText('operations.withdraw');
+            const withdrawAccountLabel = document.getElementById('withdrawAccountLabel');
+            if (withdrawAccountLabel) withdrawAccountLabel.textContent = getAdminText('operations.account') + ':';
+            const withdrawSelectAccountOption = document.getElementById('withdrawSelectAccountOption');
+            if (withdrawSelectAccountOption) withdrawSelectAccountOption.textContent = getAdminText('operations.selectAccount');
+            const withdrawAmountLabel = document.getElementById('withdrawAmountLabel');
+            if (withdrawAmountLabel) withdrawAmountLabel.textContent = getAdminText('operations.amount');
+            const withdrawSubmitBtn = document.getElementById('withdrawSubmitBtn');
+            if (withdrawSubmitBtn) withdrawSubmitBtn.textContent = getAdminText('operations.withdraw');
+            const transferTitle = document.getElementById('transferTitle');
+            if (transferTitle) transferTitle.textContent = getAdminText('operations.transfer');
+            const transferFromAccountLabel = document.getElementById('transferFromAccountLabel');
+            if (transferFromAccountLabel) transferFromAccountLabel.textContent = getAdminText('operations.fromAccount') + ':';
+            const transferSelectAccountOption = document.getElementById('transferSelectAccountOption');
+            if (transferSelectAccountOption) transferSelectAccountOption.textContent = getAdminText('operations.selectAccount');
+            const transferToAccountLabel = document.getElementById('transferToAccountLabel');
+            if (transferToAccountLabel) transferToAccountLabel.textContent = getAdminText('operations.toAccount') + ' (number):';
+            const transferAmountLabel = document.getElementById('transferAmountLabel');
+            if (transferAmountLabel) transferAmountLabel.textContent = getAdminText('operations.amount');
+            const transferSubmitBtn = document.getElementById('transferSubmitBtn');
+            if (transferSubmitBtn) transferSubmitBtn.textContent = getAdminText('operations.transfer');
+            const adminTransferCalcLabel = document.getElementById('adminTransferCalcLabel');
+            if (adminTransferCalcLabel) adminTransferCalcLabel.textContent = getAdminText('operations.quickCalculation');
+            const adminTransferCalcFromLabel = document.getElementById('adminTransferCalcFromLabel');
+            if (adminTransferCalcFromLabel) adminTransferCalcFromLabel.textContent = getAdminText('operations.fromCurrency');
+            const adminTransferCalcToLabel = document.getElementById('adminTransferCalcToLabel');
+            if (adminTransferCalcToLabel) adminTransferCalcToLabel.textContent = getAdminText('operations.toCurrency');
+            const adminTransferCalcResultLabel = document.getElementById('adminTransferCalcResultLabel');
+            if (adminTransferCalcResultLabel) adminTransferCalcResultLabel.textContent = getAdminText('operations.result') + ':';
+            const myTransactionsTitle = document.getElementById('myTransactionsTitle');
+            if (myTransactionsTitle) myTransactionsTitle.textContent = getAdminText('profile.myTransactions');
+            const myTransactionsLoadingText = document.getElementById('myTransactionsLoadingText');
+            if (myTransactionsLoadingText) myTransactionsLoadingText.textContent = getAdminText('transactions.loading');
+            
+            // Update operations labels
+            const transferSelect = document.getElementById('adminFromAccount');
+            if (transferSelect) {
+                const firstOption = transferSelect.querySelector('option[value=""]');
+                if (firstOption) firstOption.textContent = getAdminText('operations.selectAccount');
+            }
+            // Check if there's another transferAmountLabel element (for admin transfer form)
+            const adminTransferAmountLabel = document.querySelector('#adminTransferAmount')?.previousElementSibling;
+            if (adminTransferAmountLabel && adminTransferAmountLabel.tagName === 'LABEL') {
+                adminTransferAmountLabel.textContent = getAdminText('operations.amount');
+            }
+            const quickCalcLabel = document.querySelector('#adminTransferCalc label');
+            if (quickCalcLabel) quickCalcLabel.textContent = getAdminText('operations.quickCalculation');
+            const quickCalcFromLabel = document.querySelector('#adminTransferCalc [data-role="from"]')?.previousElementSibling;
+            if (quickCalcFromLabel && quickCalcFromLabel.tagName === 'LABEL') {
+                quickCalcFromLabel.textContent = getAdminText('operations.fromCurrency');
+            }
+            const quickCalcToLabel = document.querySelector('#adminTransferCalc [data-role="to"]')?.previousElementSibling;
+            if (quickCalcToLabel && quickCalcToLabel.tagName === 'LABEL') {
+                quickCalcToLabel.textContent = getAdminText('operations.toCurrency');
+            }
+            const quickCalcResult = document.querySelector('#adminTransferCalc .result-box strong');
+            if (quickCalcResult) quickCalcResult.textContent = getAdminText('operations.result') + ':';
+            
+            // Update chat
+            const adminChatNewConversationLabel = document.getElementById('adminChatNewConversationLabel');
+            if (adminChatNewConversationLabel) adminChatNewConversationLabel.textContent = getAdminText('chat.newConversation');
+            const adminStartChatBtn = document.getElementById('adminStartChatBtn');
+            if (adminStartChatBtn) adminStartChatBtn.textContent = getAdminText('chat.startChat');
+            const adminChatTitle = document.getElementById('adminChatActiveTitle');
+            if (adminChatTitle && adminChatTitle.textContent && !adminChatTitle.textContent.includes('@')) {
+                adminChatTitle.textContent = getAdminText('chat.selectDialog');
+            }
+            const adminChatInput = document.getElementById('adminChatInput');
+            if (adminChatInput) adminChatInput.placeholder = getAdminText('chat.typeMessage');
+            const adminChatStatus = document.getElementById('adminChatActiveStatus');
+            if (adminChatStatus) {
+                const currentText = adminChatStatus.textContent.trim();
+                // Update status text for various default messages
+                if (currentText === 'Команда $cash доступна після вибору співрозмовника' || 
+                    currentText === '$cash command available after selecting a contact' ||
+                    currentText === getAdminText('chat.cashCommandAvailable')) {
+                    adminChatStatus.textContent = getAdminText('chat.cashCommandAvailable');
+                } else if (currentText === 'Оберіть діалог або створіть новий' ||
+                           currentText === 'Select a dialog or create a new one') {
+                    // Update "Select dialog" message when no thread is active
+                    if (!adminChatState || !adminChatState.activeThreadId) {
+                        adminChatStatus.textContent = getAdminText('chat.selectDialogOrCreate');
+                    }
+                }
+            }
+            const adminChatCashCommandHint = document.getElementById('adminChatCashCommandHint');
+            if (adminChatCashCommandHint) {
+                const hintText = getAdminText('chat.cashCommandHint');
+                // Replace $cash command with code tag if present
+                adminChatCashCommandHint.innerHTML = hintText.replace(/\$cash 400 EUR ->/g, '<code>$cash 400 EUR -></code>');
+            }
+            
+            // Update profile overlay
+            const adminProfileTitle = document.querySelector('#adminProfileOverlay h2');
+            if (adminProfileTitle) adminProfileTitle.textContent = getAdminText('profile.title');
+            const adminProfileLoading = document.getElementById('adminProfileOverlayLoadingText');
+            if (adminProfileLoading) adminProfileLoading.textContent = getAdminText('messages.loading');
+            const adminProfileEdit = document.getElementById('adminProfileOverlayEditBtn');
+            if (adminProfileEdit) adminProfileEdit.textContent = getAdminText('profile.edit');
+            const adminProfileClose = document.getElementById('adminProfileOverlayCollapse');
+            if (adminProfileClose) adminProfileClose.textContent = getAdminText('profile.close');
+            
+            // Update chat send button
+            const adminChatSendBtn = document.getElementById('adminChatSendBtn');
+            if (adminChatSendBtn) adminChatSendBtn.textContent = getAdminText('messages.send');
+            const adminChatHistoryPlaceholder = document.querySelector('#adminChatHistory > p');
+            if (adminChatHistoryPlaceholder) {
+                adminChatHistoryPlaceholder.textContent = getAdminText('messages.selectContact');
+            }
+        }
+
         // Перевіряємо авторизацію
+        console.log('=== SETTING UP ADMIN LOAD EVENT LISTENER ===');
         window.addEventListener('load', function() {
+            console.log('=== ADMIN LOAD EVENT FIRED ===');
             const token = localStorage.getItem('accessToken');
+            console.log('Admin token exists:', !!token);
             if (!token) {
+                console.log('No admin token, redirecting to login...');
                 window.location.href = 'login.html';
                 return;
             }
@@ -2056,19 +3017,73 @@
                 return;
             }
 
-            document.getElementById('userName').textContent = localStorage.getItem('username') || 'Адміністратор';
-            const initialTheme = localStorage.getItem(ADMIN_THEME_STORAGE_KEY)
-                || localStorage.getItem(LEGACY_THEME_STORAGE_KEY)
-                || (document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-            applyTheme(initialTheme);
-            const adminThemeToggleBtn = document.getElementById('adminThemeToggleBtn');
-            if (adminThemeToggleBtn && !adminThemeToggleBtn.dataset.bound) {
-                adminThemeToggleBtn.addEventListener('click', toggleTheme);
-                adminThemeToggleBtn.dataset.bound = 'true';
+            // Initialize language
+            console.log('Initializing admin language...');
+            try {
+                applyAdminLanguage();
+                console.log('Admin language initialized successfully');
+            } catch (error) {
+                console.error('Error applying admin language:', error);
             }
-            setupAdminProfileControls();
-            setupAdminOperations();
+            const languageToggleBtn = document.getElementById('adminLanguageToggleBtn');
+            if (languageToggleBtn && !languageToggleBtn.dataset.bound) {
+                languageToggleBtn.addEventListener('click', switchAdminLanguage);
+                languageToggleBtn.dataset.bound = 'true';
+            }
+
+            try {
+                const userNameEl = document.getElementById('userName');
+                if (userNameEl) {
+                    userNameEl.textContent = localStorage.getItem('username') || getAdminText('header.userName');
+                }
+            } catch (error) {
+                console.error('Error setting username:', error);
+            }
+            
+            try {
+                const initialTheme = localStorage.getItem(ADMIN_THEME_STORAGE_KEY)
+                    || localStorage.getItem(LEGACY_THEME_STORAGE_KEY)
+                    || (document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+                if (typeof applyTheme === 'function') {
+                    applyTheme(initialTheme);
+                } else {
+                    console.error('applyTheme is not a function!');
+                }
+            } catch (error) {
+                console.error('Error applying theme:', error);
+            }
+            
+            try {
+                const adminThemeToggleBtn = document.getElementById('adminThemeToggleBtn');
+                if (adminThemeToggleBtn && !adminThemeToggleBtn.dataset.bound) {
+                    if (typeof toggleTheme === 'function') {
+                        adminThemeToggleBtn.addEventListener('click', toggleTheme);
+                        adminThemeToggleBtn.dataset.bound = 'true';
+                    } else {
+                        console.error('toggleTheme is not a function!');
+                    }
+                }
+            } catch (error) {
+                console.error('Error setting up theme toggle:', error);
+            }
+            try {
+                console.log('Setting up admin profile controls...');
+                setupAdminProfileControls();
+            } catch (error) {
+                console.error('Error setting up admin profile controls:', error);
+            }
+            try {
+                console.log('Setting up admin operations...');
+                setupAdminOperations();
+            } catch (error) {
+                console.error('Error setting up admin operations:', error);
+            }
+            try {
+                console.log('Loading dashboard data...');
             loadDashboardData();
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
         });
 
         async function loadDashboardData() {
@@ -2078,8 +3093,10 @@
                 await loadAccounts();
                 await loadStats();
                 await loadAdminProfile();
+                // Re-apply language after loading all data to ensure all elements are translated
+                applyAdminLanguage();
             } catch (e) {
-                console.error('Помилка завантаження дашборду:', e);
+                console.error('Error loading dashboard:', e);
             }
         }
 
@@ -2095,7 +3112,7 @@
                     const data = await readResponseBodySafe(response);
                     if (typeof data === 'string') {
                         console.error('Users response not JSON:', data.slice(0, 500));
-                        showMessage('Помилка завантаження користувачів: некоректний формат відповіді', 'error');
+                        showMessage('Error loading users: invalid response format', 'error');
                         users = [];
                     } else {
                         users = data;
@@ -2108,10 +3125,10 @@
                     renderUsersPage();
                 } else {
                     const err = await readResponseBodySafe(response);
-                    showMessage('Помилка завантаження користувачів: ' + (typeof err === 'string' ? err : response.statusText), 'error');
+                    showMessage('Error loading users: ' + (typeof err === 'string' ? err : response.statusText), 'error');
                 }
             } catch (error) {
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getAdminText('messages.connectionError') + ' ' + error.message, 'error');
             }
         }
 
@@ -2132,33 +3149,62 @@
                     updateTransactionsCount();
                 } else {
                     const err = await readResponseBodySafe(response);
-                    showMessage('Помилка завантаження транзакцій: ' + (err || response.statusText), 'error');
+                    showMessage('Error loading transactions: ' + (err || response.statusText), 'error');
                 }
             } catch (error) {
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getAdminText('messages.connectionError') + ' ' + error.message, 'error');
             }
         }
 
         async function loadAccounts() {
             try {
+                console.log('loadAccounts: Fetching accounts from', `${BASE_URL}/accounts`);
                 const response = await fetch(`${BASE_URL}/accounts`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                     }
                 });
 
+                console.log('loadAccounts: Response status:', response.status);
+
                 if (response.ok) {
                     const data = await readResponseBodySafe(response);
-                    accounts = (typeof data === 'string') ? [] : data;
+                    console.log('loadAccounts: Received data:', data);
+                    console.log('loadAccounts: Data type:', typeof data);
+                    console.log('loadAccounts: Is array:', Array.isArray(data));
+                    
+                    accounts = (typeof data === 'string') ? [] : (Array.isArray(data) ? data : []);
+                    console.log('loadAccounts: Accounts set to:', accounts.length, 'items');
+                    
+                    if (accounts.length > 0) {
+                        console.log('loadAccounts: First account:', accounts[0]);
+                    }
+                    
                     displayAccounts(accounts);
                     // Оновлюємо показники
                     updateAccountsStats();
                 } else {
                     const err = await readResponseBodySafe(response);
-                    showMessage('Помилка завантаження акаунтів: ' + (err || response.statusText), 'error');
+                    console.error('loadAccounts: Error response:', err);
+                    console.error('loadAccounts: Status:', response.status);
+                    console.error('loadAccounts: Status text:', response.statusText);
+                    
+                    let errorMessage = 'Error loading accounts';
+                    if (response.status === 403) {
+                        errorMessage += ': Доступ заборонено. Перевірте права адміністратора.';
+                    } else if (response.status === 401) {
+                        errorMessage += ': Не авторизовано. Перезайдіть в систему.';
+                    } else if (err) {
+                        errorMessage += ': ' + (typeof err === 'string' ? err : JSON.stringify(err));
+                    } else {
+                        errorMessage += ': ' + response.statusText + ' (HTTP ' + response.status + ')';
+                    }
+                    
+                    showMessage(errorMessage, 'error');
                 }
             } catch (error) {
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                console.error('loadAccounts: Exception:', error);
+                showMessage(getAdminText('messages.connectionError') + ' ' + error.message, 'error');
             }
         }
 
@@ -2187,7 +3233,7 @@
                 const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
                 document.getElementById('totalBalance').textContent = totalBalance.toFixed(2);
             } catch (error) {
-                console.error('Помилка завантаження статистики:', error);
+                console.error('Error loading statistics:', error);
             }
         }
 
@@ -2233,7 +3279,7 @@
             const container = document.getElementById('usersList');
             
             if (!usersToShow || usersToShow.length === 0) {
-                container.innerHTML = '<p>Користувачів не знайдено.</p>';
+                container.innerHTML = '<p>No users found.</p>';
                 return;
             }
 
@@ -2241,12 +3287,12 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Ім'я користувача</th>
-                            <th>Email</th>
-                            <th>Ролі</th>
-                            <th>Активний</th>
-                            <th>Дії</th>
+                            <th>${getAdminText('users.tableId')}</th>
+                            <th>${getAdminText('users.tableUsername')}</th>
+                            <th>${getAdminText('users.tableEmail')}</th>
+                            <th>${getAdminText('users.tableRoles')}</th>
+                            <th>${getAdminText('users.tableActive')}</th>
+                            <th>${getAdminText('users.tableActions')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -2254,7 +3300,7 @@
                             <tr>
                                 <td>${user.id ?? ''}</td>
                                 <td>${user.username ?? ''}</td>
-                                <td>${user.customerEmail ?? 'Н/Д'}</td>
+                                <td>${user.customerEmail ?? 'N/A'}</td>
                                 <td>
                                     ${(Array.isArray(user.roles) ? user.roles : []).map(r => 
                                         `<span class="badge ${r === 'ROLE_ADMIN' ? 'badge-danger' : 'badge-info'}">${r}</span>`
@@ -2262,11 +3308,11 @@
                                 </td>
                                 <td>
                                     <span class="badge ${user.enabled ? 'badge-success' : 'badge-danger'}">
-                                        ${user.enabled ? 'Так' : 'Ні'}
+                                        ${user.enabled ? getAdminText('users.yes') : getAdminText('users.no')}
                                     </span>
                                 </td>
                                 <td>
-                                    <button class="btn btn-info" onclick="viewUserDetails(${user.id})">Деталі</button>
+                                    <button class="btn btn-info" onclick="viewUserDetails(${user.id})">${getAdminText('users.details')}</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -2305,45 +3351,384 @@
             const container = document.getElementById('transactionsList');
             
             if (!transactionsToShow || transactionsToShow.length === 0) {
-                container.innerHTML = '<p>Транзакцій не знайдено.</p>';
+                container.innerHTML = '<p>No transactions found.</p>';
                 return;
             }
+
+            const categoryLabels = {
+                'FOOD': '🍕 Їжа',
+                'TRANSPORT': '🚗 Транспорт',
+                'SHOPPING': '🛍️ Покупки',
+                'ENTERTAINMENT': '🎬 Розваги',
+                'BILLS': '💡 Комунальні послуги',
+                'HEALTHCARE': '🏥 Здоров\'я',
+                'EDUCATION': '📚 Освіта',
+                'OTHER': '📦 Інше'
+            };
 
             container.innerHTML = `
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Тип</th>
-                            <th>Сума</th>
-                            <th>Опис</th>
-                            <th>Клієнт</th>
-                            <th>Дата</th>
-                            <th>Статус</th>
-                            <th>З акаунта</th>
-                            <th>На акаунт</th>
+                            <th>${getAdminText('transactions.tableId') || 'ID'}</th>
+                            <th>${getAdminText('transactions.tableType')}</th>
+                            <th>${getAdminText('transactions.tableAmount')}</th>
+                            <th>${getAdminText('transactions.tableDescription')}</th>
+                            <th>${getAdminText('transactions.tableClient')}</th>
+                            <th>${getAdminText('transactions.tableDate')}</th>
+                            <th>${getAdminText('transactions.tableStatus')}</th>
+                            <th>${getAdminText('transactions.category')}</th>
+                            <th>${getAdminText('transactions.tableFromAccount')}</th>
+                            <th>${getAdminText('transactions.tableToAccount')}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${transactionsToShow.map(t => `
+                        ${transactionsToShow.map(t => {
+                            const canEditCategory = t.type === 'WITHDRAWAL' || t.type === 'PAYMENT';
+                            const categoryDisplay = t.category ? categoryLabels[t.category] || t.category : '—';
+                            return `
                             <tr>
                                 <td>${t.id ?? ''}</td>
                                 <td><span class="badge type-${(t.type||'').toLowerCase()}">${t.type ?? ''}</span></td>
                                 <td>${t.amount ?? ''}</td>
                                 <td>${t.description ?? ''}</td>
-                                <td>${t.customerName || (t.customerId ? ('ID ' + t.customerId) : 'Н/Д')}</td>
-                                <td>${t.timestamp ? new Date(t.timestamp).toLocaleString('uk-UA') : ''}</td>
+                                <td>${t.customerName || (t.customerId ? ('ID ' + t.customerId) : 'N/A')}</td>
+                                <td>${formatAdminDateTime(t.timestamp)}</td>
                                 <td><span class="badge ${t.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">${t.status ?? ''}</span></td>
+                                <td>
+                                    ${canEditCategory ? `
+                                        <select class="category-select" data-transaction-id="${t.id}" 
+                                                style="padding: 0.3rem; border-radius: 5px; border: 1px solid #ddd; font-size: 0.85rem;">
+                                            <option value="">${getAdminText('categories.none')}</option>
+                                            <option value="FOOD" ${t.category === 'FOOD' ? 'selected' : ''}>${getAdminText('categories.FOOD')}</option>
+                                            <option value="TRANSPORT" ${t.category === 'TRANSPORT' ? 'selected' : ''}>${getAdminText('categories.TRANSPORT')}</option>
+                                            <option value="SHOPPING" ${t.category === 'SHOPPING' ? 'selected' : ''}>${getAdminText('categories.SHOPPING')}</option>
+                                            <option value="ENTERTAINMENT" ${t.category === 'ENTERTAINMENT' ? 'selected' : ''}>${getAdminText('categories.ENTERTAINMENT')}</option>
+                                            <option value="BILLS" ${t.category === 'BILLS' ? 'selected' : ''}>${getAdminText('categories.BILLS')}</option>
+                                            <option value="HEALTHCARE" ${t.category === 'HEALTHCARE' ? 'selected' : ''}>${getAdminText('categories.HEALTHCARE')}</option>
+                                            <option value="EDUCATION" ${t.category === 'EDUCATION' ? 'selected' : ''}>${getAdminText('categories.EDUCATION')}</option>
+                                            <option value="OTHER" ${t.category === 'OTHER' ? 'selected' : ''}>${getAdminText('categories.OTHER')}</option>
+                                        </select>
+                                    ` : `<span>${categoryDisplay}</span>`}
+                                </td>
                                 <td>${t.fromAccount || ''}</td>
                                 <td>${t.toAccount || ''}</td>
                             </tr>
-                        `).join('')}
+                        `;
+                        }).join('')}
                     </tbody>
                 </table>
                 <div id="transactionsPagination" class="pagination"></div>
             `;
 
+            // Add event listeners for category selectors
+            container.querySelectorAll('.category-select').forEach(select => {
+                select.addEventListener('change', async (e) => {
+                    const transactionId = e.target.dataset.transactionId;
+                    const categoryValue = e.target.value;
+                    const category = categoryValue && categoryValue.trim() !== '' ? categoryValue : null;
+                    await updateTransactionCategory(transactionId, category);
+                });
+            });
+
             renderTransactionsPagination();
+        }
+
+        async function updateTransactionCategory(transactionId, category) {
+            try {
+                const response = await fetch(`${BASE_URL}/transactions/${transactionId}/category`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: JSON.stringify({ category: category })
+                });
+
+                if (response.ok) {
+                    // Reload transactions to reflect the updated category
+                    loadTransactions();
+                } else {
+                    const errorText = await response.text();
+                    console.error('Failed to update category:', errorText);
+                    showMessage('Error updating category: ' + errorText, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating category:', error);
+                showMessage(getAdminText('messages.connectionError') + ' ' + error.message, 'error');
+            }
+        }
+
+        let detailedUserCharts = {};
+
+        async function loadDetailedUserExpenseStatistics() {
+            const monthSelector = document.getElementById('detailedStatsMonthSelector');
+            const container = document.getElementById('detailedUserStatsContainer');
+            
+            if (!monthSelector || !container) return;
+
+            if (!monthSelector.value) {
+                const now = new Date();
+                monthSelector.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
+
+            const [year, month] = monthSelector.value.split('-').map(Number);
+            
+            container.innerHTML = '<p>Loading statistics...</p>';
+
+            try {
+                // Load all customers
+                const customersResponse = await fetch(`${BASE_URL}/customers`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (!customersResponse.ok) {
+                    container.innerHTML = '<p style="color: red;">Error loading users</p>';
+                    return;
+                }
+
+                const customers = await customersResponse.json();
+
+                // Load statistics for all users
+                const statsResponse = await fetch(`${BASE_URL}/transactions/all/expense-statistics?year=${year}&month=${month}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (!statsResponse.ok) {
+                    container.innerHTML = '<p style="color: red;">Error loading statistics</p>';
+                    return;
+                }
+
+                const allStats = await statsResponse.json();
+
+                // Destroy existing charts
+                Object.values(detailedUserCharts).forEach(chart => {
+                    if (chart) chart.destroy();
+                });
+                detailedUserCharts = {};
+
+                let html = '';
+
+                for (const customer of customers) {
+                    const customerStats = allStats[customer.id];
+                    
+                    html += `<div class="card" style="margin-bottom: 2rem;">
+                        <h3>${customer.name} (${customer.email})</h3>`;
+
+                    if (customerStats && customerStats.totalExpenses && customerStats.totalExpenses > 0) {
+                        html += `
+                            <div style="margin-bottom: 1rem;">
+                                <p><strong>Загальні витрати:</strong> ${Number(customerStats.totalExpenses).toFixed(2)}</p>
+                            </div>
+                            <div style="position: relative; height: 300px; margin-bottom: 1.5rem;">
+                                <canvas id="detailedChart_${customer.id}"></canvas>
+                            </div>`;
+
+                        // Load accounts for this customer
+                        try {
+                            const accountsResponse = await fetch(`${BASE_URL}/accounts/customer/${customer.id}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                                }
+                            });
+
+                            if (accountsResponse.ok) {
+                                const accounts = await accountsResponse.json();
+                                
+                                html += `<h4 style="margin-top: 1.5rem; margin-bottom: 1rem;">Статистика по акаунтам:</h4>`;
+                                
+                                for (const account of accounts) {
+                                    try {
+                                        const accountStatsResponse = await fetch(
+                                            `${BASE_URL}/transactions/account/${account.id}/expense-statistics?year=${year}&month=${month}`,
+                                            {
+                                                headers: {
+                                                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                                                }
+                                            }
+                                        );
+
+                                        if (accountStatsResponse.ok) {
+                                            const accountStats = await accountStatsResponse.json();
+                                            
+                                            if (accountStats.totalExpenses && accountStats.totalExpenses > 0) {
+                                                html += `
+                                                    <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+                                                        <h5>${account.number} (${account.currency})</h5>
+                                                        <p><strong>Витрати:</strong> ${Number(accountStats.totalExpenses).toFixed(2)} ${account.currency}</p>
+                                                        <div style="position: relative; height: 250px; margin-top: 1rem;">
+                                                            <canvas id="detailedAccountChart_${account.id}"></canvas>
+                                                        </div>
+                                                    </div>`;
+                                            }
+                                        }
+                                    } catch (error) {
+                                        console.error(`Error loading stats for account ${account.id}:`, error);
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Error loading accounts for customer ${customer.id}:`, error);
+                        }
+                    } else {
+                        html += `<p style="color: #999;">${getAdminText('messages.noExpensesPeriod')}</p>`;
+                    }
+
+                    html += '</div>';
+                }
+
+                container.innerHTML = html;
+
+                // Render charts after DOM is updated
+                setTimeout(() => {
+                    for (const customer of customers) {
+                        const customerStats = allStats[customer.id];
+                        
+                        if (customerStats && customerStats.totalExpenses && customerStats.totalExpenses > 0) {
+                            renderDetailedChart(`detailedChart_${customer.id}`, customerStats, customerStats);
+                        }
+
+                        // Load and render account charts
+                        fetch(`${BASE_URL}/accounts/customer/${customer.id}`, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                            }
+                        }).then(response => response.json())
+                        .then(accounts => {
+                            accounts.forEach(account => {
+                                fetch(`${BASE_URL}/transactions/account/${account.id}/expense-statistics?year=${year}&month=${month}`, {
+                                    headers: {
+                                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                                    }
+                                }).then(accountStatsResponse => accountStatsResponse.json())
+                                .then(accountStats => {
+                                    if (accountStats.totalExpenses && accountStats.totalExpenses > 0) {
+                                        renderDetailedChart(`detailedAccountChart_${account.id}`, accountStats, accountStats);
+                                    }
+                                }).catch(error => console.error(`Error loading stats for account ${account.id}:`, error));
+                            });
+                        }).catch(error => console.error(`Error loading accounts for customer ${customer.id}:`, error));
+                    }
+                }, 100);
+
+            } catch (error) {
+                console.error('Error loading detailed statistics:', error);
+                container.innerHTML = `<p style="color: red;">${getAdminText('messages.errorLoadingStats')} ${error.message}</p>`;
+            }
+        }
+
+        function renderDetailedChart(canvasId, statistics, statsData) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) {
+                console.warn(`Canvas not found: ${canvasId}`);
+                return;
+            }
+
+            // Destroy existing chart if any
+            if (detailedUserCharts[canvasId]) {
+                detailedUserCharts[canvasId].destroy();
+                detailedUserCharts[canvasId] = null;
+            }
+
+            // Ensure canvas has proper dimensions
+            const parentContainer = ctx.parentElement;
+            if (parentContainer) {
+                const containerHeight = parentContainer.offsetHeight || 300;
+                const containerWidth = parentContainer.offsetWidth || 300;
+                // Set canvas display block to ensure it takes up space
+                ctx.style.display = 'block';
+                ctx.style.width = '100%';
+                ctx.style.height = '100%';
+            }
+
+            const categoryLabels = {
+                'FOOD': getAdminText('categories.FOOD'),
+                'TRANSPORT': getAdminText('categories.TRANSPORT'),
+                'SHOPPING': getAdminText('categories.SHOPPING'),
+                'ENTERTAINMENT': getAdminText('categories.ENTERTAINMENT'),
+                'BILLS': getAdminText('categories.BILLS'),
+                'HEALTHCARE': getAdminText('categories.HEALTHCARE'),
+                'EDUCATION': getAdminText('categories.EDUCATION'),
+                'OTHER': getAdminText('categories.OTHER')
+            };
+
+            const labels = [];
+            const data = [];
+            const colors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+            ];
+
+            if (statistics.percentagesByCategory && Object.keys(statistics.percentagesByCategory).length > 0) {
+                Object.entries(statistics.percentagesByCategory).forEach(([category, percentage]) => {
+                    labels.push(`${categoryLabels[category] || category}: ${percentage.toFixed(1)}%`);
+                    data.push(percentage);
+                });
+            }
+
+            if (data.length === 0) {
+                const ctx2d = ctx.getContext('2d');
+                const width = ctx.offsetWidth || 400;
+                const height = ctx.offsetHeight || 400;
+                ctx.width = width;
+                ctx.height = height;
+                ctx2d.clearRect(0, 0, width, height);
+                ctx2d.fillStyle = document.body.classList.contains('dark-mode') ? '#94a3b8' : '#666';
+                ctx2d.font = '14px Arial';
+                ctx2d.textAlign = 'center';
+                ctx2d.fillText(getAdminText('users.noData'), width / 2, height / 2);
+                return;
+            }
+
+            // Use setTimeout to ensure DOM is fully rendered
+            setTimeout(() => {
+                try {
+                    detailedUserCharts[canvasId] = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, data.length),
+                        borderWidth: 2,
+                        borderColor: document.body.classList.contains('dark-mode') ? '#172035' : '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: document.body.classList.contains('dark-mode') ? '#e2e8f0' : '#333',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = statsData.totalExpenses || 0;
+                                    const categoryAmount = (total * value / 100).toFixed(2);
+                                    return `${label} (${categoryAmount})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+                } catch (error) {
+                    console.error(`Error rendering chart ${canvasId}:`, error);
+                }
+            }, 50);
         }
 
         function renderTransactionsPage() {
@@ -2372,7 +3757,7 @@
         async function loadAdminExchangeRates(force = false) {
             if (adminExchangeLoaded && !force) {
                 renderAdminExchangeRates(adminRatesUAH);
-                updateAdminQuickCalculator();
+                await updateAllAdminCalculators();
                 return;
             }
 
@@ -2388,28 +3773,33 @@
                     if (response.ok) {
                         const data = await readResponseBodySafe(response);
                         if (data && data.rate != null) {
-                            rates[currency] = Number(data.rate);
+                            const rateValue = Number(data.rate);
+                            if (Number.isFinite(rateValue) && rateValue > 0) {
+                                rates[currency] = rateValue;
+                            }
                         }
                     }
                 } catch (error) {
-                    console.error('loadAdminExchangeRates:', error);
+                    console.error(`Error loading rate for ${currency}:`, error);
                 }
             }));
 
             if (Object.keys(rates).length === 0) {
                 const list = document.getElementById('adminExchangeRatesList');
                 if (list) {
-                    list.innerHTML = '<p class="error">Не вдалося завантажити курси валют.</p>';
+                    list.innerHTML = `<p class="error">${getAdminText('exchange.loading')} ${getAdminText('messages.connectionError')}</p>`;
                 }
+                adminExchangeLoaded = false;
                 return;
             }
 
+            // Always set adminRatesUAH with loaded rates
             adminRatesUAH = { 'UAH': 1, ...rates };
             renderAdminExchangeRates(rates);
-        setupAdminExchangeControls();
-        setupAdminCalculators();
-        await loadAdminRateHistory(adminHistoryPeriod);
-        updateAllAdminCalculators();
+            setupAdminExchangeControls();
+            setupAdminCalculators();
+            await loadAdminRateHistory(adminHistoryPeriod);
+            await updateAllAdminCalculators();
             adminExchangeLoaded = true;
         }
 
@@ -2419,15 +3809,16 @@
 
             const entries = Object.entries(rates);
             if (!entries.length) {
-                container.innerHTML = '<p>Дані поки відсутні.</p>';
+                container.innerHTML = `<p>${getAdminText('messages.noData')}</p>`;
                 return;
             }
 
+            const labels = getAdminCurrencyLabels();
             container.innerHTML = entries.map(([currency, rate]) => `
                 <div class="account-item">
                     <div class="account-info">
                         <h3>${currency}</h3>
-                        <p>${ADMIN_CURRENCY_LABELS[currency] || currency}</p>
+                        <p>${labels[currency] || currency}</p>
                     </div>
                     <div class="account-balance account-balance-rate account-balance-large">
                         ${rate.toFixed(2)} UAH
@@ -2448,7 +3839,8 @@
                 ADMIN_SUPPORTED_CURRENCIES.filter(code => code !== 'UAH').forEach(code => {
                     const option = document.createElement('option');
                     option.value = code;
-                    option.textContent = ADMIN_CURRENCY_LABELS[code] || code;
+                    const labels = getAdminCurrencyLabels();
+                    option.textContent = labels[code] || code;
                     currencySelect.appendChild(option);
                 });
                 currencySelect.value = adminHistoryCurrency;
@@ -2471,6 +3863,9 @@
 
         function adminConvertAmount(amount, fromCurrency, toCurrency) {
             if (!Number.isFinite(amount) || amount < 0) {
+                return null;
+            }
+            if (!adminRatesUAH) {
                 return null;
             }
             const rateFrom = adminRatesUAH[fromCurrency];
@@ -2503,7 +3898,8 @@
                 ADMIN_SUPPORTED_CURRENCIES.forEach(code => {
                     const option = document.createElement('option');
                     option.value = code;
-                    option.textContent = ADMIN_CURRENCY_LABELS[code] || code;
+                    const labels = getAdminCurrencyLabels();
+                    option.textContent = labels[code] || code;
                     fromSelect.appendChild(option.cloneNode(true));
                     toSelect.appendChild(option);
                 });
@@ -2520,7 +3916,9 @@
                 toSelect.value = ADMIN_SUPPORTED_CURRENCIES.includes(defaultTo) ? defaultTo : fallback;
             }
 
-            const handler = () => updateAdminCalculator(containerId);
+            const handler = () => {
+                updateAdminCalculator(containerId).catch(err => console.error('Error updating calculator:', err));
+            };
             amountInput.addEventListener('input', handler);
             fromSelect.addEventListener('change', handler);
             toSelect.addEventListener('change', handler);
@@ -2529,7 +3927,7 @@
             updateAdminCalculator(containerId);
         }
 
-        function updateAdminCalculator(containerId) {
+        async function updateAdminCalculator(containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
 
@@ -2545,25 +3943,39 @@
             const toCurrency = toSelect.value;
 
             if (!fromCurrency || !toCurrency) {
-                resultEl.textContent = 'Оберіть валюту.';
+                resultEl.textContent = getAdminText('exchange.selectCurrency');
                 return;
             }
             if (!Number.isFinite(amount) || amount <= 0) {
-                resultEl.textContent = 'Введіть суму більше 0.';
+                resultEl.textContent = getAdminText('exchange.enterAmount');
                 return;
             }
 
+            // Check if rates are available
+            if (!adminRatesUAH || Object.keys(adminRatesUAH).length <= 1) {
+                resultEl.textContent = getAdminText('exchange.rateUnavailable');
+                return;
+            }
+            
+            // Check if both currencies are available in rates
+            if (!adminRatesUAH[fromCurrency] || !adminRatesUAH[toCurrency]) {
+                resultEl.textContent = getAdminText('exchange.rateUnavailable');
+                return;
+            }
+            
             const converted = adminConvertAmount(amount, fromCurrency, toCurrency);
-            if (converted == null) {
-                resultEl.textContent = 'Курс недоступний.';
+            if (converted == null || !Number.isFinite(converted)) {
+                resultEl.textContent = getAdminText('exchange.rateUnavailable');
                 return;
             }
 
             resultEl.textContent = `${amount.toFixed(2)} ${fromCurrency} = ${converted.toFixed(2)} ${toCurrency}`;
         }
 
-        function updateAllAdminCalculators() {
-            ADMIN_CALCULATOR_IDS.forEach(updateAdminCalculator);
+        async function updateAllAdminCalculators() {
+            for (const containerId of ADMIN_CALCULATOR_IDS) {
+                await updateAdminCalculator(containerId);
+            }
         }
 
         async function loadAdminRateHistory(period) {
@@ -2603,7 +4015,8 @@
                 const value = Number(entry.rate);
                 if (!Number.isFinite(value)) return;
                 const parsedDate = new Date(entry.date);
-                labels.push(isNaN(parsedDate.getTime()) ? (entry.date || '') : parsedDate.toLocaleDateString('uk-UA'));
+                const locale = adminCurrentLanguage === 'uk' ? 'uk-UA' : 'en-US';
+                labels.push(isNaN(parsedDate.getTime()) ? (entry.date || '') : parsedDate.toLocaleDateString(locale));
                 values.push(Number(value.toFixed(2)));
             });
 
@@ -2664,7 +4077,7 @@
             const container = document.getElementById('accountsList');
             
             if (accountsToShow.length === 0) {
-                container.innerHTML = '<p>Акаунтів не знайдено.</p>';
+                container.innerHTML = `<p>${getAdminText('accounts.noAccountsFound')}</p>`;
                 return;
             }
 
@@ -2672,12 +4085,12 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Номер</th>
-                            <th>Валюта</th>
-                            <th>Баланс</th>
-                            <th>Клієнт</th>
-                            <th>Дата створення</th>
+                            <th>${getAdminText('accounts.tableId') || 'ID'}</th>
+                            <th>${getAdminText('accounts.tableNumber')}</th>
+                            <th>${getAdminText('accounts.tableCurrency')}</th>
+                            <th>${getAdminText('accounts.tableBalance')}</th>
+                            <th>${getAdminText('accounts.tableClient')}</th>
+                            <th>${getAdminText('accounts.tableCreatedDate')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -2687,8 +4100,8 @@
                                 <td>${account.number}</td>
                                 <td>${account.currency}</td>
                                 <td>${Number.isFinite(Number(account.balance)) ? Number(account.balance).toFixed(2) : (account.balance ?? '0.00')}</td>
-                                <td>${account.customerName || 'Н/Д'}</td>
-                                <td>${account.createdDate ? new Date(account.createdDate).toLocaleDateString('uk-UA') : '—'}</td>
+                                <td>${account.customerName || 'N/A'}</td>
+                                <td>${formatAdminDate(account.createdDate)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -2699,16 +4112,23 @@
         function updateRoleUserSelect() {
             const select = document.getElementById('roleUserSelect');
             if (!select) return;
-            select.innerHTML = '<option value="">Оберіть користувача</option>';
+            const selectUserText = getAdminText('roles.selectUser');
+            select.innerHTML = `<option value="" id="selectUserOption">${selectUserText}</option>`;
             users.forEach(user => {
                 const option = document.createElement('option');
                 option.value = user.id;
-                option.textContent = `${user.username} (${user.customerEmail || 'Н/Д'})`;
+                option.textContent = `${user.username} (${user.customerEmail || 'N/A'})`;
                 select.appendChild(option);
             });
+            // Update the first option translation after creating it
+            const firstOption = document.getElementById('selectUserOption');
+            if (firstOption) {
+                firstOption.textContent = getAdminText('roles.selectUser');
+            }
         }
 
-        function showTab(tabName, evt) {
+        // Full showTab implementation - replaces the minimal one above
+        window.showTab = function(tabName, evt) {
             const tabs = document.querySelectorAll('.header-tabs .tab');
             tabs.forEach(tab => tab.classList.remove('active'));
             const targetTab = evt && evt.currentTarget ? evt.currentTarget : document.querySelector(`.header-tabs .tab[data-tab="${tabName}"]`);
@@ -2728,15 +4148,28 @@
             }
             
             if (tabName === 'users') {
-                updateUsersCount();
+                if (typeof updateUsersCount === 'function') updateUsersCount();
             } else if (tabName === 'accounts') {
-                updateAccountsStats();
+                if (typeof updateAccountsStats === 'function') updateAccountsStats();
             } else if (tabName === 'transactions') {
-                updateTransactionsCount();
+                if (typeof updateTransactionsCount === 'function') updateTransactionsCount();
             } else if (tabName === 'exchange') {
-                loadAdminExchangeRates();
+                // Ensure language is applied when exchange tab is opened
+                applyAdminLanguage();
+                if (typeof loadAdminExchangeRates === 'function') {
+                    loadAdminExchangeRates().then(() => {
+                        // Update calculators after rates are loaded
+                        updateAllAdminCalculators().catch(err => console.error('Error updating calculators:', err));
+                    }).catch(err => console.error('Error loading exchange rates:', err));
+                }
+            } else if (tabName === 'roles') {
+                // Ensure language is applied when roles tab is opened
+                applyAdminLanguage();
+                if (typeof updateRoleUserSelect === 'function') {
+                    updateRoleUserSelect();
+                }
             } else if (tabName === 'my-profile') {
-                loadAdminProfile();
+                if (typeof loadAdminProfile === 'function') loadAdminProfile();
             } else if (tabName === 'chat' && !adminChatState.initialized) {
                 initializeAdminChat();
             }
@@ -2783,7 +4216,7 @@
             const roleName = document.getElementById('roleSelect').value;
 
             if (!userId || !roleName) {
-                showMessage('Оберіть користувача та роль', 'error');
+                showMessage(getAdminText('roles.selectUserAndRole'), 'error');
                 return;
             }
 
@@ -2796,13 +4229,16 @@
                 });
 
                 if (response.ok) {
-                    showMessage('Роль успішно призначено!', 'success');
-                    loadUsers();
+                    showMessage(getAdminText('messages.roleAssigned'), 'success');
+                    await loadUsers();
+                    // Re-apply language after loading users to ensure buttons are translated
+                    updateRoleUserSelect();
+                    applyAdminLanguage();
                 } else {
-                    showMessage('Помилка призначення ролі', 'error');
+                    showMessage(getAdminText('roles.errorAssigning'), 'error');
                 }
             } catch (error) {
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getAdminText('messages.connectionError') + ' ' + error.message, 'error');
             }
         }
 
@@ -2811,7 +4247,7 @@
             const roleName = document.getElementById('roleSelect').value;
 
             if (!userId || !roleName) {
-                showMessage('Оберіть користувача та роль', 'error');
+                showMessage(getAdminText('roles.selectUserAndRole'), 'error');
                 return;
             }
 
@@ -2824,13 +4260,16 @@
                 });
 
                 if (response.ok) {
-                    showMessage('Роль успішно видалено!', 'success');
-                    loadUsers();
+                    showMessage(getAdminText('messages.roleRemoved'), 'success');
+                    await loadUsers();
+                    // Re-apply language after loading users to ensure buttons are translated
+                    updateRoleUserSelect();
+                    applyAdminLanguage();
                 } else {
-                    showMessage('Помилка видалення ролі', 'error');
+                    showMessage(getAdminText('roles.errorRemoving'), 'error');
                 }
             } catch (error) {
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getAdminText('messages.connectionError') + ' ' + error.message, 'error');
             }
         }
 
@@ -2839,7 +4278,7 @@
                 return;
             }
             adminChatState.initialized = true;
-            updateAdminChatStatus('Завантаження даних...', 'info');
+            updateAdminChatStatus(getAdminText('chat.loadingData'), 'info');
             try {
                 const [profile, contacts, threads] = await Promise.all([
                     fetchAdminChatJson('/chat/me'),
@@ -2856,11 +4295,13 @@
                 renderAdminChatThreads();
                 bindAdminChatControls();
                 connectAdminChatSocket();
-                updateAdminChatStatus('Оберіть діалог або створіть новий', 'info');
+                updateAdminChatStatus(getAdminText('chat.selectDialogOrCreate'), 'info');
+                const adminChatTitle = document.getElementById('adminChatActiveTitle');
+                if (adminChatTitle) adminChatTitle.textContent = getAdminText('chat.selectDialog');
             } catch (error) {
                 console.error('Admin chat initialization failed:', error);
-                updateAdminChatStatus('Не вдалося завантажити чат. Спробуйте пізніше.', 'error');
-                showMessage('Помилка завантаження месенджера: ' + (error.message || error), 'error');
+                updateAdminChatStatus(getAdminText('messages.failedToLoadChat'), 'error');
+                showMessage(getAdminText('chat.errorLoading') + ' ' + (error.message || error), 'error');
             }
         }
 
@@ -2935,7 +4376,7 @@
                 renderAdminChatThreads();
             } catch (error) {
                 console.error('Failed to load admin chat threads:', error);
-                updateAdminChatStatus('Не вдалося оновити список діалогів', 'error');
+                updateAdminChatStatus(getAdminText('messages.failedToUpdateList'), 'error');
             }
         }
 
@@ -2952,7 +4393,7 @@
             if (!container) return;
 
             if (!adminChatState.threads.length) {
-                container.innerHTML = '<p style="padding:1rem; opacity:0.7;">Немає активних діалогів. Оберіть користувача вище, щоб розпочати.</p>';
+                container.innerHTML = `<p style="padding:1rem; opacity:0.7;">${getAdminText('chat.noActiveDialogs')}</p>`;
                 return;
             }
 
@@ -3005,7 +4446,7 @@
             const rawValue = (input.value || '').trim();
             if (!rawValue.startsWith('@')) {
                 if (!silent) {
-                    updateAdminChatStatus('Почніть нік із символу @', 'info');
+                    updateAdminChatStatus(getAdminText('chat.enterNickname'), 'info');
                 }
                 return null;
             }
@@ -3013,14 +4454,14 @@
             const handle = adminNormalizeHandle(rawValue);
             if (!handle) {
                 if (!silent) {
-                    updateAdminChatStatus('Введіть нік у форматі @username', 'info');
+                    updateAdminChatStatus(getAdminText('chat.enterNickname'), 'info');
                 }
                 return null;
             }
 
             if (adminChatState.currentUsername && adminChatState.currentUsername.toLowerCase() === handle) {
                 if (!silent) {
-                    updateAdminChatStatus('Неможливо написати самому собі', 'error');
+                    updateAdminChatStatus(getAdminText('chat.cannotMessageSelf'), 'error');
                 }
                 return null;
             }
@@ -3028,7 +4469,7 @@
             const contact = findAdminContact(handle);
             if (!contact) {
                 if (!silent) {
-                    updateAdminChatStatus(`Користувача @${handle} не знайдено`, 'error');
+                    updateAdminChatStatus(getAdminText('chat.userNotFound').replace('{handle}', handle), 'error');
                 }
                 return null;
             }
@@ -3051,7 +4492,7 @@
             cleanupAdminChatSubscription();
             renderAdminChatMessages([]);
             if (!silent) {
-                updateAdminChatHeader(`@${contact.username}`, 'Напишіть перше повідомлення', 'info');
+                updateAdminChatHeader(`@${contact.username}`, getAdminText('chat.firstMessage'), 'info');
             } else {
                 const headerTitle = document.getElementById('adminChatActiveTitle');
                 if (headerTitle) {
@@ -3072,7 +4513,7 @@
                 markAdminThreadAsRead(threadId);
             } catch (error) {
                 console.error('Failed to load admin chat messages:', error);
-                updateAdminChatStatus('Не вдалося завантажити повідомлення', 'error');
+                updateAdminChatStatus(getAdminText('messages.failedToLoadMessages'), 'error');
             }
         }
 
@@ -3080,7 +4521,7 @@
             const history = document.getElementById('adminChatHistory');
             if (!history) return;
             if (!messages.length) {
-                history.innerHTML = '<p style="opacity:0.7;">Повідомлень поки що немає. Напишіть перше повідомлення.</p>';
+                history.innerHTML = `<p style="opacity:0.7;">${getAdminText('chat.noMessagesYet')}</p>`;
                 return;
             }
             history.innerHTML = '';
@@ -3217,7 +4658,8 @@
             if (!timestamp) return '';
             try {
                 const date = new Date(timestamp);
-                return date.toLocaleString('uk-UA', {
+                const locale = adminCurrentLanguage === 'uk' ? 'uk-UA' : 'en-US';
+                return date.toLocaleString(locale, {
                     hour: '2-digit',
                     minute: '2-digit',
                     day: '2-digit',
@@ -3230,7 +4672,7 @@
 
         async function sendAdminChatMessage() {
             if (!adminChatState.profile) {
-                updateAdminChatStatus('Спочатку увімкніть чат', 'info');
+                updateAdminChatStatus(getAdminText('chat.initializeChat'), 'info');
                 return;
             }
             const input = document.getElementById('adminChatInput');
@@ -3248,7 +4690,7 @@
             }
 
             if (!adminChatState.activeThreadId && !adminChatState.activeRecipientId) {
-                updateAdminChatStatus('Оберіть співрозмовника, щоб надіслати повідомлення', 'info');
+                updateAdminChatStatus(getAdminText('chat.selectContactToSend'), 'info');
                 return;
             }
 
@@ -3262,7 +4704,7 @@
                     payload.recipientUserId = adminChatState.activeRecipientId;
                 }
                 if (!payload.threadId && !payload.recipientUserId) {
-                    throw new Error('Не вказано отримувача повідомлення');
+                    throw new Error(adminCurrentLanguage === 'uk' ? 'Не вказано отримувача повідомлення' : 'Message recipient not specified');
                 }
 
                 const response = await fetchAdminChatJson('/chat/messages', {
@@ -3278,12 +4720,12 @@
                 }
 
                 appendAdminChatMessage(response);
-                updateAdminChatStatus('Повідомлення надіслано', 'success');
+                updateAdminChatStatus(getAdminText('messages.messageSent'), 'success');
                 loadAdminChatThreads();
             } catch (error) {
                 console.error('Failed to send admin chat message:', error);
-                updateAdminChatStatus('Не вдалося надіслати повідомлення: ' + error.message, 'error');
-                showMessage('Не вдалося надіслати повідомлення: ' + error.message, 'error');
+                updateAdminChatStatus(getAdminText('messages.failedToSend') + ' ' + error.message, 'error');
+                showMessage(getAdminText('messages.failedToSend') + ' ' + error.message, 'error');
             } finally {
                 sendBtn.disabled = false;
                 const history = document.getElementById('adminChatHistory');
@@ -3309,7 +4751,7 @@
                 }
             }, (error) => {
                 console.error('Admin chat WebSocket error:', error);
-                updateAdminChatStatus('Немає з\'єднання з сервером чату', 'error');
+                updateAdminChatStatus(getAdminText('chat.noConnection'), 'error');
             });
         }
 
@@ -3443,7 +4885,7 @@
                 } else if (data && typeof data === 'object') {
                     errorMessage = data.message || data.error || JSON.stringify(data);
                 } else {
-                    errorMessage = 'Помилка запиту';
+                    errorMessage = getAdminText('messages.errorLoading');
                 }
                 const details = `[${response.status}] ${errorMessage}`;
                 console.error('fetchAdminChatJson error', path, details, data);
@@ -3456,7 +4898,7 @@
             const user = users.find(u => u.id === userId);
             if (user) {
                 const rolesStr = Array.isArray(user.roles) ? user.roles.join(', ') : '';
-                alert(`Деталі користувача:\n\nID: ${user.id}\nІм'я: ${user.username}\nEmail: ${user.customerEmail || 'Н/Д'}\nАктивний: ${user.enabled ? 'Так' : 'Ні'}\nРолі: ${rolesStr}`);
+                alert(`${getAdminText('users.detailsTitle')}:\n\nID: ${user.id}\n${getAdminText('users.name')} ${user.username}\nEmail: ${user.customerEmail || getAdminText('accounts.clientN')}\n${getAdminText('users.active')}: ${user.enabled ? getAdminText('messages.yes') : getAdminText('messages.no')}\n${getAdminText('users.roles')}: ${rolesStr}`);
             }
         }
 
@@ -3473,7 +4915,7 @@
             const content = document.getElementById('userDetailsContent');
             
             modal.style.display = 'block';
-            content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>';
+            content.innerHTML = `<div class="loading"><div class="spinner"></div><p>${getAdminText('messages.loading')}</p></div>`;
 
             try {
                 const response = await fetch(`${BASE_URL}/admin/users/${userId}/details`, {
@@ -3483,13 +4925,13 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Не вдалося завантажити дані');
+                    throw new Error(getAdminText('messages.failedToLoadData'));
                 }
 
                 const details = await readResponseBodySafe(response);
                 displayUserDetails(details);
             } catch (error) {
-                content.innerHTML = `<div class="error">Помилка: ${error.message}</div>`;
+                content.innerHTML = `<div class="error">${getAdminText('messages.errorLoading')} ${error.message}</div>`;
             }
         }
 
@@ -3499,40 +4941,40 @@
             content.innerHTML = `
                 <div class="details-grid">
                     <div class="details-section">
-                        <h3>Інформація про користувача</h3>
+                        <h3>${getAdminText('users.userInfo')}</h3>
                         <table class="table" style="margin-top: 1rem;">
                             <tr><td><strong>ID:</strong></td><td>${details.userId}</td></tr>
-                            <tr><td><strong>Логін:</strong></td><td>${details.username}</td></tr>
-                            <tr><td><strong>Email:</strong></td><td>${details.customerEmail || 'Н/Д'}</td></tr>
-                            <tr><td><strong>Активний:</strong></td><td>
+                            <tr><td><strong>${getAdminText('users.tableUsername')}:</strong></td><td>${details.username}</td></tr>
+                            <tr><td><strong>Email:</strong></td><td>${details.customerEmail || getAdminText('accounts.clientN')}</td></tr>
+                            <tr><td><strong>${getAdminText('users.active')}:</strong></td><td>
                                 <span class="badge ${details.enabled ? 'badge-success' : 'badge-danger'}">
-                                    ${details.enabled ? 'Так' : 'Ні'}
+                                    ${details.enabled ? getAdminText('messages.yes') : getAdminText('messages.no')}
                                 </span>
                             </td></tr>
-                            <tr><td><strong>Ролі:</strong></td><td>
+                            <tr><td><strong>${getAdminText('users.roles')}:</strong></td><td>
                                 ${details.roles.map(r => 
                                     `<span class="badge ${r === 'ROLE_ADMIN' ? 'badge-danger' : 'badge-info'}">${r}</span>`
                                 ).join(' ')}
                             </td></tr>
                         </table>
 
-                        <h3>Особисті дані</h3>
+                        <h3>${getAdminText('users.personalData')}</h3>
                         <table class="table" style="margin-top: 1rem;">
-                            <tr><td><strong>Ім'я:</strong></td><td>${details.customerName || 'Н/Д'}</td></tr>
-                            <tr><td><strong>Вік:</strong></td><td>${details.customerAge || 'Н/Д'}</td></tr>
-                            <tr><td><strong>Роботодавці:</strong></td><td>${details.employers && details.employers.length > 0 ? details.employers.join(', ') : 'Н/Д'}</td></tr>
+                            <tr><td><strong>${getAdminText('users.name')}</strong></td><td>${details.customerName || getAdminText('accounts.clientN')}</td></tr>
+                            <tr><td><strong>${getAdminText('users.age')}</strong></td><td>${details.customerAge || getAdminText('accounts.clientN')}</td></tr>
+                            <tr><td><strong>${getAdminText('users.employers')}</strong></td><td>${details.employers && details.employers.length > 0 ? details.employers.join(', ') : getAdminText('accounts.clientN')}</td></tr>
                         </table>
                     </div>
 
                     <div class="details-section">
-                        <h3>Рахунки (${details.accounts ? details.accounts.length : 0})</h3>
+                        <h3>${getAdminText('users.accounts')} (${details.accounts ? details.accounts.length : 0})</h3>
                         ${details.accounts && details.accounts.length > 0 ? `
                             <table class="table" style="margin-top: 1rem;">
                                 <thead>
                                     <tr>
-                                        <th>Номер</th>
-                                        <th>Баланс</th>
-                                        <th>Валюта</th>
+                                        <th>${getAdminText('users.number')}</th>
+                                        <th>${getAdminText('users.balance')}</th>
+                                        <th>${getAdminText('users.currency')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -3545,25 +4987,25 @@
                                     `).join('')}
                                 </tbody>
                             </table>
-                        ` : '<p class="details-empty">Рахунків не знайдено</p>'}
+                        ` : `<p class="details-empty">${getAdminText('users.noAccounts')}</p>`}
                     </div>
                 </div>
 
                 <div class="details-section" style="margin-top: 2rem;">
-                    <h3>Транзакції (${details.transactions ? details.transactions.length : 0})</h3>
+                    <h3>${getAdminText('transactions.title')} (${details.transactions ? details.transactions.length : 0})</h3>
                     ${details.transactions && details.transactions.length > 0 ? `
                         <div class="details-scroll">
                             <table class="table">
                                 <thead class="sticky-header">
                                     <tr>
                                         <th>ID</th>
-                                        <th>Тип</th>
-                                        <th>Сума</th>
-                                        <th>Опис</th>
-                                        <th>Дата</th>
-                                        <th>Статус</th>
-                                        <th>З рахунку</th>
-                                        <th>На рахунок</th>
+                                        <th>${getAdminText('transactions.tableType')}</th>
+                                        <th>${getAdminText('transactions.tableAmount')}</th>
+                                        <th>${getAdminText('transactions.tableDescription')}</th>
+                                        <th>${getAdminText('transactions.tableDate')}</th>
+                                        <th>${getAdminText('transactions.tableStatus')}</th>
+                                        <th>${getAdminText('users.fromAccount')}</th>
+                                        <th>${getAdminText('users.toAccount')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -3573,7 +5015,7 @@
                                             <td><span class="badge type-${(t.type||'').toLowerCase()}">${t.type}</span></td>
                                             <td>${t.amount}</td>
                                             <td>${t.description || '-'}</td>
-                                            <td>${t.timestamp ? new Date(t.timestamp).toLocaleString('uk-UA') : ''}</td>
+                                            <td>${formatAdminDateTime(t.timestamp)}</td>
                                             <td><span class="badge ${t.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">${t.status}</span></td>
                                             <td>${t.fromAccount || '-'}</td>
                                             <td>${t.toAccount || '-'}</td>
@@ -3582,13 +5024,239 @@
                                 </tbody>
                             </table>
                         </div>
-                    ` : '<p class="details-empty">Транзакцій не знайдено</p>'}
+                    ` : `<p class="details-empty">${getAdminText('users.noTransactions')}</p>`}
                 </div>
+
+                ${details.customerId ? `
+                <div class="details-section" style="margin-top: 2rem;">
+                    <h3>${getAdminText('users.expenseStats')}</h3>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">${getAdminText('users.selectAccount')}</label>
+                        <select id="userDetailsAccountSelect_${details.customerId}" style="padding: 0.5rem; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 1rem; width: 100%; max-width: 400px;">
+                            <option value="">${getAdminText('users.allAccounts')}</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">${getAdminText('users.selectMonth')}</label>
+                        <input type="month" id="userDetailsMonthSelector_${details.customerId}" lang="${adminCurrentLanguage === 'uk' ? 'uk' : 'en'}" style="padding: 0.5rem; border-radius: 5px; border: 1px solid #ddd;">
+                    </div>
+                    <div style="position: relative; height: 400px;">
+                        <canvas id="userDetailsExpenseChart_${details.customerId}"></canvas>
+                    </div>
+                </div>
+                ` : ''}
             `;
+            
+            // Initialize expense statistics if customerId exists
+            if (details.customerId) {
+                setTimeout(() => {
+                    initializeUserDetailsExpenseStats(details.customerId, details.accounts || []);
+                }, 100);
+            }
+        }
+
+        let userDetailsExpenseCharts = {};
+
+        function initializeUserDetailsExpenseStats(customerId, accounts) {
+            const accountSelect = document.getElementById(`userDetailsAccountSelect_${customerId}`);
+            const monthSelector = document.getElementById(`userDetailsMonthSelector_${customerId}`);
+            
+            if (!accountSelect || !monthSelector) return;
+
+            // Populate account selector
+                accountSelect.innerHTML = `<option value="">${getAdminText('users.allAccounts')}</option>`;
+            if (accounts && accounts.length > 0) {
+                accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    // Check if account has id field, if not try to get it from account object
+                    const accountId = account.id || (account.accountId ? account.accountId : null);
+                    if (!accountId) {
+                        console.warn('Account missing id:', account);
+                        return;
+                    }
+                    option.value = accountId;
+                    const numericBalance = Number(account.balance ?? 0);
+                    const formattedBalance = Number.isFinite(numericBalance) ? numericBalance.toFixed(2) : (account.balance ?? '0.00');
+                    option.textContent = `${account.number} (${account.currency}) - ${formattedBalance}`;
+                    accountSelect.appendChild(option);
+                });
+            }
+
+            // Set default month to current month
+            const now = new Date();
+            monthSelector.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            // Add event listeners
+            accountSelect.addEventListener('change', () => loadUserDetailsExpenseStats(customerId));
+            monthSelector.addEventListener('change', () => loadUserDetailsExpenseStats(customerId));
+
+            // Load initial statistics
+            loadUserDetailsExpenseStats(customerId);
+        }
+
+        async function loadUserDetailsExpenseStats(customerId) {
+            const accountSelect = document.getElementById(`userDetailsAccountSelect_${customerId}`);
+            const monthSelector = document.getElementById(`userDetailsMonthSelector_${customerId}`);
+            const canvasId = `userDetailsExpenseChart_${customerId}`;
+            
+            if (!accountSelect || !monthSelector) return;
+
+            const accountId = accountSelect.value;
+            const [year, month] = monthSelector.value.split('-').map(Number);
+
+            try {
+                let url;
+                if (accountId) {
+                    url = `${BASE_URL}/transactions/account/${accountId}/expense-statistics?year=${year}&month=${month}`;
+                } else {
+                    url = `${BASE_URL}/transactions/customer/${customerId}/expense-statistics?year=${year}&month=${month}`;
+                }
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const statistics = await response.json();
+                    renderUserDetailsExpenseChart(canvasId, statistics);
+                } else {
+                    console.error('Failed to load expense statistics');
+                    if (userDetailsExpenseCharts[canvasId]) {
+                        userDetailsExpenseCharts[canvasId].destroy();
+                        userDetailsExpenseCharts[canvasId] = null;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading expense statistics:', error);
+                if (userDetailsExpenseCharts[canvasId]) {
+                    userDetailsExpenseCharts[canvasId].destroy();
+                    userDetailsExpenseCharts[canvasId] = null;
+                }
+            }
+        }
+
+        function renderUserDetailsExpenseChart(canvasId, statistics) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) {
+                console.warn(`Canvas not found: ${canvasId}`);
+                return;
+            }
+
+            // Destroy existing chart if any
+            if (userDetailsExpenseCharts[canvasId]) {
+                userDetailsExpenseCharts[canvasId].destroy();
+                userDetailsExpenseCharts[canvasId] = null;
+            }
+
+            // Ensure canvas has proper dimensions
+            const parentContainer = ctx.parentElement;
+            if (parentContainer) {
+                const containerHeight = parentContainer.offsetHeight || 400;
+                const containerWidth = parentContainer.offsetWidth || 400;
+                // Set canvas display block to ensure it takes up space
+                ctx.style.display = 'block';
+                ctx.style.width = '100%';
+                ctx.style.height = '100%';
+            }
+
+            const categoryLabels = {
+                'FOOD': getAdminText('categories.FOOD'),
+                'TRANSPORT': getAdminText('categories.TRANSPORT'),
+                'SHOPPING': getAdminText('categories.SHOPPING'),
+                'ENTERTAINMENT': getAdminText('categories.ENTERTAINMENT'),
+                'BILLS': getAdminText('categories.BILLS'),
+                'HEALTHCARE': getAdminText('categories.HEALTHCARE'),
+                'EDUCATION': getAdminText('categories.EDUCATION'),
+                'OTHER': getAdminText('categories.OTHER')
+            };
+
+            const labels = [];
+            const data = [];
+            const colors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+            ];
+
+            if (statistics.percentagesByCategory && Object.keys(statistics.percentagesByCategory).length > 0) {
+                Object.entries(statistics.percentagesByCategory).forEach(([category, percentage]) => {
+                    labels.push(`${categoryLabels[category] || category}: ${percentage.toFixed(1)}%`);
+                    data.push(percentage);
+                });
+            }
+
+            if (data.length === 0) {
+                const ctx2d = ctx.getContext('2d');
+                const width = ctx.offsetWidth || 400;
+                const height = ctx.offsetHeight || 400;
+                ctx.width = width;
+                ctx.height = height;
+                ctx2d.clearRect(0, 0, width, height);
+                ctx2d.fillStyle = document.body.classList.contains('dark-mode') ? '#94a3b8' : '#666';
+                ctx2d.font = '16px Arial';
+                ctx2d.textAlign = 'center';
+                ctx2d.fillText(getAdminText('users.noData'), width / 2, height / 2);
+                return;
+            }
+
+            // Use setTimeout to ensure DOM is fully rendered
+            setTimeout(() => {
+                try {
+                    userDetailsExpenseCharts[canvasId] = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, data.length),
+                        borderWidth: 2,
+                        borderColor: document.body.classList.contains('dark-mode') ? '#172035' : '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: document.body.classList.contains('dark-mode') ? '#e2e8f0' : '#333',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = statistics.totalExpenses || 0;
+                                    const categoryAmount = (total * value / 100).toFixed(2);
+                                    return `${label} (${categoryAmount})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+                } catch (error) {
+                    console.error(`Error rendering chart ${canvasId}:`, error);
+                }
+            }, 50);
         }
 
         function closeUserDetailsModal() {
-            document.getElementById('userDetailsModal').style.display = 'none';
+            const modal = document.getElementById('userDetailsModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            // Destroy all user details expense charts
+            Object.values(userDetailsExpenseCharts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            userDetailsExpenseCharts = {};
         }
 
         function openAdminCreateAccountModal() {
@@ -3633,7 +5301,7 @@
                 form.addEventListener('submit', async function(event) {
                     event.preventDefault();
                     if (!adminCachedProfile || !adminCachedProfile.id) {
-                        showMessage('Профіль не завантажено. Оновіть сторінку.', 'error');
+                        showMessage(getAdminText('messages.profileNotLoaded'), 'error');
                         return;
                     }
 
@@ -3658,10 +5326,10 @@
                         } else {
                             const errorData = await readResponseBodySafe(response);
                             const message = typeof errorData === 'string' ? errorData : response.statusText;
-                            showMessage('Помилка створення рахунку: ' + message, 'error');
+                            showMessage(getAdminText('messages.accountCreateError') + message, 'error');
                         }
                     } catch (error) {
-                        showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                        showMessage(getAdminText('messages.connectionError') + ' ' + error.message, 'error');
                     }
                 });
                 form.dataset.bound = 'true';
@@ -3818,32 +5486,32 @@
             }
 
             if (!adminCachedProfile) {
-                summary.innerHTML = '<p class="error">Профіль не знайдено</p>';
-                overlayBody.innerHTML = '<p class="error">Профіль не знайдено</p>';
+                summary.innerHTML = `<p class="error">${getAdminText('messages.profileNotFound')}</p>`;
+                overlayBody.innerHTML = `<p class="error">${getAdminText('messages.profileNotFound')}</p>`;
                 toggleBtn.disabled = true;
-                toggleBtn.title = 'Профіль недоступний';
+                toggleBtn.title = getAdminText('messages.profileUnavailable');
                 return;
             }
 
             toggleBtn.disabled = false;
-            toggleBtn.title = 'Переглянути профіль';
+            toggleBtn.title = getAdminText('messages.viewProfile');
 
             const employers = Array.isArray(adminCachedProfile.employers) && adminCachedProfile.employers.length
                 ? adminCachedProfile.employers.join(', ')
-                : 'Н/Д';
+                : getAdminText('accounts.clientN');
 
             summary.innerHTML = `
-                <p><strong>Ім'я:</strong> ${adminCachedProfile.name || 'Не вказано'}</p>
-                <p><strong>Email:</strong> ${adminCachedProfile.email || 'Не вказано'}</p>
-                <p><strong>Вік:</strong> ${adminCachedProfile.age || 'Не вказано'}</p>
+                <p><strong>${getAdminText('users.name')}</strong> ${adminCachedProfile.name || getAdminText('profile.notSpecified')}</p>
+                <p><strong>${getAdminText('profile.email')}</strong> ${adminCachedProfile.email || getAdminText('profile.notSpecified')}</p>
+                <p><strong>${getAdminText('users.age')}</strong> ${adminCachedProfile.age || getAdminText('profile.notSpecified')}</p>
             `;
 
             overlayBody.innerHTML = `
-                <p><strong>Ім'я:</strong> ${adminCachedProfile.name || 'Не вказано'}</p>
-                <p><strong>Email:</strong> ${adminCachedProfile.email || 'Не вказано'}</p>
-                <p><strong>Вік:</strong> ${adminCachedProfile.age || 'Не вказано'}</p>
-                <p><strong>ID:</strong> ${adminCachedProfile.id || 'Н/Д'}</p>
-                <p><strong>Роботодавці:</strong> ${employers}</p>
+                <p><strong>${getAdminText('users.name')}</strong> ${adminCachedProfile.name || getAdminText('profile.notSpecified')}</p>
+                <p><strong>${getAdminText('profile.email')}</strong> ${adminCachedProfile.email || getAdminText('profile.notSpecified')}</p>
+                <p><strong>${getAdminText('users.age')}</strong> ${adminCachedProfile.age || getAdminText('profile.notSpecified')}</p>
+                <p><strong>ID:</strong> ${adminCachedProfile.id || getAdminText('accounts.clientN')}</p>
+                <p><strong>${getAdminText('users.employers')}</strong> ${employers}</p>
             `;
         }
 
@@ -3865,7 +5533,11 @@
             }
 
             renderAdminAccountsList(adminAccounts);
+            // Re-apply language after rendering accounts to ensure translations are correct
+            applyAdminLanguage();
             updateAdminAccountSelects();
+            // Re-apply language after updating account selects to ensure translations are correct
+            applyAdminLanguage();
         }
 
         async function loadAdminTransactions(customerId) {
@@ -3885,7 +5557,9 @@
                 adminTransactions = [];
             }
 
-            renderAdminTransactionsList(adminTransactions);
+                renderAdminTransactionsList(adminTransactions);
+                // Re-apply language after rendering transactions to update category selects
+                applyAdminLanguage();
         }
 
         function renderAdminAccountsList(accounts) {
@@ -3893,7 +5567,7 @@
             if (!container) return;
 
             if (!accounts || accounts.length === 0) {
-                container.innerHTML = '<p>Власних рахунків поки немає.</p>';
+                container.innerHTML = `<p>${getAdminText('messages.noOwnAccounts')}</p>`;
                 return;
             }
 
@@ -3905,7 +5579,7 @@
                     <div class="account-item">
                         <div class="account-info">
                             <h3>${account.number}</h3>
-                            <p>Валюта: ${account.currency} | Баланс: ${displayBalance}</p>
+                            <p>${getAdminText('accounts.tableCurrency')} ${account.currency} | ${getAdminText('accounts.tableBalance')} ${displayBalance}</p>
                 </div>
                         <div class="account-balance account-balance-large">${displayBalance} ${account.currency}</div>
                     </div>
@@ -3915,14 +5589,19 @@
 
         function updateAdminAccountSelects() {
             const selects = [
-                document.getElementById('adminDepositAccount'),
-                document.getElementById('adminWithdrawAccount'),
-                document.getElementById('adminFromAccount')
+                { element: document.getElementById('adminDepositAccount'), firstOptionId: 'depositSelectAccountOption' },
+                { element: document.getElementById('adminWithdrawAccount'), firstOptionId: 'withdrawSelectAccountOption' },
+                { element: document.getElementById('adminFromAccount'), firstOptionId: 'transferSelectAccountOption' }
             ];
 
-            selects.forEach(select => {
+            selects.forEach(({ element: select, firstOptionId }) => {
                 if (!select) return;
-                select.innerHTML = '<option value="">Оберіть рахунок</option>' +
+                // Get the current first option to preserve its ID
+                const firstOption = select.querySelector('option[value=""]');
+                const firstOptionText = getAdminText('operations.selectAccount');
+                
+                // Clear and rebuild
+                select.innerHTML = `<option value="" id="${firstOptionId}">${firstOptionText}</option>` +
                     adminAccounts.map(account => `<option value="${account.number}">${account.number} (${Number(account.balance || 0).toFixed(2)} ${account.currency})</option>`).join('');
             });
         }
@@ -3948,7 +5627,7 @@
                                 <td><span class="badge type-${(t.type || '').toLowerCase()}">${t.type ?? ''}</span></td>
                                 <td>${t.amount ?? ''}</td>
                                 <td>${t.description || '—'}</td>
-                                <td>${t.timestamp ? new Date(t.timestamp).toLocaleString('uk-UA') : ''}</td>
+                                <td>${formatAdminDateTime(t.timestamp)}</td>
                                 <td><span class="badge ${t.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">${t.status || ''}</span></td>
                             </tr>
                         `).join('')}
@@ -3966,7 +5645,7 @@
                 const accountNumber = document.getElementById('adminDepositAccount').value;
                 const amount = parseFloat(document.getElementById('adminDepositAmount').value);
                 if (!accountNumber || !Number.isFinite(amount) || amount <= 0) {
-                    showMessage('Вкажіть рахунок та суму для поповнення.', 'error');
+                    showMessage(getAdminText('messages.specifyAccountAmount'), 'error');
                     return;
                 }
                 await performAdminOperation('deposit', { accountNumber, amount });
@@ -3979,7 +5658,7 @@
                 const accountNumber = document.getElementById('adminWithdrawAccount').value;
                 const amount = parseFloat(document.getElementById('adminWithdrawAmount').value);
                 if (!accountNumber || !Number.isFinite(amount) || amount <= 0) {
-                    showMessage('Вкажіть рахунок та суму для зняття.', 'error');
+                    showMessage(getAdminText('messages.specifyAccountAmountWithdraw'), 'error');
                 return;
             }
                 await performAdminOperation('withdraw', { accountNumber, amount });
@@ -3993,7 +5672,7 @@
                 const toAccountNumber = document.getElementById('adminToAccountNumber').value.trim();
                 const amount = parseFloat(document.getElementById('adminTransferAmount').value);
                 if (!fromAccount || !toAccountNumber || !Number.isFinite(amount) || amount <= 0) {
-                    showMessage('Заповніть усі поля для переказу.', 'error');
+                    showMessage(getAdminText('messages.fillAllFieldsTransfer'), 'error');
                 return;
             }
                 await performAdminOperation('transfer', { accountNumber: fromAccount, toAccountNumber, amount });
@@ -4006,7 +5685,7 @@
 
         async function performAdminOperation(type, { accountNumber, toAccountNumber, amount }) {
             if (!adminCachedProfile || !adminCachedProfile.id) {
-                showMessage('Профіль не завантажено. Оновіть сторінку.', 'error');
+                showMessage(getAdminText('messages.profileNotLoaded'), 'error');
                 return;
             }
 
@@ -4042,26 +5721,85 @@
                     await loadAdminTransactions(adminCachedProfile.id);
                 } else {
                     const errorText = await response.text();
-                    showMessage('Помилка операції: ' + (errorText || response.statusText), 'error');
+                    // Якщо помилка вже містить повний опис (наприклад, "Недостатньо коштів"), 
+                    // показуємо її без додавання "Помилка операції: "
+                    if (errorText && (errorText.trim().startsWith('Недостатньо коштів') || 
+                                     errorText.trim().startsWith('Недостатньо коштів на рахунку'))) {
+                        showMessage(errorText, 'error');
+                    } else {
+                        showMessage(getAdminText('messages.operationError') + (errorText || response.statusText), 'error');
+                    }
                 }
             } catch (error) {
                 console.error('performAdminOperation:', error);
-                showMessage('Помилка з\'єднання: ' + error.message, 'error');
+                showMessage(getAdminText('messages.connectionError') + ' ' + error.message, 'error');
             }
         }
 
         function logout() {
+            console.log('=== ADMIN LOGOUT CALLED ===');
+            try {
             localStorage.removeItem('accessToken');
             localStorage.removeItem('userRole');
             localStorage.removeItem('username');
+                console.log('Cleared localStorage, redirecting...');
             window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error in admin logout:', error);
+            }
         }
+        
+        // Перевіряємо, чи функція logout доступна глобально
+        console.log('Admin logout function defined:', typeof logout);
+        window.logout = logout;
 
-        const initialAdminChatActive = document.getElementById('chat')?.classList.contains('active');
-        document.body.classList.toggle('chat-lock', Boolean(initialAdminChatActive));
-        const adminContainer = document.querySelector('.container');
-        if (adminContainer) {
-            adminContainer.classList.toggle('chat-mode', Boolean(initialAdminChatActive));
+        // Ensure logout is available immediately - BEFORE any DOM manipulation
+        if (typeof logout === 'function') {
+            window.logout = logout;
+            console.log('Logout function assigned to window:', typeof window.logout);
+        } else {
+            console.error('CRITICAL: logout function is not defined!');
+            // Fallback logout function
+            window.logout = function() {
+                console.log('Fallback logout called');
+                try {
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('username');
+                    window.location.href = 'login.html';
+                } catch (e) {
+                    alert('Error during logout: ' + e.message);
+                }
+            };
+        }
+        
+        // Make sure critical functions are available
+        if (typeof showTab === 'undefined') {
+            console.warn('showTab function not found - will be defined later');
+        }
+        
+        // Wait for DOM to be ready before accessing elements
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOM Content Loaded');
+                initializeAdminChatState();
+            });
+        } else {
+            console.log('DOM already loaded');
+            initializeAdminChatState();
+        }
+        
+        function initializeAdminChatState() {
+            try {
+                const initialAdminChatActive = document.getElementById('chat')?.classList.contains('active');
+                document.body.classList.toggle('chat-lock', Boolean(initialAdminChatActive));
+                const adminContainer = document.querySelector('.container');
+                if (adminContainer) {
+                    adminContainer.classList.toggle('chat-mode', Boolean(initialAdminChatActive));
+                }
+            } catch (error) {
+                console.error('Error initializing admin chat state:', error);
+            }
         }
     </script>
 </body>

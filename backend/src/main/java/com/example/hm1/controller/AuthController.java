@@ -7,6 +7,11 @@ import com.example.hm1.entity.Customer;
 import com.example.hm1.entity.Role;
 import com.example.hm1.entity.User;
 import com.example.hm1.security.JwtService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,6 +31,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Authentication", description = "API для аутентифікації та реєстрації користувачів")
 public class AuthController {
 
     private final AuthenticationManager authManager;
@@ -45,7 +51,14 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest req) {
+    @Operation(summary = "Реєстрація нового користувача", description = "Створює нового користувача з роллю USER та пов'язаний обліковий запис Customer")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Користувач успішно зареєстрований"),
+            @ApiResponse(responseCode = "400", description = "Помилка реєстрації: користувач з таким ім'ям або email вже існує, або невалідні дані")
+    })
+    public ResponseEntity<?> register(
+            @Parameter(description = "Дані для реєстрації: username, email, password", required = true)
+            @RequestBody RegisterRequest req) {
         try {
             // Перевіряємо чи користувач вже існує
             if (userRepository.existsByUsername(req.getUsername())) {
@@ -93,7 +106,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest req) {
+    @Operation(summary = "Авторизація користувача", description = "Перевіряє облікові дані користувача та повертає JWT токен для доступу до API")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успішна авторизація, повертається JWT токен та ролі користувача"),
+            @ApiResponse(responseCode = "401", description = "Помилка авторизації: невірний username або password, або користувач не знайдений")
+    })
+    public ResponseEntity<?> login(
+            @Parameter(description = "Облікові дані: username та password", required = true)
+            @RequestBody LoginRequest req) {
         try {
             // Перевіряємо чи користувач існує
             if (!userRepository.existsByUsername(req.getUsername())) {

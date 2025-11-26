@@ -43,12 +43,27 @@ public class Transaction extends AbstractEntity {
     @Column(nullable = false)
     private TransactionStatus status = TransactionStatus.COMPLETED;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category")
+    private ExpenseCategory category;
+
     public enum TransactionType {
         DEPOSIT, WITHDRAWAL, TRANSFER, PAYMENT
     }
 
     public enum TransactionStatus {
         PENDING, COMPLETED, FAILED, CANCELLED
+    }
+
+    public enum ExpenseCategory {
+        FOOD,
+        TRANSPORT,
+        SHOPPING,
+        ENTERTAINMENT,
+        BILLS,
+        HEALTHCARE,
+        EDUCATION,
+        OTHER
     }
 
     // Конструктор для створення транзакції
@@ -131,5 +146,13 @@ public class Transaction extends AbstractEntity {
 
     public void setStatus(TransactionStatus status) {
         this.status = status;
+    }
+
+    public ExpenseCategory getCategory() {
+        return this.category;
+    }
+
+    public void setCategory(ExpenseCategory category) {
+        this.category = category;
     }
 }

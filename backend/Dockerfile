@@ -3,11 +3,11 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
 # Копіюємо pom.xml та завантажуємо залежності (кешування)
-COPY pom.xml .
+COPY backend/pom.xml .
 RUN mvn dependency:go-offline -B
 
 # Копіюємо вихідний код та збираємо додаток
-COPY src ./src
+COPY backend/src ./src
 RUN mvn clean package -DskipTests
 
 # Production образ - використовуємо стандартний образ замість alpine для кращої сумісності

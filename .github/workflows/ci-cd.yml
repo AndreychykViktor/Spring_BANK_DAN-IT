@@ -38,9 +38,8 @@ jobs:
         with:
           images: ${{ env.DOCKER_IMAGE }}
           tags: |
-            type=sha,prefix=${{ github.ref_name }}-,format=long
-            type=raw,value=${{ github.ref_name }}-${{ github.sha }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest
+            type=sha,prefix=${{ github.ref_name }}-,format=short
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -57,10 +56,8 @@ jobs:
       - name: Output image tags
         id: image-tags
         run: |
-          # Використовуємо простий формат: branch-sha
-          BRANCH_NAME="${{ github.ref_name }}"
-          COMMIT_SHA="${{ github.sha }}"
-          IMAGE_TAG="${BRANCH_NAME}-${COMMIT_SHA}"
+          # Використовуємо latest для простішого деплою
+          IMAGE_TAG="latest"
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "full_image=${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "📦 Built image tag: ${IMAGE_TAG}"
@@ -89,11 +86,8 @@ jobs:
       - name: Get image tag from build
         id: image-tag
         run: |
-          # Отримуємо тег з попереднього job через needs context
-          # Використовуємо формат main-<short-sha> або main-<full-sha>
-          BRANCH_NAME="${{ github.ref_name }}"
-          COMMIT_SHA="${{ github.sha }}"
-          IMAGE_TAG="${BRANCH_NAME}-${COMMIT_SHA}"
+          # Використовуємо latest для простішого деплою
+          IMAGE_TAG="latest"
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "full_image=${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "📦 Image tag: ${IMAGE_TAG}"
@@ -179,59 +173,34 @@ jobs:
         run: |
           set -e
           
-          IMAGE_TAG="${{ steps.image-tag.outputs.image_tag }}"
-          FULL_IMAGE="${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
-          LATEST_IMAGE="${{ env.DOCKER_IMAGE }}:latest"
+          IMAGE_TO_DEPLOY="${{ env.DOCKER_IMAGE }}:latest"
           
           echo "🚀 Деплой в Azure AKS..."
-          echo "📦 Спробуємо використати образ: ${FULL_IMAGE}"
+          echo "📦 Використовується образ: ${IMAGE_TO_DEPLOY}"
           
           # Перевіряємо, чи deployment існує
           if ! kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} >/dev/null 2>&1; then
             echo "❌ Deployment bank-app не знайдено в namespace ${{ env.KUBERNETES_NAMESPACE }}"
-            echo "Спочатку застосуйте deployment вручну або через kubectl apply"
             exit 1
           fi
           
-          # Показуємо поточний образ перед оновленням
+          # Показуємо поточний стан
           CURRENT_IMAGE=$(kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}')
           echo "📋 Поточний образ: ${CURRENT_IMAGE}"
+          echo "📋 Новий образ: ${IMAGE_TO_DEPLOY}"
           
-          # Спочатку пробуємо використати точний тег
-          echo "🔄 Оновлюємо deployment з образом ${FULL_IMAGE}..."
-          if kubectl set image deployment/bank-app bank-app="${FULL_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }} 2>&1; then
-            echo "✅ Deployment оновлено з образом ${FULL_IMAGE}"
-            # Перевіряємо, чи образ дійсно змінився
-            NEW_IMAGE=$(kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}')
-            echo "📋 Новий образ: ${NEW_IMAGE}"
-            
-            # Якщо образ не змінився, спробуємо latest
-            if [ "${NEW_IMAGE}" = "${CURRENT_IMAGE}" ]; then
-              echo "⚠️ Образ не змінився, спробуємо latest"
-              kubectl set image deployment/bank-app bank-app="${LATEST_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}
-            fi
-            
-            # Примусово перезапускаємо deployment для підтягування нового образу
-            echo "🔄 Примусово перезапускаємо deployment для підтягування нового образу..."
-            kubectl rollout restart deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }} || {
-              echo "⚠️ Rollout restart не вдався, але продовжуємо..."
-            }
-            echo "✅ Deployment перезапущено"
-          else
-            echo "⚠️ Не вдалося використати точний тег ${FULL_IMAGE}, спробуємо latest"
-            echo "🔄 Оновлюємо deployment з образом ${LATEST_IMAGE}..."
-            kubectl set image deployment/bank-app bank-app="${LATEST_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }} || {
-              echo "❌ Не вдалося оновити deployment"
-              exit 1
-            }
-            echo "✅ Deployment оновлено з образом ${LATEST_IMAGE}"
-            # Примусово перезапускаємо deployment
-            echo "🔄 Примусово перезапускаємо deployment..."
-            kubectl rollout restart deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }} || {
-              echo "⚠️ Rollout restart не вдався, але продовжуємо..."
-            }
-            echo "✅ Deployment перезапущено"
-          fi
+          # Оновлюємо образ
+          echo "🔄 Оновлюємо deployment..."
+          kubectl set image deployment/bank-app bank-app="${IMAGE_TO_DEPLOY}" -n ${{ env.KUBERNETES_NAMESPACE }}
+          
+          # Перевіряємо, чи образ змінився
+          NEW_IMAGE=$(kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}')
+          echo "📋 Оновлений образ: ${NEW_IMAGE}"
+          
+          # Примусово перезапускаємо для підтягування нового образу
+          echo "🔄 Примусово перезапускаємо deployment..."
+          kubectl rollout restart deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }}
+          echo "✅ Deployment оновлено та перезапущено"
       
       - name: Verify Azure deployment
         env:
@@ -288,10 +257,8 @@ jobs:
       - name: Get image tag from build
         id: image-tag
         run: |
-          # Отримуємо тег з попереднього job
-          BRANCH_NAME="${{ github.ref_name }}"
-          COMMIT_SHA="${{ github.sha }}"
-          IMAGE_TAG="${BRANCH_NAME}-${COMMIT_SHA}"
+          # Використовуємо latest для простішого деплою
+          IMAGE_TAG="latest"
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "full_image=${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "📦 Image tag: ${IMAGE_TAG}"
@@ -373,59 +340,34 @@ jobs:
         run: |
           set -e
           
-          IMAGE_TAG="${{ steps.image-tag.outputs.image_tag }}"
-          FULL_IMAGE="${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
-          LATEST_IMAGE="${{ env.DOCKER_IMAGE }}:latest"
+          IMAGE_TO_DEPLOY="${{ env.DOCKER_IMAGE }}:latest"
           
           echo "🚀 Деплой в AWS EKS..."
-          echo "📦 Спробуємо використати образ: ${FULL_IMAGE}"
+          echo "📦 Використовується образ: ${IMAGE_TO_DEPLOY}"
           
           # Перевіряємо, чи deployment існує
           if ! kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} >/dev/null 2>&1; then
             echo "❌ Deployment bank-app не знайдено в namespace ${{ env.KUBERNETES_NAMESPACE }}"
-            echo "Спочатку застосуйте deployment вручну або через kubectl apply"
             exit 1
           fi
           
-          # Показуємо поточний образ перед оновленням
+          # Показуємо поточний стан
           CURRENT_IMAGE=$(kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}')
           echo "📋 Поточний образ: ${CURRENT_IMAGE}"
+          echo "📋 Новий образ: ${IMAGE_TO_DEPLOY}"
           
-          # Спочатку пробуємо використати точний тег
-          echo "🔄 Оновлюємо deployment з образом ${FULL_IMAGE}..."
-          if kubectl set image deployment/bank-app bank-app="${FULL_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }} 2>&1; then
-            echo "✅ Deployment оновлено з образом ${FULL_IMAGE}"
-            # Перевіряємо, чи образ дійсно змінився
-            NEW_IMAGE=$(kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}')
-            echo "📋 Новий образ: ${NEW_IMAGE}"
-            
-            # Якщо образ не змінився, спробуємо latest
-            if [ "${NEW_IMAGE}" = "${CURRENT_IMAGE}" ]; then
-              echo "⚠️ Образ не змінився, спробуємо latest"
-              kubectl set image deployment/bank-app bank-app="${LATEST_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}
-            fi
-            
-            # Примусово перезапускаємо deployment для підтягування нового образу
-            echo "🔄 Примусово перезапускаємо deployment для підтягування нового образу..."
-            kubectl rollout restart deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }} || {
-              echo "⚠️ Rollout restart не вдався, але продовжуємо..."
-            }
-            echo "✅ Deployment перезапущено"
-          else
-            echo "⚠️ Не вдалося використати точний тег ${FULL_IMAGE}, спробуємо latest"
-            echo "🔄 Оновлюємо deployment з образом ${LATEST_IMAGE}..."
-            kubectl set image deployment/bank-app bank-app="${LATEST_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }} || {
-              echo "❌ Не вдалося оновити deployment"
-              exit 1
-            }
-            echo "✅ Deployment оновлено з образом ${LATEST_IMAGE}"
-            # Примусово перезапускаємо deployment
-            echo "🔄 Примусово перезапускаємо deployment..."
-            kubectl rollout restart deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }} || {
-              echo "⚠️ Rollout restart не вдався, але продовжуємо..."
-            }
-            echo "✅ Deployment перезапущено"
-          fi
+          # Оновлюємо образ
+          echo "🔄 Оновлюємо deployment..."
+          kubectl set image deployment/bank-app bank-app="${IMAGE_TO_DEPLOY}" -n ${{ env.KUBERNETES_NAMESPACE }}
+          
+          # Перевіряємо, чи образ змінився
+          NEW_IMAGE=$(kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}')
+          echo "📋 Оновлений образ: ${NEW_IMAGE}"
+          
+          # Примусово перезапускаємо для підтягування нового образу
+          echo "🔄 Примусово перезапускаємо deployment..."
+          kubectl rollout restart deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }}
+          echo "✅ Deployment оновлено та перезапущено"
       
       - name: Verify AWS deployment
         env:
@@ -464,7 +406,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.DOCKER_IMAGE }}:${{ github.ref_name }}-${{ github.sha }}
+          image-ref: ${{ env.DOCKER_IMAGE }}:latest
           format: 'sarif'
           output: 'trivy-results.sarif'
           continue-on-error: true

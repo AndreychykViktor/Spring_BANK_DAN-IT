@@ -1,0 +1,40 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+
+# Heroku
+.heroku/
+
+# Personal values (не комітьте з паролями!)
+MY_VALUES.md
+*_VALUES.md
+
+# Build
+*.jar
+!**/src/main/**/*.jar
+!**/src/test/**/*.jar
+

@@ -1,0 +1,42 @@
+{
+  "name": "Banking Application",
+  "description": "Internet Banking Backend Application",
+  "repository": "https://https://github.com/AndreychykViktor/Spring_BANK_DAN-IT",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": ["java", "spring-boot", "banking", "postgresql"],
+  "env": {
+    "SPRING_PROFILES_ACTIVE": {
+      "description": "Spring profile to use",
+      "value": "heroku"
+    },
+    "JWT_SECRET": {
+      "description": "JWT secret key (Base64 encoded). Generate with: echo -n 'your-secret' | base64",
+      "generator": "secret"
+    },
+    "JWT_EXPIRATION": {
+      "description": "JWT token expiration in milliseconds",
+      "value": "3600000"
+    },
+    "CORS_ALLOWED_ORIGINS": {
+      "description": "Allowed CORS origins (comma-separated)",
+      "value": "*"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "cloudamqp:lemur"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/java"
+    }
+  ]
+}
+

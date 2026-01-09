@@ -37,7 +37,7 @@ jobs:
       - name: Build application
         run: |
           cd backend
-          mvn clean package -DskipTests
+          mvn clean package -DskipTests=true
       
       - name: Upload test results
         if: always()

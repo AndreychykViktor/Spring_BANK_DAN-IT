@@ -41,11 +41,24 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
             type=sha,prefix=${{ github.ref_name }}-,format=short
       
+      - name: Verify Dockerfile exists
+        run: |
+          echo "🔍 Перевірка наявності Dockerfile..."
+          if [ -f "./backend/Dockerfile" ]; then
+            echo "✅ Dockerfile знайдено: ./backend/Dockerfile"
+            ls -lh ./backend/Dockerfile
+          else
+            echo "❌ Dockerfile не знайдено в ./backend/Dockerfile"
+            echo "📋 Структура директорій:"
+            ls -la backend/ | head -20
+            exit 1
+          fi
+      
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          file: ./backend/Dockerfile
+          file: Dockerfile
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

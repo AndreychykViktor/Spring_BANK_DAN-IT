@@ -30,7 +30,7 @@ spec:
               name: grafana-secret
               key: admin-password
         - name: GF_SERVER_ROOT_URL
-          value: "http://grafana.bank-system.svc.cluster.local:3000"
+          value: "https://grafana.andreychyk-bank.duckdns.org/"
         - name: GF_INSTALL_PLUGINS
           value: "grafana-piechart-panel"
         volumeMounts:
@@ -40,6 +40,8 @@ spec:
           mountPath: /etc/grafana/provisioning/datasources
         - name: grafana-dashboards
           mountPath: /etc/grafana/provisioning/dashboards
+        - name: grafana-dashboard-bank
+          mountPath: /var/lib/grafana/dashboards
         resources:
           requests:
             memory: "256Mi"
@@ -56,6 +58,9 @@ spec:
       - name: grafana-dashboards
         configMap:
           name: grafana-dashboards
+      - name: grafana-dashboard-bank
+        configMap:
+          name: grafana-dashboard-bank
 ---
 apiVersion: v1
 kind: Service

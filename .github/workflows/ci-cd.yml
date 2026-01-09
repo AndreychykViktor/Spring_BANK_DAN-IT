@@ -436,6 +436,7 @@ jobs:
           }
       
       - name: Deploy to AWS EKS
+        if: steps.check-aws-creds.outputs.aws_available == 'true'
         env:
           KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
         continue-on-error: true
@@ -480,6 +481,7 @@ jobs:
           fi
       
       - name: Verify AWS deployment
+        if: steps.check-aws-creds.outputs.aws_available == 'true'
         env:
           KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
         continue-on-error: true
@@ -495,14 +497,16 @@ jobs:
           fi
       
       - name: Get AWS deployment status
+        if: steps.check-aws-creds.outputs.aws_available == 'true'
         env:
           KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
+        continue-on-error: true
         run: |
           echo "📊 Статус подів в AWS:"
-          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l app=bank-app
+          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l app=bank-app || echo "⚠️ Не вдалося отримати статус подів"
           echo ""
           echo "📋 Deployment details:"
-          kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}'
+          kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}' || echo "⚠️ Не вдалося отримати деталі deployment"
           echo ""
 
   # Security scan

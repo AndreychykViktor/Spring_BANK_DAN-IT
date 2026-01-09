@@ -285,4 +285,30 @@ public class AdminController {
             return ResponseEntity.badRequest().body("Failed to get user details: " + e.getMessage());
         }
     }
+
+    @GetMapping("/metrics/summary")
+    @Operation(summary = "Отримати короткий звіт про метрики", description = "Повертає статистику системи для адміна")
+    @ApiResponse(responseCode = "200", description = "Успішно отримано метрики")
+    public ResponseEntity<?> getMetricsSummary() {
+        try {
+            long totalUsers = userRepository.count();
+            long totalCustomers = customerRepo.findAll().size();
+            long totalAccounts = accountRepo.findAll().size();
+            long totalTransactions = transactionService.getAllTransactions().size();
+            
+            java.util.Map<String, Object> metrics = java.util.Map.of(
+                "totalUsers", totalUsers,
+                "totalCustomers", totalCustomers,
+                "totalAccounts", totalAccounts,
+                "totalTransactions", totalTransactions,
+                "grafanaUrl", "https://grafana.andreychyk-bank.duckdns.org",
+                "prometheusUrl", "http://prometheus:9090"
+            );
+            
+            return ResponseEntity.ok(metrics);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Failed to get metrics: " + e.getMessage());
+        }
+    }
 }

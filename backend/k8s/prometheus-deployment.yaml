@@ -28,6 +28,8 @@ spec:
           - '--web.console.libraries=/etc/prometheus/console_libraries'
           - '--web.console.templates=/etc/prometheus/consoles'
           - '--web.enable-lifecycle'
+          - '--web.external-url=/prometheus'
+          - '--web.route-prefix=/prometheus'
         volumeMounts:
         - name: prometheus-config
           mountPath: /etc/prometheus
@@ -82,39 +84,18 @@ data:
       # Банківський додаток
       - job_name: 'bank-app'
         metrics_path: '/actuator/prometheus'
-        kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-                - bank-system
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_app]
-            action: keep
-            regex: bank-app
-          - source_labels: [__meta_kubernetes_pod_ip]
-            action: replace
-            target_label: __address__
-            replacement: $1:9000
-          - source_labels: [__meta_kubernetes_pod_name]
-            target_label: pod
-          - source_labels: [__meta_kubernetes_namespace]
-            target_label: namespace
-
-      # PostgreSQL метрики (якщо є exporter)
-      - job_name: 'postgresql'
+        scheme: http
         static_configs:
-          - targets: ['postgresql:5432']
+          - targets: ['bank-app:80']
             labels:
-              service: postgresql
-              database: neondb
+              service: bank-app
+              application: hm1
+              namespace: bank-system
 
-      # RabbitMQ метрики
-      - job_name: 'rabbitmq'
-        static_configs:
-          - targets: ['rabbitmq:15692']
-            labels:
-              service: rabbitmq
-
+      # Примітка: PostgreSQL та RabbitMQ targets вимкнено, 
+      # бо немає Prometheus exporters.
+      # Якщо потрібні метрики - встановіть окремі exporters.
+      
       # Kubernetes компоненти
       - job_name: 'kubernetes-apiservers'
         kubernetes_sd_configs:

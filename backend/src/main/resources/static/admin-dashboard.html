@@ -1858,7 +1858,7 @@
                             </div>
                             <small style="opacity: 0.8; display: block; margin-top: 0.5rem;">Логін: admin / Пароль: admin123</small>
                         </div>
-                        <div class="card" style="background: linear-gradient(135deg, #e44d26 0%, #f16529 100%); color: white; cursor: pointer;" onclick="window.open('https://prometheus.andreychyk-bank.duckdns.org', '_blank')">
+                        <div class="card" style="background: linear-gradient(135deg, #e44d26 0%, #f16529 100%); color: white; cursor: pointer;" onclick="openPrometheus()">
                             <h3 style="color: white; margin-bottom: 0.5rem;">🔥 Prometheus</h3>
                             <p style="opacity: 0.9; margin-bottom: 1rem;">Збір та запити метрик</p>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -3160,6 +3160,13 @@
                 console.error('Error loading dashboard data:', error);
             }
         });
+
+        function openPrometheus() {
+            // Використовуємо шлях через основний домен
+            const baseUrl = window.location.origin; // https://andreychyk-bank.duckdns.org
+            const prometheusUrl = baseUrl + '/prometheus';
+            window.open(prometheusUrl, '_blank');
+        }
 
         async function loadMetrics() {
             try {

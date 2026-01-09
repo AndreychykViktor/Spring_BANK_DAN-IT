@@ -302,7 +302,7 @@ public class AdminController {
                 "totalAccounts", totalAccounts,
                 "totalTransactions", totalTransactions,
                 "grafanaUrl", "https://grafana.andreychyk-bank.duckdns.org",
-                "prometheusUrl", "https://prometheus.andreychyk-bank.duckdns.org",
+                "prometheusUrl", "https://andreychyk-bank.duckdns.org/prometheus",
                 "prometheusInternalUrl", "http://prometheus:9090"
             );
             

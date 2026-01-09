@@ -1,0 +1,51 @@
+# Headless Service для StatefulSet (потрібен для стабільної мережевої ідентичності)
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-headless
+  namespace: bank-system
+  labels:
+    app: rabbitmq
+spec:
+  clusterIP: None
+  ports:
+  - port: 5672
+    targetPort: 5672
+    protocol: TCP
+    name: amqp
+  - port: 15672
+    targetPort: 15672
+    protocol: TCP
+    name: management
+  - port: 25672
+    targetPort: 25672
+    protocol: TCP
+    name: clustering
+  - port: 4369
+    targetPort: 4369
+    protocol: TCP
+    name: discovery
+  selector:
+    app: rabbitmq
+---
+# Regular Service для доступу з додатку
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: bank-system
+  labels:
+    app: rabbitmq
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5672
+    targetPort: 5672
+    protocol: TCP
+    name: amqp
+  - port: 15672
+    targetPort: 15672
+    protocol: TCP
+    name: management
+  selector:
+    app: rabbitmq

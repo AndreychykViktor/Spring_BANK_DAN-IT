@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bank-config
+  namespace: bank-system
+data:
+  jwt-expiration: "3600000"
+  cors-allowed-origins: "http://andreychyk-bank.duckdns.org"
+  app-port: "9000"
+

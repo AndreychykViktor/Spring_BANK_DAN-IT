@@ -54,11 +54,25 @@ jobs:
             exit 1
           fi
       
+      - name: List files in backend directory
+        run: |
+          echo "📋 Файли в backend/:"
+          ls -la ./backend/ | head -20
+          echo ""
+          echo "📋 Перевірка Dockerfile:"
+          if [ -f "./backend/Dockerfile" ]; then
+            echo "✅ Dockerfile існує"
+            cat ./backend/Dockerfile | head -10
+          else
+            echo "❌ Dockerfile НЕ знайдено!"
+            exit 1
+          fi
+      
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          file: Dockerfile
+          file: ./backend/Dockerfile
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

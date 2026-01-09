@@ -193,15 +193,23 @@ jobs:
             exit 1
           fi
           
-          # Спробуємо використати точний тег
+          # Спочатку пробуємо використати точний тег
           echo "🔄 Оновлюємо deployment з образом ${FULL_IMAGE}..."
           if kubectl set image deployment/bank-app bank-app="${FULL_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}; then
             echo "✅ Deployment оновлено з образом ${FULL_IMAGE}"
+            # Примусово перезапускаємо deployment для підтягування нового образу
+            echo "🔄 Примусово перезапускаємо deployment для підтягування нового образу..."
+            kubectl rollout restart deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }}
+            echo "✅ Deployment перезапущено"
           else
             echo "⚠️ Не вдалося використати точний тег ${FULL_IMAGE}, спробуємо latest"
             echo "🔄 Оновлюємо deployment з образом ${LATEST_IMAGE}..."
             kubectl set image deployment/bank-app bank-app="${LATEST_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}
             echo "✅ Deployment оновлено з образом ${LATEST_IMAGE}"
+            # Примусово перезапускаємо deployment
+            echo "🔄 Примусово перезапускаємо deployment..."
+            kubectl rollout restart deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }}
+            echo "✅ Deployment перезапущено"
           fi
       
       - name: Verify Azure deployment
@@ -350,15 +358,23 @@ jobs:
             exit 1
           fi
           
-          # Спробуємо використати точний тег
+          # Спочатку пробуємо використати точний тег
           echo "🔄 Оновлюємо deployment з образом ${FULL_IMAGE}..."
           if kubectl set image deployment/bank-app bank-app="${FULL_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}; then
             echo "✅ Deployment оновлено з образом ${FULL_IMAGE}"
+            # Примусово перезапускаємо deployment для підтягування нового образу
+            echo "🔄 Примусово перезапускаємо deployment для підтягування нового образу..."
+            kubectl rollout restart deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }}
+            echo "✅ Deployment перезапущено"
           else
             echo "⚠️ Не вдалося використати точний тег ${FULL_IMAGE}, спробуємо latest"
             echo "🔄 Оновлюємо deployment з образом ${LATEST_IMAGE}..."
             kubectl set image deployment/bank-app bank-app="${LATEST_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}
             echo "✅ Deployment оновлено з образом ${LATEST_IMAGE}"
+            # Примусово перезапускаємо deployment
+            echo "🔄 Примусово перезапускаємо deployment..."
+            kubectl rollout restart deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }}
+            echo "✅ Deployment перезапущено"
           fi
       
       - name: Verify AWS deployment

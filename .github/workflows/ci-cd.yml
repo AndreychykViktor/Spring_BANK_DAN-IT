@@ -38,7 +38,7 @@ jobs:
         with:
           images: ${{ env.DOCKER_IMAGE }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
             type=sha,prefix=${{ github.ref_name }}-,format=short
       
       - name: Build and push Docker image

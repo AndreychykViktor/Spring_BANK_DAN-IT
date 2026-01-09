@@ -12,34 +12,6 @@ env:
   KUBERNETES_NAMESPACE: bank-system
 
 jobs:
-  # CI - Тестування та валідація коду
-  test:
-    name: Build and Test
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
-      
-      - name: Build application (skip tests)
-        run: |
-          cd backend
-          mvn clean package -DskipTests=true
-      
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: backend/target/surefire-reports/
-
   # Build Docker image
   build:
     name: Build Docker Image

@@ -1848,7 +1848,7 @@
                 </div>
                 <div class="card" style="margin-top: 1rem;">
                     <h3>🔗 Доступ до моніторингу</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem;">
                         <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; cursor: pointer;" onclick="window.open('https://grafana.andreychyk-bank.duckdns.org', '_blank')">
                             <h3 style="color: white; margin-bottom: 0.5rem;">📈 Grafana</h3>
                             <p style="opacity: 0.9; margin-bottom: 1rem;">Візуалізація метрик та дашборди</p>
@@ -1857,6 +1857,15 @@
                                 <span>→</span>
                             </div>
                             <small style="opacity: 0.8; display: block; margin-top: 0.5rem;">Логін: admin / Пароль: admin123</small>
+                        </div>
+                        <div class="card" style="background: linear-gradient(135deg, #e44d26 0%, #f16529 100%); color: white; cursor: pointer;" onclick="window.open('https://prometheus.andreychyk-bank.duckdns.org', '_blank')">
+                            <h3 style="color: white; margin-bottom: 0.5rem;">🔥 Prometheus</h3>
+                            <p style="opacity: 0.9; margin-bottom: 1rem;">Збір та запити метрик</p>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>Відкрити Prometheus</span>
+                                <span>→</span>
+                            </div>
+                            <small style="opacity: 0.8; display: block; margin-top: 0.5rem;">PromQL запити та графіки</small>
                         </div>
                         <div class="card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; cursor: pointer;" onclick="window.open('/actuator/prometheus', '_blank')">
                             <h3 style="color: white; margin-bottom: 0.5rem;">🔍 Prometheus Metrics</h3>
@@ -3199,7 +3208,7 @@
                     </div>
                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.1);">
                         <p><strong>Grafana URL:</strong> <a href="${data.grafanaUrl}" target="_blank">${data.grafanaUrl}</a></p>
-                        <p><strong>Prometheus URL:</strong> ${data.prometheusUrl} (внутрішній)</p>
+                        <p><strong>Prometheus URL:</strong> <a href="${data.prometheusUrl}" target="_blank">${data.prometheusUrl}</a></p>
                     </div>
                 `;
                 document.getElementById('metricsDetails').innerHTML = detailsHtml;

@@ -302,7 +302,8 @@ public class AdminController {
                 "totalAccounts", totalAccounts,
                 "totalTransactions", totalTransactions,
                 "grafanaUrl", "https://grafana.andreychyk-bank.duckdns.org",
-                "prometheusUrl", "http://prometheus:9090"
+                "prometheusUrl", "https://prometheus.andreychyk-bank.duckdns.org",
+                "prometheusInternalUrl", "http://prometheus:9090"
             );
             
             return ResponseEntity.ok(metrics);

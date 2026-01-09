@@ -202,8 +202,8 @@ jobs:
           LATEST_IMAGE="${{ env.DOCKER_IMAGE }}:latest"
           
           echo "🔍 Перевірка наявності образу: ${FULL_IMAGE}"
-          echo "⏳ Очікуємо 10 секунд для завершення push образу..."
-          sleep 10
+          echo "⏳ Очікуємо 5 секунд для завершення push образу..."
+          sleep 5
           
           # Перевіряємо, чи образ доступний через Docker Hub API
           echo "✅ Припускаємо, що образ залитий. Переходимо до деплою."
@@ -258,7 +258,7 @@ jobs:
         continue-on-error: true
         run: |
           echo "⏳ Очікування на готовність deployment в Azure..."
-          if kubectl rollout status deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m; then
+          if kubectl rollout status deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=3m; then
             echo "✅ Deployment готовий"
           else
             echo "⚠️ Deployment не готовий вчасно, але перевіряємо статус..."
@@ -314,7 +314,21 @@ jobs:
           fi
           aws --version
       
+      - name: Check AWS credentials availability
+        id: check-aws-creds
+        continue-on-error: true
+        run: |
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ] && [ -z "${{ secrets.KUBECONFIG_AWS }}" ] && [ -z "${{ secrets.KUBECONFIG }}" ]; then
+            echo "aws_available=false" >> $GITHUB_OUTPUT
+            echo "⚠️ AWS credentials не налаштовані, пропускаємо AWS deploy"
+            exit 0
+          else
+            echo "aws_available=true" >> $GITHUB_OUTPUT
+            echo "✅ AWS credentials знайдено"
+          fi
+      
       - name: Configure AWS credentials
+        if: steps.check-aws-creds.outputs.aws_available == 'true'
         continue-on-error: true
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -333,20 +347,11 @@ jobs:
           echo "📦 Full image: ${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
       
       - name: Configure kubectl for AWS
+        if: steps.check-aws-creds.outputs.aws_available == 'true'
         id: kubeconfig
         continue-on-error: true
         run: |
           KUBECONFIG_PATH=""
-          
-          # Перевірка наявності будь-якого способу автентифікації
-          if [ -z "${{ secrets.KUBECONFIG_AWS }}" ] && [ -z "${{ secrets.KUBECONFIG }}" ] && [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
-            echo "⚠️ AWS credentials не налаштовані, пропускаємо AWS deploy"
-            echo "Додайте один з цих secrets в GitHub:"
-            echo "  - KUBECONFIG_AWS (окремий config для AWS)"
-            echo "  - KUBECONFIG (комбінований config) + AWS_KUBERNETES_CONTEXT"
-            echo "  - AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY + AWS_EKS_CLUSTER_NAME"
-            exit 0  # Exit 0 щоб не падав pipeline
-          fi
           
           if [ -n "${{ secrets.KUBECONFIG_AWS }}" ]; then
             echo "${{ secrets.KUBECONFIG_AWS }}" | base64 -d > kubeconfig-aws.yaml
@@ -480,7 +485,7 @@ jobs:
         continue-on-error: true
         run: |
           echo "⏳ Очікування на готовність deployment в AWS..."
-          if kubectl rollout status deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m; then
+          if kubectl rollout status deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=3m; then
             echo "✅ Deployment готовий"
           else
             echo "⚠️ Deployment не готовий вчасно, але перевіряємо статус..."

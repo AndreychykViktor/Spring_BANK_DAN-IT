@@ -283,7 +283,7 @@ jobs:
     name: Deploy to AWS EKS
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main' && (secrets.AWS_ACCESS_KEY_ID != '' || secrets.KUBECONFIG_AWS != '' || secrets.KUBECONFIG != '')
+    if: github.ref == 'refs/heads/main'
     environment: 
       name: production-aws
       url: https://andreychyk-bank.duckdns.org
@@ -307,7 +307,6 @@ jobs:
           aws --version
       
       - name: Configure AWS credentials
-        if: secrets.AWS_ACCESS_KEY_ID != ''
         continue-on-error: true
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -327,8 +326,19 @@ jobs:
       
       - name: Configure kubectl for AWS
         id: kubeconfig
+        continue-on-error: true
         run: |
           KUBECONFIG_PATH=""
+          
+          # Перевірка наявності будь-якого способу автентифікації
+          if [ -z "${{ secrets.KUBECONFIG_AWS }}" ] && [ -z "${{ secrets.KUBECONFIG }}" ] && [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+            echo "⚠️ AWS credentials не налаштовані, пропускаємо AWS deploy"
+            echo "Додайте один з цих secrets в GitHub:"
+            echo "  - KUBECONFIG_AWS (окремий config для AWS)"
+            echo "  - KUBECONFIG (комбінований config) + AWS_KUBERNETES_CONTEXT"
+            echo "  - AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY + AWS_EKS_CLUSTER_NAME"
+            exit 0  # Exit 0 щоб не падав pipeline
+          fi
           
           if [ -n "${{ secrets.KUBECONFIG_AWS }}" ]; then
             echo "${{ secrets.KUBECONFIG_AWS }}" | base64 -d > kubeconfig-aws.yaml

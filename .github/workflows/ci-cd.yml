@@ -323,28 +323,39 @@ jobs:
       - name: Configure kubectl for AWS
         id: kubeconfig
         run: |
+          KUBECONFIG_PATH=""
+          
           if [ -n "${{ secrets.KUBECONFIG_AWS }}" ]; then
             echo "${{ secrets.KUBECONFIG_AWS }}" | base64 -d > kubeconfig-aws.yaml
-            echo "KUBECONFIG_PATH=$(pwd)/kubeconfig-aws.yaml" >> $GITHUB_OUTPUT
+            KUBECONFIG_PATH="$(pwd)/kubeconfig-aws.yaml"
+            echo "KUBECONFIG_PATH=${KUBECONFIG_PATH}" >> $GITHUB_OUTPUT
             echo "✅ Використано KUBECONFIG_AWS"
           elif [ -n "${{ secrets.KUBECONFIG }}" ]; then
             echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yaml
-            echo "KUBECONFIG_PATH=$(pwd)/kubeconfig.yaml" >> $GITHUB_OUTPUT
+            KUBECONFIG_PATH="$(pwd)/kubeconfig.yaml"
+            echo "KUBECONFIG_PATH=${KUBECONFIG_PATH}" >> $GITHUB_OUTPUT
             # Встановити контекст AWS якщо вказано
             if [ -n "${{ secrets.AWS_KUBERNETES_CONTEXT }}" ]; then
-              kubectl config use-context ${{ secrets.AWS_KUBERNETES_CONTEXT }} --kubeconfig=kubeconfig.yaml
+              kubectl config use-context "${{ secrets.AWS_KUBERNETES_CONTEXT }}" --kubeconfig="${KUBECONFIG_PATH}"
               echo "✅ Встановлено контекст: ${{ secrets.AWS_KUBERNETES_CONTEXT }}"
             else
               echo "⚠️ AWS_KUBERNETES_CONTEXT не вказано, спробуємо знайти AWS контекст автоматично"
               # Спробувати знайти AWS контекст за назвою
-              AWS_CTX=$(kubectl config get-contexts -o name --kubeconfig=kubeconfig.yaml | grep -i eks || echo "")
+              AWS_CTX=$(kubectl config get-contexts -o name --kubeconfig="${KUBECONFIG_PATH}" | grep -i eks | head -1 || echo "")
               if [ -n "$AWS_CTX" ]; then
-                kubectl config use-context "$AWS_CTX" --kubeconfig=kubeconfig.yaml
+                kubectl config use-context "$AWS_CTX" --kubeconfig="${KUBECONFIG_PATH}"
                 echo "✅ Автоматично встановлено контекст: $AWS_CTX"
               else
-                echo "❌ AWS контекст не знайдено автоматично"
-                kubectl config get-contexts --kubeconfig=kubeconfig.yaml
-                exit 1
+                echo "⚠️ AWS контекст не знайдено автоматично, спробуємо перший доступний"
+                FIRST_CTX=$(kubectl config get-contexts -o name --kubeconfig="${KUBECONFIG_PATH}" | head -1 || echo "")
+                if [ -n "$FIRST_CTX" ]; then
+                  kubectl config use-context "$FIRST_CTX" --kubeconfig="${KUBECONFIG_PATH}"
+                  echo "✅ Використано перший доступний контекст: $FIRST_CTX"
+                else
+                  echo "❌ Не знайдено жодного контексту"
+                  kubectl config get-contexts --kubeconfig="${KUBECONFIG_PATH}"
+                  exit 1
+                fi
               fi
             fi
             echo "✅ Використано KUBECONFIG з контекстом"
@@ -353,7 +364,8 @@ jobs:
             if [ -n "${{ secrets.AWS_EKS_CLUSTER_NAME }}" ] && [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
               echo "🔄 Отримання credentials через AWS CLI..."
               aws eks update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION || 'eu-north-1' }}
-              echo "KUBECONFIG_PATH=${HOME}/.kube/config" >> $GITHUB_OUTPUT
+              KUBECONFIG_PATH="${HOME}/.kube/config"
+              echo "KUBECONFIG_PATH=${KUBECONFIG_PATH}" >> $GITHUB_OUTPUT
               echo "✅ Отримано credentials через AWS CLI"
             else
               echo "❌ KUBECONFIG_AWS, KUBECONFIG або AWS_EKS_CLUSTER_NAME не знайдено"
@@ -364,29 +376,34 @@ jobs:
               exit 1
             fi
           fi
+          
           # Валідація KUBECONFIG
-          KUBECONFIG_FILE="${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}"
-          if [ -z "$KUBECONFIG_FILE" ]; then
-            echo "❌ KUBECONFIG_PATH не встановлено"
+          if [ -z "${KUBECONFIG_PATH}" ]; then
+            # Спробуємо прочитати з outputs
+            KUBECONFIG_PATH="${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}"
+            if [ -z "${KUBECONFIG_PATH}" ]; then
+              echo "❌ KUBECONFIG_PATH не встановлено після налаштування"
+              exit 1
+            fi
+          fi
+          
+          if [ ! -f "${KUBECONFIG_PATH}" ]; then
+            echo "❌ KUBECONFIG файл не знайдено: ${KUBECONFIG_PATH}"
             exit 1
           fi
           
-          if [ ! -f "$KUBECONFIG_FILE" ]; then
-            echo "❌ KUBECONFIG файл не знайдено: $KUBECONFIG_FILE"
-            exit 1
-          fi
-          
+          echo "📋 KUBECONFIG_PATH: ${KUBECONFIG_PATH}"
           echo "📋 Поточний контекст:"
-          kubectl config current-context --kubeconfig="$KUBECONFIG_FILE" || {
+          kubectl config current-context --kubeconfig="${KUBECONFIG_PATH}" || {
             echo "❌ Не вдалося отримати поточний контекст"
             exit 1
           }
           echo "📋 Доступні контексти:"
-          kubectl config get-contexts --kubeconfig="$KUBECONFIG_FILE"
+          kubectl config get-contexts --kubeconfig="${KUBECONFIG_PATH}"
           
           # Перевірка з'єднання з кластером
           echo "🔍 Перевірка з'єднання з кластером..."
-          kubectl cluster-info --kubeconfig="$KUBECONFIG_FILE" || {
+          kubectl cluster-info --kubeconfig="${KUBECONFIG_PATH}" || {
             echo "⚠️ Не вдалося підключитися до кластера, але продовжуємо..."
           }
       

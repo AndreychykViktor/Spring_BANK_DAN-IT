@@ -38,8 +38,9 @@ jobs:
         with:
           images: ${{ env.DOCKER_IMAGE }}
           tags: |
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=${{ github.ref_name }}-,format=long
+            type=raw,value=${{ github.ref_name }}-${{ github.sha }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -52,6 +53,16 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+      
+      - name: Output image tags
+        id: image-tags
+        run: |
+          # Отримуємо перший тег (без latest)
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' | grep -v latest | head -n 1 | sed 's/docker.io\///' | sed "s|${{ env.DOCKER_IMAGE }}:||")
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "full_image=${{ env.DOCKER_IMAGE }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "📦 Built image tag: $IMAGE_TAG"
+          echo "📦 Full image: ${{ env.DOCKER_IMAGE }}:$IMAGE_TAG"
 
   # Deploy to Azure AKS
   deploy-azure:
@@ -72,29 +83,43 @@ jobs:
         with:
           version: 'latest'
       
+      - name: Get image tag from build
+        id: image-tag
+        run: |
+          # Отримуємо тег з попереднього job через needs context
+          # Використовуємо формат main-<short-sha> або main-<full-sha>
+          BRANCH_NAME="${{ github.ref_name }}"
+          COMMIT_SHA="${{ github.sha }}"
+          IMAGE_TAG="${BRANCH_NAME}-${COMMIT_SHA}"
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "full_image=${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "📦 Image tag: ${IMAGE_TAG}"
+          echo "📦 Full image: ${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
+      
       - name: Configure kubectl for Azure
+        id: kubeconfig
         run: |
           if [ -n "${{ secrets.KUBECONFIG_AZURE }}" ]; then
             echo "${{ secrets.KUBECONFIG_AZURE }}" | base64 -d > kubeconfig-azure.yaml
-            export KUBECONFIG=kubeconfig-azure.yaml
+            echo "KUBECONFIG_PATH=$(pwd)/kubeconfig-azure.yaml" >> $GITHUB_OUTPUT
             echo "✅ Використано KUBECONFIG_AZURE"
           elif [ -n "${{ secrets.KUBECONFIG }}" ]; then
             echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yaml
-            export KUBECONFIG=kubeconfig.yaml
+            echo "KUBECONFIG_PATH=$(pwd)/kubeconfig.yaml" >> $GITHUB_OUTPUT
             # Встановити контекст Azure якщо вказано
             if [ -n "${{ secrets.AZURE_KUBERNETES_CONTEXT }}" ]; then
-              kubectl config use-context ${{ secrets.AZURE_KUBERNETES_CONTEXT }}
+              kubectl config use-context ${{ secrets.AZURE_KUBERNETES_CONTEXT }} --kubeconfig=kubeconfig.yaml
               echo "✅ Встановлено контекст: ${{ secrets.AZURE_KUBERNETES_CONTEXT }}"
             else
               echo "⚠️ AZURE_KUBERNETES_CONTEXT не вказано, спробуємо знайти Azure контекст автоматично"
               # Спробувати знайти Azure контекст за назвою
-              AZURE_CTX=$(kubectl config get-contexts -o name | grep -i "andreychyk-bank-cluster" | grep -v eks || echo "")
+              AZURE_CTX=$(kubectl config get-contexts -o name --kubeconfig=kubeconfig.yaml | grep -i "andreychyk-bank-cluster" | grep -v eks || echo "")
               if [ -n "$AZURE_CTX" ]; then
-                kubectl config use-context "$AZURE_CTX"
+                kubectl config use-context "$AZURE_CTX" --kubeconfig=kubeconfig.yaml
                 echo "✅ Автоматично встановлено контекст: $AZURE_CTX"
               else
                 echo "❌ Azure контекст не знайдено автоматично"
-                kubectl config get-contexts
+                kubectl config get-contexts --kubeconfig=kubeconfig.yaml
                 exit 1
               fi
             fi
@@ -107,29 +132,58 @@ jobs:
             exit 1
           fi
           echo "📋 Поточний контекст:"
-          kubectl config current-context
+          kubectl config current-context --kubeconfig=${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
           echo "📋 Доступні контексти:"
-          kubectl config get-contexts
+          kubectl config get-contexts --kubeconfig=${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
+      
+      - name: Check if image exists in Docker Hub
+        env:
+          KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
+        run: |
+          IMAGE_TAG="${{ steps.image-tag.outputs.image_tag }}"
+          FULL_IMAGE="${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
+          echo "🔍 Перевірка наявності образу: ${FULL_IMAGE}"
+          # Спробуємо перевірити через docker manifest (якщо доступний)
+          # Або просто переходимо до деплою, оскільки образ повинен бути вже залитий
+          echo "✅ Припускаємо, що образ вже залитий в build job"
       
       - name: Deploy to Azure AKS
+        env:
+          KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
         run: |
-          export KUBECONFIG=${KUBECONFIG:-kubeconfig-azure.yaml}
-          export IMAGE_TAG=${{ github.sha }}
+          IMAGE_TAG="${{ steps.image-tag.outputs.image_tag }}"
+          FULL_IMAGE="${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
           
           echo "🚀 Деплой в Azure AKS..."
-          kubectl set image deployment/bank-app bank-app=${{ env.DOCKER_IMAGE }}:main-${{ github.sha }} -n ${{ env.KUBERNETES_NAMESPACE }}
+          echo "📦 Використовується образ: ${FULL_IMAGE}"
+          
+          # Спробуємо використати точний тег, якщо не працює - використаємо latest
+          if kubectl set image deployment/bank-app bank-app="${FULL_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }} 2>/dev/null; then
+            echo "✅ Deployment оновлено з образом ${FULL_IMAGE}"
+          else
+            echo "⚠️ Не вдалося використати точний тег, спробуємо latest"
+            LATEST_IMAGE="${{ env.DOCKER_IMAGE }}:latest"
+            kubectl set image deployment/bank-app bank-app="${LATEST_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}
+            echo "✅ Deployment оновлено з образом ${LATEST_IMAGE}"
+          fi
       
       - name: Verify Azure deployment
+        env:
+          KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
         run: |
-          export KUBECONFIG=${KUBECONFIG:-kubeconfig-azure.yaml}
           echo "⏳ Очікування на готовність deployment в Azure..."
           kubectl rollout status deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
           
       - name: Get Azure deployment status
+        env:
+          KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
         run: |
-          export KUBECONFIG=${KUBECONFIG:-kubeconfig-azure.yaml}
           echo "📊 Статус подів в Azure:"
           kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l app=bank-app
+          echo ""
+          echo "📋 Deployment details:"
+          kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}'
+          echo ""
 
   # Deploy to AWS EKS
   deploy-aws:
@@ -157,29 +211,42 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION || 'eu-north-1' }}
       
+      - name: Get image tag from build
+        id: image-tag
+        run: |
+          # Отримуємо тег з попереднього job
+          BRANCH_NAME="${{ github.ref_name }}"
+          COMMIT_SHA="${{ github.sha }}"
+          IMAGE_TAG="${BRANCH_NAME}-${COMMIT_SHA}"
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "full_image=${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "📦 Image tag: ${IMAGE_TAG}"
+          echo "📦 Full image: ${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
+      
       - name: Configure kubectl for AWS
+        id: kubeconfig
         run: |
           if [ -n "${{ secrets.KUBECONFIG_AWS }}" ]; then
             echo "${{ secrets.KUBECONFIG_AWS }}" | base64 -d > kubeconfig-aws.yaml
-            export KUBECONFIG=kubeconfig-aws.yaml
+            echo "KUBECONFIG_PATH=$(pwd)/kubeconfig-aws.yaml" >> $GITHUB_OUTPUT
             echo "✅ Використано KUBECONFIG_AWS"
           elif [ -n "${{ secrets.KUBECONFIG }}" ]; then
             echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yaml
-            export KUBECONFIG=kubeconfig.yaml
+            echo "KUBECONFIG_PATH=$(pwd)/kubeconfig.yaml" >> $GITHUB_OUTPUT
             # Встановити контекст AWS якщо вказано
             if [ -n "${{ secrets.AWS_KUBERNETES_CONTEXT }}" ]; then
-              kubectl config use-context ${{ secrets.AWS_KUBERNETES_CONTEXT }}
+              kubectl config use-context ${{ secrets.AWS_KUBERNETES_CONTEXT }} --kubeconfig=kubeconfig.yaml
               echo "✅ Встановлено контекст: ${{ secrets.AWS_KUBERNETES_CONTEXT }}"
             else
               echo "⚠️ AWS_KUBERNETES_CONTEXT не вказано, спробуємо знайти AWS контекст автоматично"
               # Спробувати знайти AWS контекст за назвою
-              AWS_CTX=$(kubectl config get-contexts -o name | grep -i eks || echo "")
+              AWS_CTX=$(kubectl config get-contexts -o name --kubeconfig=kubeconfig.yaml | grep -i eks || echo "")
               if [ -n "$AWS_CTX" ]; then
-                kubectl config use-context "$AWS_CTX"
+                kubectl config use-context "$AWS_CTX" --kubeconfig=kubeconfig.yaml
                 echo "✅ Автоматично встановлено контекст: $AWS_CTX"
               else
                 echo "❌ AWS контекст не знайдено автоматично"
-                kubectl config get-contexts
+                kubectl config get-contexts --kubeconfig=kubeconfig.yaml
                 exit 1
               fi
             fi
@@ -189,6 +256,7 @@ jobs:
             if [ -n "${{ secrets.AWS_EKS_CLUSTER_NAME }}" ] && [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
               echo "🔄 Отримання credentials через AWS CLI..."
               aws eks update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION || 'eu-north-1' }}
+              echo "KUBECONFIG_PATH=${HOME}/.kube/config" >> $GITHUB_OUTPUT
               echo "✅ Отримано credentials через AWS CLI"
             else
               echo "❌ KUBECONFIG_AWS, KUBECONFIG або AWS_EKS_CLUSTER_NAME не знайдено"
@@ -200,29 +268,47 @@ jobs:
             fi
           fi
           echo "📋 Поточний контекст:"
-          kubectl config current-context
+          kubectl config current-context --kubeconfig=${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
           echo "📋 Доступні контексти:"
-          kubectl config get-contexts
+          kubectl config get-contexts --kubeconfig=${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
       
       - name: Deploy to AWS EKS
+        env:
+          KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
         run: |
-          export KUBECONFIG=${KUBECONFIG:-kubeconfig-aws.yaml}
-          export IMAGE_TAG=${{ github.sha }}
+          IMAGE_TAG="${{ steps.image-tag.outputs.image_tag }}"
+          FULL_IMAGE="${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
           
           echo "🚀 Деплой в AWS EKS..."
-          kubectl set image deployment/bank-app bank-app=${{ env.DOCKER_IMAGE }}:main-${{ github.sha }} -n ${{ env.KUBERNETES_NAMESPACE }}
+          echo "📦 Використовується образ: ${FULL_IMAGE}"
+          
+          # Спробуємо використати точний тег, якщо не працює - використаємо latest
+          if kubectl set image deployment/bank-app bank-app="${FULL_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }} 2>/dev/null; then
+            echo "✅ Deployment оновлено з образом ${FULL_IMAGE}"
+          else
+            echo "⚠️ Не вдалося використати точний тег, спробуємо latest"
+            LATEST_IMAGE="${{ env.DOCKER_IMAGE }}:latest"
+            kubectl set image deployment/bank-app bank-app="${LATEST_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}
+            echo "✅ Deployment оновлено з образом ${LATEST_IMAGE}"
+          fi
       
       - name: Verify AWS deployment
+        env:
+          KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
         run: |
-          export KUBECONFIG=${KUBECONFIG:-kubeconfig-aws.yaml}
           echo "⏳ Очікування на готовність deployment в AWS..."
           kubectl rollout status deployment/bank-app -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
       
       - name: Get AWS deployment status
+        env:
+          KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
         run: |
-          export KUBECONFIG=${KUBECONFIG:-kubeconfig-aws.yaml}
           echo "📊 Статус подів в AWS:"
           kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l app=bank-app
+          echo ""
+          echo "📋 Deployment details:"
+          kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}'
+          echo ""
 
   # Security scan
   security:

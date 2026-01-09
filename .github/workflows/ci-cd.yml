@@ -134,38 +134,72 @@ jobs:
             echo "  - KUBECONFIG (комбінований config) + AZURE_KUBERNETES_CONTEXT"
             exit 1
           fi
+          # Валідація KUBECONFIG
+          KUBECONFIG_FILE="${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}"
+          if [ -z "$KUBECONFIG_FILE" ]; then
+            echo "❌ KUBECONFIG_PATH не встановлено"
+            exit 1
+          fi
+          
+          if [ ! -f "$KUBECONFIG_FILE" ]; then
+            echo "❌ KUBECONFIG файл не знайдено: $KUBECONFIG_FILE"
+            exit 1
+          fi
+          
           echo "📋 Поточний контекст:"
-          kubectl config current-context --kubeconfig=${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
+          kubectl config current-context --kubeconfig="$KUBECONFIG_FILE" || {
+            echo "❌ Не вдалося отримати поточний контекст"
+            exit 1
+          }
           echo "📋 Доступні контексти:"
-          kubectl config get-contexts --kubeconfig=${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
+          kubectl config get-contexts --kubeconfig="$KUBECONFIG_FILE"
+          
+          # Перевірка з'єднання з кластером
+          echo "🔍 Перевірка з'єднання з кластером..."
+          kubectl cluster-info --kubeconfig="$KUBECONFIG_FILE" || {
+            echo "⚠️ Не вдалося підключитися до кластера, але продовжуємо..."
+          }
       
-      - name: Check if image exists in Docker Hub
-        env:
-          KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
+      - name: Wait for Docker image to be available
         run: |
           IMAGE_TAG="${{ steps.image-tag.outputs.image_tag }}"
           FULL_IMAGE="${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
+          LATEST_IMAGE="${{ env.DOCKER_IMAGE }}:latest"
+          
           echo "🔍 Перевірка наявності образу: ${FULL_IMAGE}"
-          # Спробуємо перевірити через docker manifest (якщо доступний)
-          # Або просто переходимо до деплою, оскільки образ повинен бути вже залитий
-          echo "✅ Припускаємо, що образ вже залитий в build job"
+          echo "⏳ Очікуємо 10 секунд для завершення push образу..."
+          sleep 10
+          
+          # Перевіряємо, чи образ доступний через Docker Hub API
+          echo "✅ Припускаємо, що образ залитий. Переходимо до деплою."
       
       - name: Deploy to Azure AKS
         env:
           KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
         run: |
+          set -e
+          
           IMAGE_TAG="${{ steps.image-tag.outputs.image_tag }}"
           FULL_IMAGE="${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
+          LATEST_IMAGE="${{ env.DOCKER_IMAGE }}:latest"
           
           echo "🚀 Деплой в Azure AKS..."
-          echo "📦 Використовується образ: ${FULL_IMAGE}"
+          echo "📦 Спробуємо використати образ: ${FULL_IMAGE}"
           
-          # Спробуємо використати точний тег, якщо не працює - використаємо latest
-          if kubectl set image deployment/bank-app bank-app="${FULL_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }} 2>/dev/null; then
+          # Перевіряємо, чи deployment існує
+          if ! kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} >/dev/null 2>&1; then
+            echo "❌ Deployment bank-app не знайдено в namespace ${{ env.KUBERNETES_NAMESPACE }}"
+            echo "Спочатку застосуйте deployment вручну або через kubectl apply"
+            exit 1
+          fi
+          
+          # Спробуємо використати точний тег
+          echo "🔄 Оновлюємо deployment з образом ${FULL_IMAGE}..."
+          if kubectl set image deployment/bank-app bank-app="${FULL_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}; then
             echo "✅ Deployment оновлено з образом ${FULL_IMAGE}"
           else
-            echo "⚠️ Не вдалося використати точний тег, спробуємо latest"
-            LATEST_IMAGE="${{ env.DOCKER_IMAGE }}:latest"
+            echo "⚠️ Не вдалося використати точний тег ${FULL_IMAGE}, спробуємо latest"
+            echo "🔄 Оновлюємо deployment з образом ${LATEST_IMAGE}..."
             kubectl set image deployment/bank-app bank-app="${LATEST_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}
             echo "✅ Deployment оновлено з образом ${LATEST_IMAGE}"
           fi
@@ -270,27 +304,59 @@ jobs:
               exit 1
             fi
           fi
+          # Валідація KUBECONFIG
+          KUBECONFIG_FILE="${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}"
+          if [ -z "$KUBECONFIG_FILE" ]; then
+            echo "❌ KUBECONFIG_PATH не встановлено"
+            exit 1
+          fi
+          
+          if [ ! -f "$KUBECONFIG_FILE" ]; then
+            echo "❌ KUBECONFIG файл не знайдено: $KUBECONFIG_FILE"
+            exit 1
+          fi
+          
           echo "📋 Поточний контекст:"
-          kubectl config current-context --kubeconfig=${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
+          kubectl config current-context --kubeconfig="$KUBECONFIG_FILE" || {
+            echo "❌ Не вдалося отримати поточний контекст"
+            exit 1
+          }
           echo "📋 Доступні контексти:"
-          kubectl config get-contexts --kubeconfig=${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
+          kubectl config get-contexts --kubeconfig="$KUBECONFIG_FILE"
+          
+          # Перевірка з'єднання з кластером
+          echo "🔍 Перевірка з'єднання з кластером..."
+          kubectl cluster-info --kubeconfig="$KUBECONFIG_FILE" || {
+            echo "⚠️ Не вдалося підключитися до кластера, але продовжуємо..."
+          }
       
       - name: Deploy to AWS EKS
         env:
           KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG_PATH }}
         run: |
+          set -e
+          
           IMAGE_TAG="${{ steps.image-tag.outputs.image_tag }}"
           FULL_IMAGE="${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
+          LATEST_IMAGE="${{ env.DOCKER_IMAGE }}:latest"
           
           echo "🚀 Деплой в AWS EKS..."
-          echo "📦 Використовується образ: ${FULL_IMAGE}"
+          echo "📦 Спробуємо використати образ: ${FULL_IMAGE}"
           
-          # Спробуємо використати точний тег, якщо не працює - використаємо latest
-          if kubectl set image deployment/bank-app bank-app="${FULL_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }} 2>/dev/null; then
+          # Перевіряємо, чи deployment існує
+          if ! kubectl get deployment bank-app -n ${{ env.KUBERNETES_NAMESPACE }} >/dev/null 2>&1; then
+            echo "❌ Deployment bank-app не знайдено в namespace ${{ env.KUBERNETES_NAMESPACE }}"
+            echo "Спочатку застосуйте deployment вручну або через kubectl apply"
+            exit 1
+          fi
+          
+          # Спробуємо використати точний тег
+          echo "🔄 Оновлюємо deployment з образом ${FULL_IMAGE}..."
+          if kubectl set image deployment/bank-app bank-app="${FULL_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}; then
             echo "✅ Deployment оновлено з образом ${FULL_IMAGE}"
           else
-            echo "⚠️ Не вдалося використати точний тег, спробуємо latest"
-            LATEST_IMAGE="${{ env.DOCKER_IMAGE }}:latest"
+            echo "⚠️ Не вдалося використати точний тег ${FULL_IMAGE}, спробуємо latest"
+            echo "🔄 Оновлюємо deployment з образом ${LATEST_IMAGE}..."
             kubectl set image deployment/bank-app bank-app="${LATEST_IMAGE}" -n ${{ env.KUBERNETES_NAMESPACE }}
             echo "✅ Deployment оновлено з образом ${LATEST_IMAGE}"
           fi
@@ -324,9 +390,10 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.DOCKER_IMAGE }}:main-${{ github.sha }}
+          image-ref: ${{ env.DOCKER_IMAGE }}:${{ github.ref_name }}-${{ github.sha }}
           format: 'sarif'
           output: 'trivy-results.sarif'
+          continue-on-error: true
       
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3

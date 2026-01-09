@@ -3162,9 +3162,9 @@
         });
 
         function openPrometheus() {
-            // Використовуємо шлях через основний домен
+            // Використовуємо піддомен для Prometheus
             const baseUrl = window.location.origin; // https://andreychyk-bank.duckdns.org
-            const prometheusUrl = baseUrl + '/prometheus';
+            const prometheusUrl = baseUrl.replace('andreychyk-bank.duckdns.org', 'prometheus.andreychyk-bank.duckdns.org');
             window.open(prometheusUrl, '_blank');
         }
 

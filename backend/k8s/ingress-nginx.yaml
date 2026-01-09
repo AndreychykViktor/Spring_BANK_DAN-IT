@@ -23,13 +23,6 @@ spec:
   - host: andreychyk-bank.duckdns.org  # ⚠️ ЗАМІНІТЬ на ваш DuckDNS домен!
     http:
       paths:
-      - path: /prometheus
-        pathType: Prefix
-        backend:
-          service:
-            name: prometheus
-            port:
-              number: 9090
       - path: /
         pathType: Prefix
         backend:
